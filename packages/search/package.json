@@ -1,0 +1,14 @@
+{
+  "name": "@mcpedia/search",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mcpedia/db": "workspace:*",
+    "@mcpedia/types": "workspace:*",
+    "drizzle-orm": "^0.38.0"
+  }
+}

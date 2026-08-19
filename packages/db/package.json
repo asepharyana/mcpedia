@@ -1,0 +1,19 @@
+{
+  "name": "@mcpedia/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/client.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "dependencies": {
+    "@mcpedia/config": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0",
+    "@types/node": "^20"
+  }
+}

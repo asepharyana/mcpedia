@@ -1,0 +1,26 @@
+{
+  "name": "@mcpedia/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "mcpedia-mcp": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "smoke": "bun run src/smoke.test.ts"
+  },
+  "dependencies": {
+    "@mcpedia/config": "workspace:*",
+    "@mcpedia/core": "workspace:*",
+    "@mcpedia/search": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.6.0"
+  }
+}

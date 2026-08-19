@@ -1,0 +1,15 @@
+{
+  "name": "@mcpedia/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mcpedia/config": "workspace:*",
+    "@mcpedia/core": "workspace:*",
+    "@mcpedia/db": "workspace:*",
+    "@mcpedia/parser": "workspace:*",
+    "@mcpedia/search": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "postgres": "^3.4.5"
+  }
+}
