@@ -1,5 +1,6 @@
 import { db } from "@mcpedia/db";
 import { documents, documentRevisions, documentChunks } from "@mcpedia/db/schema";
+import { reindexChunks } from "./index.service";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { toMeta } from "./row-map";
 import type { DocumentMeta } from "@mcpedia/types";
@@ -14,10 +15,11 @@ export interface RevisionSummary {
   bodyLength: number;
 }
 
-/** List revisions for a slug, newest first. */
+/** List revisions for a slug, newest first. `offset` enables paging. */
 export async function listRevisions(
   slug: string,
   limit = 20,
+  offset = 0,
 ): Promise<RevisionSummary[]> {
   const [doc] = await db
     .select({ id: documents.id })
@@ -38,7 +40,8 @@ export async function listRevisions(
     .from(documentRevisions)
     .where(eq(documentRevisions.documentId, doc.id))
     .orderBy(desc(documentRevisions.revisionNo))
-    .limit(limit);
+    .limit(limit)
+    .offset(offset);
 
   return rows.map((r) => ({
     id: r.id,
@@ -111,6 +114,11 @@ export async function restoreRevision(
       updatedAt: new Date(),
     })
     .where(eq(documents.id, rev.documentId));
+
+  // Rebuild semantic chunks + embeddings from the restored body so semantic
+  // and hybrid search stay consistent (otherwise document_chunks would hold
+  // the NEW body's chunks while documents.body holds the OLD/restore body).
+  await reindexChunks(rev.slug);
 
   return { slug: rev.slug, documentId: rev.documentId };
 }

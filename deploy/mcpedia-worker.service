@@ -1,0 +1,23 @@
+[Unit]
+Description=MCPedia indexing/embedding worker (BullMQ)
+After=network-online.target redis.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/code/mcpedia
+# Loads DATABASE_URL, REDIS_*, EMBED_* from the repo .env
+# (.env is gitignored; for prod, point this at a deployed secret file).
+EnvironmentFile=/home/code/mcpedia/.env
+ExecStart=/usr/bin/env bun run worker
+Restart=on-failure
+RestartSec=5
+User=code
+Group=code
+NoNewPrivileges=true
+PrivateTmp=true
+MemoryMax=1G
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

@@ -72,9 +72,53 @@ bun run api              # Hono+tRPC API on :4020 (added /hooks/* webhooks)
 - API webhook `POST /hooks/reindex` enqueues → worker drains queue →
   `queueStatus` reflects counts.
 
-## Phase 4 — Scale-out (only if needed)
+## Phase 4 — Operability & Correctness Hardening ✅ DONE
+
+> Reinterpreted from the original "Scale-out" plan: OpenSearch/object-storage/
+> multi-tenant were flagged YAGNI at KB scale (4 docs), so Phase 4 = make the
+> Phase 3 async + revision machinery **correct, secure, observable, deployable**.
+
+- [x] **T1 — `restoreRevision` rebuilds semantic chunks (CORRECTNESS BUG)** —
+  previously restore wrote the old body into `documents` but left `document_chunks`
+  on the *new* body, so semantic/hybrid search went stale after a restore.
+  `@mcpedia/core` `reindexChunks(slug)` now re-chunks + re-embeds from the live
+  body; `restoreRevision` calls it after the update (embed failure is logged, not
+  thrown). Verified: restore → `document_chunks` count matches re-chunk of the
+  restored body.
+- [x] **T2 — Secure git-sync webhook (SECURITY)** — `/hooks/*` now require an
+  `x-webhook-secret` header matching `WEBHOOK_SECRET` (401 otherwise). API
+  fails fast at startup if `WEBHOOK_SECRET` is unset (no open endpoint). Added
+  `WEBHOOK_SECRET` to `@mcpedia/config` + `.env.example`; generated a real secret
+  in the local `.env` (gitignored).
+- [x] **T3 — Web UI revisions view (UX)** — doc page now shows a "History" panel
+  (revision no, reason, date, body length) with a per-revision Restore button.
+  Restore POSTs to `apps/web/app/api/revisions/restore/route.ts` → `restoreRevision`
+  → `revalidatePath` (server-component only, no client JS).
+- [x] **T4 — Paginate `listRevisions`** — added `offset` param (summary never
+  includes body). API `revisions` + MCP resource use the summary.
+- [x] **T5 — Deploy as supervised services (OPS)** — `deploy/mcpedia-api.service`
+  + `deploy/mcpedia-worker.service` systemd units (`Restart=on-failure`,
+  `EnvironmentFile=.env`, `WorkingDirectory=/home/code/mcpedia`). Enable with:
+  `cp deploy/*.service /etc/systemd/system && systemctl daemon-reload &&
+  systemctl enable --now mcpedia-api mcpedia-worker`. (Not auto-enabled on host
+  without explicit user go-ahead.)
+
+### Verification done (real, against imrnes Redis + Postgres)
+- `turbo run typecheck` + `turbo run build` green (incl. `next build` with the
+  History panel).
+- T1: edit → reindex (new revision + chunks) → restore rev #1 → `document_chunks`
+  count for that slug matches re-chunk of rev #1; `semanticSearch` on a term
+  unique to rev #1 returns it.
+- T2: `curl -XPOST /hooks/reindex` → 401; with `-H "x-webhook-secret: $WEBHOOK_SECRET"`
+  → 200 + jobId; job drains via worker.
+- T3: History panel renders; restore route rebuilds chunks (T1 path).
+- T4: `revisions` returns summaries (no body); `offset` paging works.
+- T5: `systemd-analyze verify deploy/*.service` passes (off-host safe check).
+
+## Phase 5 — Deferred scale-out (only when needed)
 
 - [ ] Dedicated search engine (OpenSearch/Elasticsearch) — YAGNI until FTS is insufficient
+- [ ] pgvector migration (install on imrnes Postgres) — when `real[]` cosine stalls
 - [ ] Object storage for assets
 - [ ] Advanced ranking, distributed workers, observability, multi-tenant
 

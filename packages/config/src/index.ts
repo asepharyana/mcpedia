@@ -46,6 +46,10 @@ export const REDIS_PASSWORD = process.env.REDIS_PASSWORD ?? "";
 // BullMQ key prefix to namespace jobs on the shared Redis instance.
 export const QUEUE_PREFIX = process.env.QUEUE_PREFIX ?? "mcpedia";
 
+// Phase 4: git-sync webhook shared secret. The API /hooks/* endpoints require
+// this header (x-webhook-secret) to match, so an open port can't trigger reindex.
+export const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? "";
+
 if (!DATABASE_URL) {
   // Fail fast with an explicit message instead of a cryptic driver error.
   throw new Error(

@@ -132,6 +132,28 @@ async function snapshotRevision(
 }
 
 /**
+ * Rebuild the semantic chunks + embeddings for a slug from its CURRENT live
+ * `documents.body`. Used after `restoreRevision` so semantic/hybrid search
+ * stay consistent with the restored body (otherwise chunks would be stale).
+ * Embed failures are logged, not thrown — FTS remains the source of truth.
+ */
+export async function reindexChunks(slug: string): Promise<number> {
+  const [doc] = await db
+    .select({ body: documents.body })
+    .from(documents)
+    .where(eq(documents.slug, slug));
+  if (!doc) return 0;
+  try {
+    return await indexChunks(slug, doc.body);
+  } catch (err) {
+    console.error(
+      `    reindexChunks embed FAILED for ${slug}: ${err instanceof Error ? err.message : err}`,
+    );
+    return 0;
+  }
+}
+
+/**
  * Walk the entire content tree and index every file. Returns aggregate counts.
  */
 export async function runFullIndex(reason = "index"): Promise<IndexResult> {

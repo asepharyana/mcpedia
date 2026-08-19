@@ -140,9 +140,30 @@ Git-sync webhooks (enqueue BullMQ jobs; the worker processes them):
   push webhook here to auto-reindex on push).
 - `POST /hooks/index?slug=<slug>` — reindex a single document.
 
+> **Security:** both webhooks require an `x-webhook-secret` header that matches
+> `WEBHOOK_SECRET` (set in `.env`). The API refuses to start if `WEBHOOK_SECRET`
+> is unset, so the hooks are never left open.
+
 `bun run index` now also chunks + embeds (Phase 2 indexer) and snapshots a
 revision whenever the body changes (Phase 3). See `.env.example` for
-`EMBED_*` / `REDIS_*` / `QUEUE_PREFIX` vars.
+`EMBED_*` / `REDIS_*` / `QUEUE_PREFIX` / `WEBHOOK_SECRET` vars.
+
+### Run as a supervised service (Phase 4)
+
+`deploy/mcpedia-api.service` + `deploy/mcpedia-worker.service` are systemd units
+(`Restart=on-failure`, `EnvironmentFile=.env`, `WorkingDirectory=/home/code/mcpedia`).
+Enable them with:
+
+```bash
+sudo cp deploy/*.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now mcpedia-api mcpedia-worker
+# tail logs
+journalctl -u mcpedia-api -u mcpedia-worker -f
+```
+
+The API should sit behind Caddy (or your reverse proxy) for TLS; expose only
+`:4020` internally and the web app publicly.
 
 ## Status
 

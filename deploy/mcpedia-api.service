@@ -1,0 +1,24 @@
+[Unit]
+Description=MCPedia API (tRPC/Hono + git-sync webhooks)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/code/mcpedia
+# Loads DATABASE_URL, REDIS_*, EMBED_*, WEBHOOK_SECRET from the repo .env
+# (.env is gitignored; for prod, point this at a deployed secret file).
+EnvironmentFile=/home/code/mcpedia/.env
+ExecStart=/usr/bin/env bun run api
+Restart=on-failure
+RestartSec=5
+User=code
+Group=code
+# The API needs WEBHOOK_SECRET; fail-fast is built into the app if it's missing.
+NoNewPrivileges=true
+PrivateTmp=true
+MemoryMax=512M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

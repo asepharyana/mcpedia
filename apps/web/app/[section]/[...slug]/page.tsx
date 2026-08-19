@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDocument, listDocuments, getRelated } from "@mcpedia/core";
+import { getDocument, listDocuments, getRelated, listRevisions } from "@mcpedia/core";
 import Markdown from "@/components/Markdown";
 
 export default async function DocPage({
@@ -14,6 +14,7 @@ export default async function DocPage({
   if (!doc) notFound();
 
   const related = await getRelated(fullSlug, 5);
+  const revisions = await listRevisions(fullSlug, 10);
 
   return (
     <article className="space-y-4">
@@ -43,6 +44,34 @@ export default async function DocPage({
                 >
                   {r.title}
                 </Link>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+
+      {revisions.length > 0 && (
+        <aside className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4">
+          <h2 className="text-sm font-medium mb-2">History</h2>
+          <ul className="text-sm space-y-1">
+            {revisions.map((rev) => (
+              <li
+                key={rev.id}
+                className="flex items-center justify-between gap-2"
+              >
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  #{rev.revisionNo} · {rev.reason} ·{" "}
+                  {new Date(rev.createdAt).toLocaleString()} · {rev.bodyLength} chars
+                </span>
+                <form action={`/api/revisions/restore/`} method="post">
+                  <input type="hidden" name="id" value={rev.id} />
+                  <button
+                    type="submit"
+                    className="rounded border border-zinc-300 dark:border-zinc-700 px-2 py-0.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Restore
+                  </button>
+                </form>
               </li>
             ))}
           </ul>
