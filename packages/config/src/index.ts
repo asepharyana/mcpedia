@@ -50,9 +50,9 @@ export const QUEUE_PREFIX = process.env.QUEUE_PREFIX ?? "mcpedia";
 // this header (x-webhook-secret) to match, so an open port can't trigger reindex.
 export const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? "";
 
-if (!DATABASE_URL) {
-  // Fail fast with an explicit message instead of a cryptic driver error.
-  throw new Error(
-    "DATABASE_URL is not set. Copy .env.example to .env and set it (dev uses imrnes Postgres :6432).",
-  );
-}
+// NOTE: we deliberately do NOT throw here if DATABASE_URL is empty. Throwing at
+// import time breaks `next build` (SSG data collection imports config before
+// any .env is present) and any runtime-injected env (containers/systemd set env
+// at process start, after module load). The DB driver (postgres.js) connects
+// lazily on first query, so a missing DATABASE_URL surfaces as a clear connect
+// error at runtime — not a cryptic build failure.
