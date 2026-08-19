@@ -4,8 +4,11 @@ import {
   index,
   integer,
   pgTable,
+  real,
   text,
   timestamp,
+  uuid,
+  vector,
 } from "drizzle-orm/pg-core";
 
 // tsvector isn't a first-class drizzle type; wrap the raw Postgres type.
@@ -46,14 +49,33 @@ export const documents = pgTable(
   }),
 );
 
-// Phase 2 (semantic search) — defined here for reference, NOT created yet:
-// export const documentChunks = pgTable("document_chunks", {
-//   id: text("id").primaryKey(),
-//   documentId: text("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
-//   content: text("content").notNull(),
-//   position: integer("position").notNull(),
-//   embedding: customType<{ data: number[] }>({ dataType: () => "vector(1536)" })("embedding"),
-// });
+// Phase 2: semantic search chunks. Each row is an embedded slice of a document
+// body. `embedding` is a plain float array (real[]). We compute cosine
+// similarity in the application layer — pgvector isn't available on the shared
+// imrnes Postgres, and brute-force cosine is instant for a KB-sized corpus.
+// (pgvector/HNSW is the Phase-4 scale-out path.)
+export const documentChunks = pgTable(
+  "document_chunks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    content: text("content").notNull(),
+    embedding: real("embedding").array(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    slugIdx: index("document_chunks_slug_idx").on(t.slug),
+  }),
+);
+
+export type DocumentChunkRow = typeof documentChunks.$inferSelect;
+export type NewDocumentChunkRow = typeof documentChunks.$inferInsert;
 
 export type DocumentRow = typeof documents.$inferSelect;
 export type NewDocumentRow = typeof documents.$inferInsert;

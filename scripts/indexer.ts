@@ -2,12 +2,13 @@ import { db } from "@mcpedia/db";
 import { documents } from "@mcpedia/db/schema";
 import { parseFile } from "@mcpedia/parser";
 import { CONTENT_ROOT } from "@mcpedia/config";
-import { listContentFiles } from "@mcpedia/core";
+import { listContentFiles, indexChunks } from "@mcpedia/core";
 import { join } from "node:path";
 
 async function main() {
   const files = listContentFiles();
   let indexed = 0;
+  let chunked = 0;
   for (const rel of files) {
     const abs = join(CONTENT_ROOT, rel);
     const { meta, body } = parseFile(abs, rel);
@@ -47,8 +48,20 @@ async function main() {
       });
     indexed++;
     console.log(`  indexed ${rel}`);
+
+    // Phase 2: chunk + embed for semantic search.
+    try {
+      const n = await indexChunks(meta.slug, body);
+      chunked += n;
+      console.log(`    embedded ${n} chunks`);
+    } catch (err) {
+      console.error(
+        `    embed FAILED for ${meta.slug}: ${err instanceof Error ? err.message : err}`,
+      );
+      // Don't abort the whole index over one doc's embedding failure.
+    }
   }
-  console.log(`indexed ${indexed} documents`);
+  console.log(`indexed ${indexed} documents, ${chunked} chunks embedded`);
 }
 
 main()

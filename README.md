@@ -51,12 +51,18 @@ bun run mcp                       # MCP server on stdio (pipe to an MCP client)
 
 ### Database
 
-Phase 1 uses Postgres FTS only. Schema is defined in `packages/db/src/schema.ts`
-(a `documents` table with a `search_vector` generated `tsvector` column + GIN
-index). Apply it with:
+Schema is defined in `packages/db/src/schema.ts` (`documents` with a weighted
+`search_vector` tsvector + GIN index, and `document_chunks` with an `embedding real[]`).
+The `pgvector` extension is **not available** on the shared imrnes Postgres, so
+semantic search stores vectors as `real[]` and ranks by in-app cosine similarity.
+
+Migrations live in `packages/db/drizzle/`. They were applied manually via `psql`
+(`drizzle-kit push` is unreliable under PgBouncer transaction pooling); to
+re-apply on a fresh DB:
 
 ```bash
-bunx --cwd packages/db drizzle-kit push
+psql $DATABASE_URL -f packages/db/drizzle/0000_grey_toro.sql
+psql $DATABASE_URL -f packages/db/drizzle/0001_document_chunks.sql
 ```
 
 > Note: on imrnes (PgBouncer `:6432`) a leaked `DATABASE_URL` shell var can
@@ -84,11 +90,13 @@ updated_at: 2026-08-19
 `body` shown in the UI is always read from the on-disk file (source of truth);
 the DB stores metadata + the search vector.
 
-## MCP tools (Phase 1)
+## MCP tools
 
 | Tool                  | Purpose                                          |
 | --------------------- | ------------------------------------------------ |
 | `search_documents`    | Postgres FTS over the corpus (ranked + snippet)  |
+| `semantic_search`     | Embedding/cosine search over chunked content     |
+| `hybrid_search`       | FTS + semantic fused via RRF                      |
 | `get_document`        | Full markdown body by slug                       |
 | `list_documents`      | List, optionally filtered by section             |
 | `get_related_documents` | Docs sharing tags with a given slug            |
@@ -99,10 +107,29 @@ Smoke test (in-memory transport, real JSON-RPC):
 bun --cwd apps/mcp run smoke
 ```
 
+## API (Phase 2)
+
+A tRPC v11 API is also exposed via Hono on **:4020** (all procedures mirror the
+MCP tools):
+
+```bash
+bun run api            # http://localhost:4020 (GET /health, POST/GET /trpc/*)
+```
+
+`bun run index` now also chunks + embeds (Phase 2 indexer). Requires `EMBED_*`
+vars in `.env` (see `.env.example`).
+
 ## Status
 
 **Phase 1 — MVP (DONE):** monorepo, Core, Web UI (home/doc/search), MCP server,
 Postgres FTS keyword search, content indexing.
 
-See `PHASES.md` for Phase 2–4 (pgvector semantic/hybrid search, tRPC/Hono API,
-auth, Redis/BullMQ background workers, revisions, scale-out).
+**Phase 2 — Semantic + API (DONE):** embeddings provider (OpenRouter via 9router),
+chunked `document_chunks`, `semanticSearch` + `hybridSearch` (RRF), tRPC/Hono API
+(`apps/api`, :4020), MCP `semantic_search`/`hybrid_search` tools, web hybrid toggle.
+
+> pgvector is **not installed** on the shared imrnes Postgres, so vector storage is
+> a `real[]` column with in-app cosine similarity (instant at KB scale). pgvector is
+> the Phase-4 scale-out path. See `PHASES.md`.
+
+See `PHASES.md` for Phase 3–4 (Redis/BullMQ, auth, revisions, scale-out).

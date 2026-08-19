@@ -14,11 +14,14 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "index": "bun run scripts/indexer.ts",
-    "mcp": "bun --cwd apps/mcp run start"
+    "mcp": "bun --cwd apps/mcp run start",
+    "api": "bun --cwd apps/api run dev"
   },
   "devDependencies": {
+    "@trpc/client": "^11.18.0",
+    "@types/node": "^26.2.0",
+    "prettier": "^3.3.0",
     "turbo": "^2.5.0",
-    "typescript": "^5.6.0",
-    "prettier": "^3.3.0"
+    "typescript": "^5.6.0"
   }
 }

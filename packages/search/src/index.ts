@@ -1,6 +1,7 @@
 import { db } from "@mcpedia/db";
-import { documents, type DocumentRow } from "@mcpedia/db/schema";
+import { documents, documentChunks, type DocumentRow } from "@mcpedia/db/schema";
 import { and, eq, sql } from "drizzle-orm";
+import { createEmbeddingProvider } from "@mcpedia/embeddings";
 import type {
   DocSection,
   DocStatus,
@@ -8,6 +9,23 @@ import type {
   DocumentMeta,
   SearchHit,
 } from "@mcpedia/types";
+
+const embedder = createEmbeddingProvider();
+
+/** Cosine similarity between two equal-length vectors. */
+export function cosine(a: number[], b: number[]): number {
+  if (a.length === 0 || a.length !== b.length) return 0;
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  const denom = Math.sqrt(na) * Math.sqrt(nb);
+  return denom === 0 ? 0 : dot / denom;
+}
 
 const VALID_SECTIONS: DocSection[] = ["docs", "writeups", "research", "notes"];
 const VALID_TYPES: DocType[] = ["documentation", "writeup", "research", "note"];
@@ -41,6 +59,99 @@ export function toTsQuery(q: string): string {
     .filter(Boolean);
   if (terms.length === 0) return "";
   return terms.map((t) => `${t}:*`).join(" & ");
+}
+
+export interface ChunkHit {
+  slug: string;
+  chunkIndex: number;
+  content: string;
+  score: number;
+}
+
+/**
+ * Semantic search: embed the query, then rank document chunks by cosine
+ * similarity. Cosine is computed in the app layer (pgvector isn't available on
+ * the shared imrnes Postgres); for a KB-sized corpus this is instant.
+ */
+export async function semanticSearch(q: string, limit = 10): Promise<ChunkHit[]> {
+  const query = q.trim();
+  if (!query) return [];
+  const [vec] = await embedder.embed([query]);
+  if (!vec || vec.length === 0) return [];
+
+  const rows = await db
+    .select({
+      slug: documentChunks.slug,
+      chunkIndex: documentChunks.chunkIndex,
+      content: documentChunks.content,
+      embedding: documentChunks.embedding,
+    })
+    .from(documentChunks)
+    .where(sql`${documentChunks.embedding} IS NOT NULL`);
+
+  return rows
+    .map((r) => ({
+      slug: r.slug,
+      chunkIndex: r.chunkIndex,
+      content: r.content,
+      score: cosine(vec, (r.embedding ?? []) as number[]),
+    }))
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+/**
+ * Hybrid search: run FTS (ts_rank) and semantic (cosine) in parallel, then fuse
+ * with Reciprocal Rank Fusion (RRF, k=60). Returns merged document-level hits.
+ */
+export async function hybridSearch(q: string, limit = 10): Promise<SearchHit[]> {
+  const [fts, sem] = await Promise.all([keywordSearch(q, limit * 2), semanticSearch(q, limit * 2)]);
+  const k = 60;
+  const fused = new Map<string, { score: number; snippet: string; chunk: string }>();
+
+  fts.forEach((hit, i) => {
+    const rrf = 1 / (k + i + 1);
+    fused.set(hit.doc.slug, {
+      score: (fused.get(hit.doc.slug)?.score ?? 0) + rrf,
+      snippet: hit.snippet,
+      chunk: "",
+    });
+  });
+  sem.forEach((hit, i) => {
+    const rrf = 1 / (k + i + 1);
+    const prev = fused.get(hit.slug);
+    fused.set(hit.slug, {
+      score: (prev?.score ?? 0) + rrf,
+      snippet: prev?.snippet ?? hit.content.slice(0, 160),
+      chunk: prev?.chunk || hit.content,
+    });
+  });
+
+  const slugs = [...fused.entries()]
+    .sort((a, b) => b[1].score - a[1].score)
+    .slice(0, limit)
+    .map(([slug]) => slug);
+
+  if (slugs.length === 0) return [];
+  const rows = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.status, "published"), sql`${documents.slug} IN ${slugs}`));
+
+  const bySlug = new Map(rows.map((r) => [r.slug, r]));
+  return slugs
+    .map((slug, i) => {
+      const row = bySlug.get(slug);
+      if (!row) return null;
+      const m = fused.get(slug)!;
+      return {
+        doc: toMeta(row),
+        rank: m.score,
+        snippet: m.snippet,
+      } as SearchHit;
+    })
+    .filter((x): x is SearchHit => x !== null);
 }
 
 /**

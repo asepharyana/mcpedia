@@ -17,8 +17,10 @@ async function main() {
   const expected = [
     "get_document",
     "get_related_documents",
+    "hybrid_search",
     "list_documents",
     "search_documents",
+    "semantic_search",
   ].sort();
   if (JSON.stringify(names) !== JSON.stringify(expected)) {
     throw new Error(`tool set mismatch: ${names.join(",")}`);
@@ -65,6 +67,30 @@ async function main() {
   const docs = JSON.parse((list.content as any)[0].text);
   if (docs.length !== 1) throw new Error("list_documents docs != 1");
   console.log("list_documents(section=docs) =>", docs.length, "doc");
+
+  // 6) semantic_search
+  const sem = await client.callTool({
+    name: "semantic_search",
+    arguments: { query: "websocket connection closing unexpectedly", limit: 5 },
+  });
+  const semHits = JSON.parse((sem.content as any)[0].text);
+  if (!Array.isArray(semHits) || semHits.length < 1) {
+    throw new Error("semantic_search returned no hits");
+  }
+  console.log(
+    `semantic_search => ${semHits.length} chunks, top: ${semHits[0].slug}@${semHits[0].score.toFixed(3)}`,
+  );
+
+  // 7) hybrid_search
+  const hyb = await client.callTool({
+    name: "hybrid_search",
+    arguments: { query: "websocket timeout debugging", limit: 5 },
+  });
+  const hybHits = JSON.parse((hyb.content as any)[0].text);
+  if (!Array.isArray(hybHits) || hybHits.length < 1) {
+    throw new Error("hybrid_search returned no hits");
+  }
+  console.log(`hybrid_search => ${hybHits.length} docs, top: ${hybHits[0].doc.slug}`);
 
   await client.close();
   await server.close();

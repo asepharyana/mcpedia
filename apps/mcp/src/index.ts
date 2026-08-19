@@ -1,8 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { listDocuments, getDocument, getRelated } from "@mcpedia/core";
-import { keywordSearch } from "@mcpedia/search";
+import { listDocuments, getDocument, getRelated, semanticSearch, hybridSearch, keywordSearch } from "@mcpedia/core";
 
 export function createMcpServer(): McpServer {
   const server = new McpServer({
@@ -80,6 +79,42 @@ export function createMcpServer(): McpServer {
       const related = await getRelated(slug, limit ?? 5);
       return {
         content: [{ type: "text", text: JSON.stringify(related, null, 2) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "semantic_search",
+    {
+      description:
+        "Semantic (embedding) search across chunked document content. Best for conceptual/paraphrased queries that don't share exact keywords. Returns chunks ranked by cosine similarity.",
+      inputSchema: z.object({
+        query: z.string().describe("Natural-language query"),
+        limit: z.number().int().positive().max(50).optional(),
+      }),
+    },
+    async ({ query, limit }) => {
+      const hits = await semanticSearch(query, limit ?? 10);
+      return {
+        content: [{ type: "text", text: JSON.stringify(hits, null, 2) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "hybrid_search",
+    {
+      description:
+        "Hybrid search fusing full-text (Postgres FTS) and semantic (embedding) signals via Reciprocal Rank Fusion. Best general-purpose search.",
+      inputSchema: z.object({
+        query: z.string().describe("Free-text or natural-language query"),
+        limit: z.number().int().positive().max(50).optional(),
+      }),
+    },
+    async ({ query, limit }) => {
+      const hits = await hybridSearch(query, limit ?? 10);
+      return {
+        content: [{ type: "text", text: JSON.stringify(hits, null, 2) }],
       };
     },
   );

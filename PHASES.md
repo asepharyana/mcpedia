@@ -19,13 +19,13 @@ Legend: ✅ built · 🟡 partial · ⬜ deferred
 
 ## Phase 2 — Semantic + API
 
-- [ ] `pgvector` + embedding column on `document_chunks`
-- [ ] Chunking + embedding provider abstraction (`EmbeddingProvider`: OpenAI/Gemini/Ollama/local)
-- [ ] Hybrid search (FTS score + cosine, reciprocal-rank fusion)
-- [ ] tRPC + Hono API (`apps/api`) sharing `@mcpedia/core`
-- [ ] Tags / Categories / References as first-class tables
-- [ ] Auth (Auth.js / OIDC) — public/private/unlisted/admin/owner
-- [ ] shadcn/ui components + Shiki syntax highlighting (replace minimal markdown render)
+- [x] `packages/embeddings` — `EmbeddingProvider` interface + OpenRouter provider (via 9router `/v1`, `encoding_format:"float"`); `chunkText` + `embedChunks` batcher. `EMBED_DIM=2048` discovered live.
+- [x] Schema `document_chunks` (id, document_id→documents.id cascade, slug, chunk_index, content, `embedding real[]`). Stored as `real[]` because pgvector **is not installed** on the shared imrnes Postgres (installing needs host-level apt — deferred). Cosine computed in-app; instant for a KB-sized corpus.
+- [x] `scripts/indexer.ts` — chunks + embeds + upserts (per-doc replace).
+- [x] `@mcpedia/search` — `semanticSearch` (cosine) + `hybridSearch` (FTS + cosine, RRF fusion). `keywordSearch` unchanged.
+- [x] `apps/api` — Hono + tRPC v11 (`@trpc/server` fetch adapter, `@hono/node-server` on :4020): `search`, `semanticSearch`, `hybridSearch`, `getDocument`, `listDocuments`, `related`.
+- [x] MCP server — added `semantic_search` + `hybrid_search` tools (6 total).
+- [x] Web search — keyword/hybrid toggle (`?mode=hybrid`), hybrid reaches semantically-related docs keyword misses.
 
 ## Phase 3 — Async + Scale
 

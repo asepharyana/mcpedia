@@ -36,6 +36,10 @@ export const CONTENT_ROOT =
 
 export const DATABASE_URL = process.env.DATABASE_URL ?? "";
 
+export const EMBED_BASE_URL = process.env.EMBED_BASE_URL ?? "";
+export const EMBED_API_KEY = process.env.EMBED_API_KEY ?? "";
+export const EMBED_MODEL = process.env.EMBED_MODEL ?? "";
+
 if (!DATABASE_URL) {
   // Fail fast with an explicit message instead of a cryptic driver error.
   throw new Error(

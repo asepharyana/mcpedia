@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@mcpedia/db";
-import { documents } from "@mcpedia/db/schema";
+import { documentChunks, documents } from "@mcpedia/db/schema";
 import { CONTENT_ROOT } from "@mcpedia/config";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -8,8 +8,11 @@ import type {
   Document,
   DocumentMeta,
 } from "@mcpedia/types";
+import { chunkText, embedChunks, createEmbeddingProvider } from "@mcpedia/embeddings";
 import { readContentFile } from "./content.service";
 import { toMeta } from "./row-map";
+
+const embedder = createEmbeddingProvider();
 
 export async function listDocuments(opts: {
   section?: string;
@@ -56,3 +59,40 @@ export async function getRelated(slug: string, limit = 5): Promise<DocumentMeta[
 }
 
 export { readContentFile };
+
+/**
+ * Chunk a document body, embed the chunks, and upsert them into
+ * `document_chunks` (replacing any prior chunks for the same slug).
+ * Failures are thrown so the caller can decide whether to abort the index.
+ */
+export async function indexChunks(slug: string, body: string): Promise<number> {
+  const [doc] = await db
+    .select({ id: documents.id })
+    .from(documents)
+    .where(eq(documents.slug, slug));
+  if (!doc) return 0;
+
+  const chunks = chunkText(body, { size: 1000, overlap: 150 });
+  if (chunks.length === 0) return 0;
+
+  const vectors = await embedChunks(embedder, chunks, 16);
+  if (vectors.length !== chunks.length) {
+    throw new Error(
+      `chunk/embedding count mismatch for ${slug}: ${chunks.length} vs ${vectors.length}`,
+    );
+  }
+
+  // Replace existing chunks for this doc in one transaction.
+  await db.delete(documentChunks).where(eq(documentChunks.slug, slug));
+  await db.insert(documentChunks).values(
+    chunks.map((content: string, i: number) => ({
+      documentId: doc.id,
+      slug,
+      chunkIndex: i,
+      content,
+      embedding: vectors[i],
+    })),
+  );
+  return chunks.length;
+}
+

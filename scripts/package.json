@@ -7,6 +7,7 @@
     "@mcpedia/config": "workspace:*",
     "@mcpedia/core": "workspace:*",
     "@mcpedia/db": "workspace:*",
+    "@mcpedia/embeddings": "workspace:*",
     "@mcpedia/parser": "workspace:*",
     "@mcpedia/search": "workspace:*",
     "drizzle-orm": "^0.38.0",

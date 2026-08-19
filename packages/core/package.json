@@ -10,6 +10,7 @@
   "dependencies": {
     "@mcpedia/config": "workspace:*",
     "@mcpedia/db": "workspace:*",
+    "@mcpedia/embeddings": "workspace:*",
     "@mcpedia/parser": "workspace:*",
     "@mcpedia/search": "workspace:*",
     "@mcpedia/types": "workspace:*",
