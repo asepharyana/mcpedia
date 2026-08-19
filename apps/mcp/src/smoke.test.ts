@@ -92,6 +92,35 @@ async function main() {
   }
   console.log(`hybrid_search => ${hybHits.length} docs, top: ${hybHits[0].doc.slug}`);
 
+  // 8) resources: list
+  const resList = await client.listResources();
+  const resNames = resList.resources.map((r: any) => r.name).sort();
+  console.log("resources:", resNames.join(", "));
+  if (!resNames.includes("mcpedia-docs-list")) {
+    throw new Error("expected mcpedia-docs-list resource");
+  }
+
+  // 9) resource: read the docs list (must not throw, returns JSON content)
+  const readList = await client.readResource({ uri: "mcpedia://docs" });
+  const listText = (readList.contents as any)[0].text;
+  if (!listText.includes("docs/websocket/contract")) {
+    throw new Error("mcpedia://docs did not list the websocket contract doc");
+  }
+  console.log("readResource(mcpedia://docs) => ok");
+
+  // 10) resource: read a single doc body + revisions
+  const readDoc = await client.readResource({ uri: "mcpedia://docs/docs/websocket/contract" });
+  const docText = (readDoc.contents as any)[0].text;
+  if (!docText.includes("WebSocket Contract")) {
+    throw new Error("mcpedia://docs/{slug} returned unexpected body");
+  }
+  console.log("readResource(mcpedia://docs/docs/websocket/contract) => ok");
+
+  const readRev = await client.readResource({
+    uri: "mcpedia://docs/docs/websocket/contract/revisions",
+  });
+  console.log("readResource(.../revisions) => ok");
+
   await client.close();
   await server.close();
   console.log("\nSMOKE OK");

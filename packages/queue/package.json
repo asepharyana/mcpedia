@@ -1,0 +1,22 @@
+{
+  "name": "@mcpedia/queue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./queue": "./src/queue.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "dependencies": {
+    "@mcpedia/config": "workspace:*",
+    "@mcpedia/core": "workspace:*",
+    "@mcpedia/db": "workspace:*",
+    "bullmq": "^6.1.2",
+    "ioredis": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

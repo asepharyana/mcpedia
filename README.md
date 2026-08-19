@@ -14,16 +14,19 @@ column) and served through a single **Core** layer that every interface
 mcpedia/
 ├── apps/
 │   ├── web/      # Next.js 16 (Turbopack) — human-facing docs UI + search
-│   └── mcp/      # MCP server (stdio) — AI-agent interface
+│   ├── mcp/      # MCP server (stdio) — AI-agent interface (tools + resources)
+│   └── api/      # Hono + tRPC v11 API on :4020 (+ /hooks/* git-sync webhooks)
 ├── packages/
 │   ├── types/    # shared domain types (DocSection, Document, SearchHit, ...)
 │   ├── config/   # loads .env (repo root) as authoritative dev config
 │   ├── db/       # Drizzle ORM schema + client + drizzle-kit config
 │   ├── parser/   # frontmatter (gray-matter) parsing
 │   ├── search/   # Postgres FTS query (ts_rank + ts_headline)
-│   └── core/     # Document/Content/Search services — the only business logic
+│   ├── embeddings/ # embedding provider + chunker
+│   ├── queue/    # Redis (ioredis) + BullMQ worker/queue (Phase 3)
+│   └── core/     # Document/Content/Search/Index/Revision — the only business logic
 ├── content/      # docs/ writeups/ research/ notes/ (the knowledge base)
-└── scripts/      # indexer.ts (walks content/ -> upserts into Postgres)
+└── scripts/      # indexer.ts (full reindex), enqueue.ts (one-shot job enqueue)
 ```
 
 ## Architecture principle
@@ -101,23 +104,45 @@ the DB stores metadata + the search vector.
 | `list_documents`      | List, optionally filtered by section             |
 | `get_related_documents` | Docs sharing tags with a given slug            |
 
+### MCP Resources
+
+| URI                              | Purpose                                  |
+| -------------------------------- | ---------------------------------------- |
+| `mcpedia://docs`                 | List all published documents             |
+| `mcpedia://docs/{+slug}`         | Full markdown body (read from disk)      |
+| `mcpedia://docs/{+slug}/chunks`  | Preview of embedded semantic chunks      |
+| `mcpedia://docs/{+slug}/revisions` | Revision history summary              |
+
+(`{+slug}` uses RFC 6570 reserved expansion so a slug like
+`docs/websocket/contract` matches the template.)
+
 Smoke test (in-memory transport, real JSON-RPC):
 
 ```bash
 bun --cwd apps/mcp run smoke
 ```
 
-## API (Phase 2)
+## API (Phase 2 + Phase 3)
 
-A tRPC v11 API is also exposed via Hono on **:4020** (all procedures mirror the
-MCP tools):
+A tRPC v11 API is exposed via Hono on **:4020** (all procedures mirror the
+MCP tools). Phase 3 adds async job + revision procedures and git-sync webhooks:
 
 ```bash
 bun run api            # http://localhost:4020 (GET /health, POST/GET /trpc/*)
 ```
 
-`bun run index` now also chunks + embeds (Phase 2 indexer). Requires `EMBED_*`
-vars in `.env` (see `.env.example`).
+tRPC procedures: `search`, `semanticSearch`, `hybridSearch`, `getDocument`,
+`listDocuments`, `related` (Phase 2); plus `revisions`, `getRevision`,
+`restoreRevision`, `jobStatus`, `queueStatus` (Phase 3).
+
+Git-sync webhooks (enqueue BullMQ jobs; the worker processes them):
+- `POST /hooks/reindex` — full-corpus reindex (point your Git provider's
+  push webhook here to auto-reindex on push).
+- `POST /hooks/index?slug=<slug>` — reindex a single document.
+
+`bun run index` now also chunks + embeds (Phase 2 indexer) and snapshots a
+revision whenever the body changes (Phase 3). See `.env.example` for
+`EMBED_*` / `REDIS_*` / `QUEUE_PREFIX` vars.
 
 ## Status
 
@@ -127,6 +152,11 @@ Postgres FTS keyword search, content indexing.
 **Phase 2 — Semantic + API (DONE):** embeddings provider (OpenRouter via 9router),
 chunked `document_chunks`, `semanticSearch` + `hybridSearch` (RRF), tRPC/Hono API
 (`apps/api`, :4020), MCP `semantic_search`/`hybrid_search` tools, web hybrid toggle.
+
+**Phase 3 — Async + Scale (DONE):** Redis + BullMQ background indexing/embedding
+workers (`packages/queue`, `apps/worker`), git-sync webhooks (`POST /hooks/*`),
+document revision system (`document_revisions` + restore), and MCP Resources
+(`mcpedia://docs/...`). See `PHASES.md`.
 
 > pgvector is **not installed** on the shared imrnes Postgres, so vector storage is
 > a `real[]` column with in-app cosine similarity (instant at KB scale). pgvector is

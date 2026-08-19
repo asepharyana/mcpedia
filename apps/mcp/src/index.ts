@@ -1,7 +1,19 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { listDocuments, getDocument, getRelated, semanticSearch, hybridSearch, keywordSearch } from "@mcpedia/core";
+import {
+  listDocuments,
+  getDocument,
+  getRelated,
+  semanticSearch,
+  hybridSearch,
+  keywordSearch,
+  listRevisions,
+  readContentFile,
+} from "@mcpedia/core";
+import { CONTENT_ROOT } from "@mcpedia/config";
+import { join } from "node:path";
 
 export function createMcpServer(): McpServer {
   const server = new McpServer({
@@ -115,6 +127,116 @@ export function createMcpServer(): McpServer {
       const hits = await hybridSearch(query, limit ?? 10);
       return {
         content: [{ type: "text", text: JSON.stringify(hits, null, 2) }],
+      };
+    },
+  );
+
+  // --- Phase 3: MCP Resources (read-only knowledge base surfaced via URIs) ---
+  // mcpedia://docs                       -> list all published documents
+  // mcpedia://docs/{slug}                -> full markdown body (from disk)
+  // mcpedia://docs/{slug}/chunks         -> chunked preview (semantic slices)
+  // mcpedia://docs/{slug}/revisions      -> revision history summary
+  server.registerResource(
+    "mcpedia-docs-list",
+    "mcpedia://docs",
+    {
+      title: "MCPedia document index",
+      description: "List of all published documents in the knowledge base.",
+      mimeType: "application/json",
+    },
+    async (uri) => {
+      const docs = await listDocuments();
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/json",
+            text: JSON.stringify(docs, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    "mcpedia-doc-chunks",
+    new ResourceTemplate("mcpedia://docs/{+slug}/chunks", { list: undefined }),
+    {
+      title: "MCPedia document chunks",
+      description: "Preview of the embedded semantic chunks for a document.",
+      mimeType: "application/json",
+    },
+    async (uri, vars) => {
+      const slug = String(vars.slug);
+      const doc = await getDocument(slug);
+      if (!doc) throw new Error(`Document not found: ${slug}`);
+      // Chunk the body the same way the indexer does (size 1000 / overlap 150)
+      // so the resource mirrors what semantic search actually sees.
+      const { chunkText } = await import("@mcpedia/embeddings");
+      const chunks = chunkText(doc.body, { size: 1000, overlap: 150 });
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/json",
+            text: JSON.stringify(
+              chunks.map((c, i) => ({ index: i, length: c.length, preview: c.slice(0, 200) })),
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    "mcpedia-doc-revisions",
+    new ResourceTemplate("mcpedia://docs/{+slug}/revisions", { list: undefined }),
+    {
+      title: "MCPedia document revisions",
+      description: "Revision history summary for a document.",
+      mimeType: "application/json",
+    },
+    async (uri, vars) => {
+      const slug = String(vars.slug);
+      const revs = await listRevisions(slug, 20);
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/json",
+            text: JSON.stringify(revs, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // Registered LAST: the bare {+slug} template is greedy and would otherwise
+  // swallow /chunks and /revisions URIs. Specific templates must match first.
+  server.registerResource(
+    "mcpedia-doc",
+    new ResourceTemplate("mcpedia://docs/{+slug}", { list: undefined }),
+    {
+      title: "MCPedia document",
+      description: "Full markdown body of a single document, read from disk (source of truth).",
+      mimeType: "text/markdown",
+    },
+    async (uri, vars) => {
+      const slug = String(vars.slug);
+      const doc = await getDocument(slug);
+      if (!doc) {
+        throw new Error(`Document not found: ${slug}`);
+      }
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "text/markdown",
+            text: doc.body,
+          },
+        ],
       };
     },
   );

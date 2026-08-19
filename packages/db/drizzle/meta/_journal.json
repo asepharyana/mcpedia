@@ -15,6 +15,13 @@
       "when": 1787137149735,
       "tag": "0001_document_chunks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787139150000,
+      "tag": "0002_document_revisions",
+      "breakpoints": true
     }
   ]
 }

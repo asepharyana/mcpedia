@@ -40,6 +40,12 @@ export const EMBED_BASE_URL = process.env.EMBED_BASE_URL ?? "";
 export const EMBED_API_KEY = process.env.EMBED_API_KEY ?? "";
 export const EMBED_MODEL = process.env.EMBED_MODEL ?? "";
 
+// Phase 3: Redis + BullMQ (shared imrnes Redis, no auth by default).
+export const REDIS_URL = process.env.REDIS_URL ?? "redis://100.121.180.82:6379";
+export const REDIS_PASSWORD = process.env.REDIS_PASSWORD ?? "";
+// BullMQ key prefix to namespace jobs on the shared Redis instance.
+export const QUEUE_PREFIX = process.env.QUEUE_PREFIX ?? "mcpedia";
+
 if (!DATABASE_URL) {
   // Fail fast with an explicit message instead of a cryptic driver error.
   throw new Error(

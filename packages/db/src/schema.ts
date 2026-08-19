@@ -3,6 +3,7 @@ import {
   customType,
   index,
   integer,
+  jsonb,
   pgTable,
   real,
   text,
@@ -76,6 +77,49 @@ export const documentChunks = pgTable(
 
 export type DocumentChunkRow = typeof documentChunks.$inferSelect;
 export type NewDocumentChunkRow = typeof documentChunks.$inferInsert;
+
+// Phase 3: document revision system. Each row is an immutable snapshot of a
+// document's body + metadata at a point in time (taken by the indexer whenever
+// the body actually changes). revisionNo is per-document and monotonically
+// increasing so the latest revision is always max(revision_no).
+export const documentRevisions = pgTable(
+  "document_revisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    revisionNo: integer("revision_no").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    // Metadata snapshot (type/section/status/author/tags) as JSON so a revision
+    // is self-describing even if the live document is later restructured.
+    meta: jsonb("meta").notNull().$type<{
+      type: string;
+      section: string;
+      status: string;
+      author: string;
+      tags: string[];
+    }>(),
+    // Why this revision was created (e.g. "index", "git-push", "restore").
+    reason: text("reason").notNull().default("index"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    docIdx: index("document_revisions_document_id_idx").on(t.documentId),
+    slugIdx: index("document_revisions_slug_idx").on(t.slug),
+    docRevIdx: index("document_revisions_doc_rev_idx").on(
+      t.documentId,
+      sql`${t.revisionNo} desc`,
+    ),
+  }),
+);
+
+export type DocumentRevisionRow = typeof documentRevisions.$inferSelect;
+export type NewDocumentRevisionRow = typeof documentRevisions.$inferInsert;
 
 export type DocumentRow = typeof documents.$inferSelect;
 export type NewDocumentRow = typeof documents.$inferInsert;

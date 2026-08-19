@@ -10,6 +10,7 @@
     "@mcpedia/embeddings": "workspace:*",
     "@mcpedia/parser": "workspace:*",
     "@mcpedia/search": "workspace:*",
+    "@mcpedia/queue": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "postgres": "^3.4.5"
   }

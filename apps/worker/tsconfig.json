@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@mcpedia/db": ["../../packages/db/src/index.ts"],
+      "@mcpedia/db/schema": ["../../packages/db/src/schema.ts"],
+      "@mcpedia/*": ["../../packages/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
