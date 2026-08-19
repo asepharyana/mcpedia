@@ -32,11 +32,11 @@ export class OpenRouterEmbeddingProvider implements EmbeddingProvider {
     this.baseUrl = (opts?.baseUrl ?? EMBED_BASE_URL).replace(/\/$/, "");
     this.apiKey = opts?.apiKey ?? EMBED_API_KEY;
     this.model = opts?.model ?? EMBED_MODEL;
-    if (!this.baseUrl || !this.apiKey || !this.model) {
-      throw new Error(
-        "OpenRouterEmbeddingProvider: missing EMBED_BASE_URL / EMBED_API_KEY / EMBED_MODEL",
-      );
-    }
+    // NOTE: we do NOT validate baseUrl/apiKey/model here. Throwing in the
+    // constructor breaks `next build` (SSG data collection imports the search
+    // package before any .env is present) and any runtime-injected env. The
+    // provider is constructed lazily at first query, so an unset config
+    // surfaces as a clear error from embed() at request time, not a build crash.
   }
 
   get dimensions(): number {
@@ -45,6 +45,11 @@ export class OpenRouterEmbeddingProvider implements EmbeddingProvider {
 
   async embed(texts: string[]): Promise<number[][]> {
     if (texts.length === 0) return [];
+    if (!this.baseUrl || !this.apiKey || !this.model) {
+      throw new Error(
+        "OpenRouterEmbeddingProvider: missing EMBED_BASE_URL / EMBED_API_KEY / EMBED_MODEL at request time",
+      );
+    }
     const res = await fetch(`${this.baseUrl}/embeddings`, {
       method: "POST",
       headers: {
