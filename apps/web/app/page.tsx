@@ -2,6 +2,10 @@ import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
 import type { DocumentMeta } from "@mcpedia/core";
 
+// Render at request time — content is in Postgres (not available at build in
+// CI, which has no DB). Request-time rendering is instant at this corpus scale.
+export const dynamic = "force-dynamic";
+
 const SECTIONS = ["docs", "writeups", "research", "notes"] as const;
 
 export default async function Home() {

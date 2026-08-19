@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { keywordSearch, hybridSearch } from "@mcpedia/core";
 
+// Render at request time — queries Postgres on each request (not at build,
+// where CI has no DB).
+export const dynamic = "force-dynamic";
+
 type Mode = "keyword" | "hybrid";
 
 export default async function SearchPage({

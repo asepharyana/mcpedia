@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import { getDocument, listDocuments, getRelated, listRevisions } from "@mcpedia/core";
 import Markdown from "@/components/Markdown";
 
+// Render at request time. The content lives in Postgres (populated by the
+// indexer/worker), which is not available at build time (CI has no DB), so we
+// opt out of static generation. At this corpus scale request-time rendering is
+// instant.
+export const dynamic = "force-dynamic";
+
 export default async function DocPage({
   params,
 }: {
@@ -79,12 +85,4 @@ export default async function DocPage({
       )}
     </article>
   );
-}
-
-export async function generateStaticParams() {
-  const docs = await listDocuments();
-  return docs.map((d) => ({
-    section: d.section,
-    slug: d.slug.split("/").slice(1),
-  }));
 }
