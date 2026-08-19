@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same ref so a fresh push supersedes them.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: typecheck + build (turbo)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Real build: typecheck + turbo run build across all workspace packages
+      # (incl. the Next.js web app). A green run means the whole monorepo
+      # compiles and the web app prerenders.
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build
+        run: bun run build
+
+      # Smoke: verify the MCP server + resources load and the indexer/module
+      # graph resolves. Requires no external services (Redis/Postgres) — pure
+      # module load + in-memory smoke test.
+      - name: MCP smoke test
+        run: bun --cwd apps/mcp run smoke
