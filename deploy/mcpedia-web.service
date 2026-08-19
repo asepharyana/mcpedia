@@ -1,0 +1,19 @@
+[Unit]
+Description=MCPedia Web (Next.js docs UI + search)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/code/mcpedia
+# Loads DATABASE_URL, EMBED_*, REDIS_*, WEBHOOK_SECRET from the repo .env.
+# CONTENT_ROOT defaults to /home/code/mcpedia/content when unset.
+Environment=PORT=4016
+Environment=NODE_ENV=production
+EnvironmentFile=/home/code/mcpedia/.env
+ExecStart=/home/code/.bun/bin/bun run --cwd apps/web start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
