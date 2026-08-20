@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
+import { publicProcedure, router, t } from "./trpc";
 import {
   getDocument,
   getRelated,
@@ -13,6 +13,21 @@ import {
 } from "@mcpedia/core";
 import { getQueue, INDEX_QUEUE } from "@mcpedia/queue";
 import { getConnection, BULLMQ_PREFIX } from "@mcpedia/queue/client";
+import { WEBHOOK_SECRET } from "@mcpedia/config";
+
+// restoreRevision is a state-changing action (it rewrites the live document row
+// + rebuilds its chunks). It must NOT be callable anonymously over the network —
+// only the Web UI (which calls @mcpedia/core directly) and an operator with the
+// webhook secret may use it. Anything else is rejected.
+const requireWriteAuth = t.middleware(({ ctx, next }) => {
+  if (!WEBHOOK_SECRET) {
+    throw new Error("WEBHOOK_SECRET is not configured; writes are disabled");
+  }
+  if (ctx.webhookSecret !== WEBHOOK_SECRET) {
+    throw new Error("unauthorized: missing or invalid x-webhook-secret");
+  }
+  return next();
+});
 
 export const appRouter = router({
   search: publicProcedure
@@ -49,6 +64,7 @@ export const appRouter = router({
     .query(async ({ input }) => getRevision(input.id)),
 
   restoreRevision: publicProcedure
+    .use(requireWriteAuth)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => restoreRevision(input.id)),
 

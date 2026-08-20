@@ -72,7 +72,10 @@ app.all("/trpc/*", (c) =>
     endpoint: "/trpc",
     req: c.req.raw,
     router: appRouter,
-    createContext: (): Context => ({ db }),
+    createContext: (opts): Context => ({
+      db,
+      webhookSecret: opts.req.headers.get("x-webhook-secret") ?? undefined,
+    }),
   }),
 );
 

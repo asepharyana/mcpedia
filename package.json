@@ -17,6 +17,7 @@
     "enqueue": "bun run scripts/enqueue.ts",
     "worker": "/home/code/.bun/bin/bun --cwd apps/worker src/index.ts",
     "mcp": "bun --cwd apps/mcp run start",
+    "mcp:http": "/home/code/.bun/bin/bun --cwd apps/mcp src/http.ts",
     "api": "/home/code/.bun/bin/bun --cwd apps/api src/index.ts"
   },
   "devDependencies": {

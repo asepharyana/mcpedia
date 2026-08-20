@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "bun run src/index.ts",
+    "serve:http": "bun run src/http.ts",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "smoke": "bun run src/smoke.test.ts"
