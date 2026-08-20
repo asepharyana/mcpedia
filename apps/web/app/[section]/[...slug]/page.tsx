@@ -74,7 +74,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   const revisions = await listRevisions(fullSlug, 10);
 
   return (
-    <article className="prose-lg">
+    <article>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6">
         <Link
