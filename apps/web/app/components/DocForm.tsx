@@ -244,14 +244,10 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
           Custom metadata fields
         </label>
         <p className="text-xs text-[#62666d] mb-3">
-          Add extra frontmatter fields. These will be stored in the document's
-          YAML frontmatter and rendered as badges on the doc page. Examples for
-          CTF writeups: <code className="text-[#7170ff]">event</code>,{" "}
-          <code className="text-[#7170ff]">challenge</code>,{" "}
-          <code className="text-[#7170ff]">category</code>,{" "}
-          <code className="text-[#7170ff]">difficulty</code>,{" "}
-          <code className="text-[#7170ff]">points</code>.
-        </p>
+          Add extra frontmatter fields. Content creators name and define their own
+          metadata here — the system auto-renders any field as a badge on the doc
+          page based on its value (e.g. numbers → points style, "easy" → green
+          difficulty badge, etc.).{" "}</p>
         {customFields.length > 0 && (
           <div className="space-y-3 mb-3">
             {customFields.map((field, i) => (

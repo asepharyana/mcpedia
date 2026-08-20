@@ -45,7 +45,8 @@ function CustomFieldBadges({
   // Convert doc to a plain record to get index signature
   const docRecord: Record<string, unknown> = { ...doc } as Record<string, unknown>;
   const customEntries = Object.entries(docRecord).filter(
-    ([k, v]) => !standardKeys.has(k) && v !== undefined && v !== null && v !== "" && !k.startsWith("_"),
+    ([k, v]) =>
+      !standardKeys.has(k) && v !== undefined && v !== null && v !== "" && !k.startsWith("_"),
   );
 
   if (customEntries.length === 0) return null;
@@ -55,38 +56,83 @@ function CustomFieldBadges({
       {customEntries.map(([key, value]) => {
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
         let colorClass = "bg-[#191a1b] border-[#23252a] text-[#d0d6e0]";
-        let prefix = "";
+        let displayValue: string;
 
-        // Auto-style common CTF fields based on key name
-        if (key === "points") {
-          prefix = "pts";
+        // --- Auto-detect styling based on VALUE TYPE + VALUE CONTENTS ---
+        // (NOT key name — content creators determine appearance via values,
+        //  not by using specific key names)
+
+        if (typeof value === "number") {
+          // Numeric values → purple "points"-style badge with + prefix
           colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
-        } else if (key === "difficulty" || key === "level") {
+          displayValue = `${value}`;
+        } else if (typeof value === "boolean") {
+          // Boolean values → green check/X
+          colorClass = value
+            ? "bg-green-500/15 border-green-500/25 text-green-400"
+            : "bg-red-500/15 border-red-500/25 text-red-400";
+          displayValue = value ? "Yes" : "No";
+        } else if (Array.isArray(value)) {
+          // Arrays → purple badge, joined values
+          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+          displayValue = value.join(", ");
+        } else if (typeof value === "object" && value !== null) {
+          // Objects → neutral badge, truncated JSON
+          displayValue = JSON.stringify(value).slice(0, 40) + 
+            (JSON.stringify(value).length > 40 ? "…" : "");
+        } else {
+          // String values — auto-detect content type for styling
           const v = String(value).toLowerCase();
-          if (v === "easy")
-            colorClass = "bg-green-500/10 border-green-500/30 text-green-400";
-          else if (v === "medium")
-            colorClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
-          else if (v === "hard")
-            colorClass = "bg-red-500/10 border-red-500/30 text-red-400";
-          else
-            colorClass = "bg-[#191a1b] border-[#23252a] text-[#d0d6e0]";
-        } else if (key === "event" || key === "category") {
-          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
-        }
 
-        const displayValue = Array.isArray(value)
-          ? value.join(", ")
-          : typeof value === "object"
-            ? JSON.stringify(value)
-            : String(value);
+          // Difficulty-like values (easy/medium/hard/etc) OR numeric with suffix
+          const diffMatch = v.match(
+            /^(easy|simple|beginner)\b|^(medium|intermediate)\b|^(hard|expert|advanced)\b/i
+          );
+          if (diffMatch) {
+            if (/^easy|simple|beginner/i.test(v))
+              colorClass = "bg-green-500/10 border-green-500/30 text-green-400";
+            else if (/^medium|intermediate/i.test(v))
+              colorClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
+            else if (/^hard|expert|advanced/i.test(v))
+              colorClass = "bg-red-500/10 border-red-500/30 text-red-400";
+            displayValue = diffMatch[0];
+          }
+          // Event-like values (contains CTF, DEF CON, hack, etc.)
+          else if (/ctf|def.?con|hack|game|competition|tournament|qualifier/i.test(v)) {
+            colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+            displayValue = String(value);
+          }
+          // Points-like values (number + "pts" suffix)
+          else if (/(\d+)\s*pts?$/i.test(v)) {
+            const match = v.match(/(\d+)\s*pts?$/i);
+            colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+            displayValue = match ? `${match[1]} pts` : String(value);
+          }
+          // Category-like values (pwn/web/crypto/etc)
+          else if (/^(pwn|web|crypto|misc|forensic|reverse|pwnable|binary|webexploit)$/i.test(v)) {
+            colorClass = "bg-orange-500/15 border-orange-500/25 text-orange-400";
+            displayValue = v.charAt(0).toUpperCase() + v.slice(1);
+          }
+          // Status-like values (solved/pending/wip)
+          else if (/^(solved|pending|wip|in.?progress|completed|todo)$/i.test(v)) {
+            colorClass = v.includes("solved") || v.includes("completed")
+              ? "bg-green-500/10 border-green-500/30 text-green-400"
+              : v.includes("wip") || v.includes("progress")
+                ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
+                : "bg-red-500/10 border-red-500/30 text-red-400";
+            displayValue = v.charAt(0).toUpperCase() + v.slice(1);
+          }
+          else {
+            displayValue = String(value);
+          }
+        }
 
         return (
           <span
             key={key}
             className={`px-2 py-0.5 border rounded text-xs ${colorClass}`}
           >
-            {prefix ? `${displayValue} ${prefix}` : `${label}: ${displayValue}`}
+            {displayValue}
           </span>
         );
       })}
