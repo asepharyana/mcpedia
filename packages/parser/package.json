@@ -9,5 +9,8 @@
   "dependencies": {
     "@mcpedia/types": "workspace:*",
     "gray-matter": "^4.0.3"
+  },
+  "scripts": {
+    "test": "bun test"
   }
 }

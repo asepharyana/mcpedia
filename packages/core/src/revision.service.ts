@@ -76,9 +76,18 @@ export async function getRevision(
   };
 }
 
-/** Restore a revision: write its body+metadata back into the live `documents` row. */
+/**
+ * Restore a revision: write its body+metadata back into the live `documents` row.
+ *
+ * @param id   revision UUID
+ * @param opts optional seam for testing — override the chunk-rebuild step so
+ *               tests can assert it's invoked without touching embeddings.
+ */
 export async function restoreRevision(
   id: string,
+  opts?: {
+    reindex?: (slug: string) => Promise<number>;
+  },
 ): Promise<{ slug: string; documentId: string } | null> {
   const [rev] = await db
     .select({
@@ -118,7 +127,8 @@ export async function restoreRevision(
   // Rebuild semantic chunks + embeddings from the restored body so semantic
   // and hybrid search stay consistent (otherwise document_chunks would hold
   // the NEW body's chunks while documents.body holds the OLD/restore body).
-  await reindexChunks(rev.slug);
+  const reindex = opts?.reindex ?? reindexChunks;
+  await reindex(rev.slug);
 
   return { slug: rev.slug, documentId: rev.documentId };
 }

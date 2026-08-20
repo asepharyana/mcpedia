@@ -18,10 +18,12 @@
     "worker": "/home/code/.bun/bin/bun --cwd apps/worker src/index.ts",
     "mcp": "bun --cwd apps/mcp run start",
     "mcp:http": "/home/code/.bun/bin/bun --cwd apps/mcp src/http.ts",
-    "api": "/home/code/.bun/bin/bun --cwd apps/api src/index.ts"
+    "api": "/home/code/.bun/bin/bun --cwd apps/api src/index.ts",
+    "test": "turbo run test"
   },
   "devDependencies": {
     "@trpc/client": "^11.18.0",
+    "@types/bun": "^1.3.14",
     "@types/node": "^26.2.0",
     "prettier": "^3.3.0",
     "turbo": "^2.5.0",

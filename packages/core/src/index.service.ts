@@ -85,6 +85,22 @@ export async function indexContentFile(
 }
 
 /**
+ * Pure decision rule for the revision system: create a new revision only when
+ * the body genuinely changed vs the latest snapshot.
+ * - no prior revision (latestBody null)  -> true  (first snapshot)
+ * - identical body                      -> false (no noise)
+ * - different body                      -> true
+ *
+ * Exported separately so it can be unit-tested without a database.
+ */
+export function shouldCreateRevision(
+  latestBody: string | null | undefined,
+  body: string,
+): boolean {
+  return latestBody == null || latestBody !== body;
+}
+
+/**
  * Compare the incoming body against the latest revision's body; if different
  * (or no prior revision exists), create a new revision with an incremented
  * per-document revisionNo.

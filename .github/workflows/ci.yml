@@ -41,3 +41,9 @@ jobs:
       # module load + in-memory smoke test.
       - name: MCP smoke test
         run: bun --cwd apps/mcp run smoke
+
+      # Unit tests across all packages + apps. CI has no Postgres/Redis, so
+      # tests use bun:test module mocking to stub @mcpedia/db, @mcpedia/queue,
+      # and @mcpedia/embeddings — no live I/O.
+      - name: Test
+        run: bun run test

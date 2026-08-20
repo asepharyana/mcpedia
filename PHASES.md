@@ -201,6 +201,63 @@ bun run api              # Hono+tRPC API on :4020 (added /hooks/* webhooks)
 - Dashboard link points to working web doc route `/docs/<slug>` (verified 200).
 - `turbo run typecheck` green.
 
+## Phase 9 — Test coverage + CI gating ✅ DONE
+
+> Before Phase 9 the only test was an integration smoke (`apps/mcp/src/smoke.test.ts`)
+> requiring a live DB; its assertions had also rotted (expected 6 tools, now 10). Added
+> a real `bun:test` suite that runs green in CI with **no external services** via
+> in-process module mocking.
+
+- [x] **Test infra** — `turbo.json` `test` task (cache:false); `test` script on every
+  package/app that has `.test.ts` files; `@types/bun` added to root devDeps;
+  `tsconfig.base.json` registers `types: ["bun","node"]`; CI step
+  `bun run test` added after `Build`.
+- [x] **`@mcpedia/embeddings`** (5 tests) — `chunkText`: empty input, single chunk,
+  multi-chunk split, overlap/word-boundary integrity, default options.
+- [x] **`@mcpedia/parser`** (5 tests) — `parseFile`: frontmatter extraction, section
+  derivation from top-level dir, invalid type/status fallbacks, missing-field
+  defaults, body excludes delimiter.
+- [x] **`@mcpedia/search`** (8 tests) — `cosine` (orthogonal/identical/zero-vector/
+  mismatched-length/negative) + `toTsQuery` (AND-prefix, sanitization, empty/garbage).
+- [x] **`@mcpedia/core`** (4 tests) — `shouldCreateRevision` dedup truth table (no prior
+  revision → snapshot; identical body → skip; changed body → snapshot; empty vs
+  non-empty). `restoreRevision` gained an `opts.reindex` seam for the chunk-rebuild
+  contract.
+- [x] **`apps/api`** (8 tests) — refactored `index.ts` → `app.ts` `createApp(deps?)`
+  factory (pure construction, injectable `QueueLike`); `dashboard.ts` extracted;
+  `/health`, `/metrics`, `/hooks/reindex` (401 w/o secret, 200 w/ secret),
+  `/hooks/index` (400 w/o slug, 200 w/ slug+secret, 401 wrong secret), `/dashboard`.
+- [x] **`apps/mcp`** (6 tests) — write-tool auth gates via `InMemoryTransport`:
+  `index_document`/`reindex_all`/`restore_revision` error without secret and enqueue
+  with secret (mocked `@mcpedia/queue` + `@mcpedia/core`); `queue_status` public;
+  tool discovery lists all 10 tools regardless of secret (gate is in handler).
+- [x] **Fixed rot** — renamed `smoke.test.ts` → `smoke.ts` (so `bun test` doesn't run the
+  integration smoke as a unit test) and updated stale assertions (10-tool set, 4 docs
+  in `docs` section).
+
+### Verification done (real)
+- `bun run test` → 32 tests green across 6 packages, **no DB/Redis** (all fakes).
+- `bun run typecheck` → 4 apps green (no test-only type errors).
+- `bun --cwd apps/mcp run smoke` → SMOKE OK (integration, live DB).
+- Live API (temp port): `/health`→200, `/metrics`→200 gauges, `/hooks/reindex`→401/200.
+- CI workflow now runs `bun run test`.
+
+### Files changed
+```
+new:    apps/api/src/app.ts                 # createApp factory
+new:    apps/api/src/dashboard.ts           # dashboard HTML module
+new:    packages/embeddings/src/chunk.test.ts
+new:    packages/parser/src/parse.test.ts
+new:    packages/search/src/cosine.test.ts
+new:    packages/core/src/index.service.test.ts
+new:    apps/api/src/app.test.ts
+new:    apps/mcp/src/auth.test.ts
+mod:    turbo.json, package.json, tsconfig.base.json, .github/workflows/ci.yml
+mod:    apps/api/src/index.ts (thin re-export), apps/api/src/router.ts (unchanged)
+renamed: apps/mcp/src/smoke.test.ts -> smoke.ts (fixed stale assertions)
+```
+
+
 ## Decisions locked (from initial planning)
 
 - **Tooling:** bun workspaces + Turborepo (repo already used bun; pnpm rejected to minimize churn).

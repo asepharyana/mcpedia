@@ -18,7 +18,11 @@ async function main() {
     "get_document",
     "get_related_documents",
     "hybrid_search",
+    "index_document",
     "list_documents",
+    "queue_status",
+    "reindex_all",
+    "restore_revision",
     "search_documents",
     "semantic_search",
   ].sort();
@@ -65,7 +69,7 @@ async function main() {
     arguments: { section: "docs" },
   });
   const docs = JSON.parse((list.content as any)[0].text);
-  if (docs.length !== 1) throw new Error("list_documents docs != 1");
+  if (docs.length !== 4) throw new Error(`list_documents docs != 4 (got ${docs.length})`);
   console.log("list_documents(section=docs) =>", docs.length, "doc");
 
   // 6) semantic_search

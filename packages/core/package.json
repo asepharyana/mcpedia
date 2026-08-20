@@ -15,5 +15,8 @@
     "@mcpedia/search": "workspace:*",
     "@mcpedia/types": "workspace:*",
     "drizzle-orm": "^0.38.0"
+  },
+  "scripts": {
+    "test": "bun test"
   }
 }
