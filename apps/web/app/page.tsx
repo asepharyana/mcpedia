@@ -35,7 +35,7 @@ export default async function Home() {
               {docs.map((d: DocumentMeta) => (
                 <li key={d.slug} className="py-2">
                   <Link
-                    href={`/${d.section}/${d.slug}`}
+                    href={`/${d.slug}`}
                     className="hover:underline font-medium"
                   >
                     {d.title}

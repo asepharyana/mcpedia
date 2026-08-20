@@ -45,7 +45,7 @@ export default async function DocPage({
             {related.map((r) => (
               <li key={r.slug}>
                 <Link
-                  href={`/${r.section}/${r.slug}`}
+                  href={`/${r.slug}`}
                   className="hover:underline"
                 >
                   {r.title}

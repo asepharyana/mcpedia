@@ -71,7 +71,7 @@ export default async function SearchPage({
             className="rounded border border-zinc-200 dark:border-zinc-800 p-3"
           >
             <Link
-              href={`/${h.doc.section}/${h.doc.slug}`}
+              href={`/${h.doc.slug}`}
               className="font-medium hover:underline"
             >
               {h.doc.title}
