@@ -55,7 +55,7 @@ export default function RootLayout({
             </aside>
 
             <main className="flex-1 min-w-0">
-              <div className="px-8 py-10 max-w-3xl mx-auto">
+              <div className="px-8 py-10 max-w-4xl mx-auto lg:max-w-5xl xl:max-w-6xl">
                 {children}
               </div>
             </main>
