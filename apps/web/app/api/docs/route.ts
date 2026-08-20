@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createDocument,
-  updateDocument,
-  deleteDocument,
 } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import { timingSafeEqual } from "node:crypto";
@@ -40,44 +38,4 @@ export async function POST(req: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ ok: false, error: msg }, { status: 400 });
   }
-}
-
-// PUT /api/docs/{slug} — Update an existing document.
-export async function PUT(req: NextRequest) {
-  if (!isAuthorized(req)) return unauthorized();
-
-  const url = new URL(req.url);
-  const parts = url.pathname.split("/").filter(Boolean);
-  const fullSlug = parts.slice(2).join("/"); // ["api","docs",...slugParts]
-  if (!fullSlug || fullSlug === "docs") {
-    return NextResponse.json({ ok: false, error: "slug required in path" }, { status: 400 });
-  }
-
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  try {
-    const doc = await updateDocument(fullSlug, body);
-    return NextResponse.json({ ok: true, slug: doc.slug, doc });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ ok: false, error: msg }, { status: 400 });
-  }
-}
-
-// DELETE /api/docs/{slug}
-export async function DELETE(req: NextRequest) {
-  if (!isAuthorized(req)) return unauthorized();
-
-  const url = new URL(req.url);
-  const parts = url.pathname.split("/").filter(Boolean);
-  const slug = parts.slice(2).join("/");
-  if (!slug) {
-    return NextResponse.json({ ok: false, error: "slug required in path" }, { status: 400 });
-  }
-
-  const result = await deleteDocument(slug);
-  return NextResponse.json({ ok: true, deleted: result.deleted });
 }
