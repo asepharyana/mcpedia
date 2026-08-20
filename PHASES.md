@@ -178,6 +178,29 @@ bun run api              # Hono+tRPC API on :4020 (added /hooks/* webhooks)
 - Worker drained the MCP-enqueued job (completed count incremented, failed:0).
 - `turbo run typecheck` green across all 4 apps.
 
+## Phase 8 — Dashboard (observability UI) ✅ DONE
+
+> The metrics endpoint existed (Phase 7) but had no consumer. Added a zero-dependency
+> dashboard so the KB is actually observable + searchable from a browser.
+
+- [x] **`GET /dashboard`** on the API — self-contained HTML (no build, no deps) that:
+  - pulls `/metrics` (same origin) and renders queue gauges (waiting/active/completed/
+    failed/delayed) + uptime, refreshing every 5s with a live-dot status indicator;
+  - runs a live **search box** that calls the MCP `hybrid_search` tool directly from the
+    browser (MCP `/mcp` is CORS-open), returning ranked hits that link to the web doc
+    page (`/docs/...`).
+- [x] XSS hardening: all KB-sourced fields (`slug`/`title`/`section`/error message)
+  are `esc()`-escaped before `innerHTML` (defense-in-depth; data is server-trusted).
+- [x] Caddy: `wiki.asepharyana.my.id/dashboard` → :4020.
+
+### Verification done (real)
+- `https://wiki.asepharyana.my.id/dashboard` → 200, serves the page (title + JS present).
+- `/metrics` → 200, 7 gauge lines including `mcpedia_queue_jobs{state=...}`.
+- MCP `hybrid_search` from browser path returns real ranked hits (verified the exact
+  `tools/call` payload the dashboard issues; shape `{doc:{slug,title,section},rank}`).
+- Dashboard link points to working web doc route `/docs/<slug>` (verified 200).
+- `turbo run typecheck` green.
+
 ## Decisions locked (from initial planning)
 
 - **Tooling:** bun workspaces + Turborepo (repo already used bun; pnpm rejected to minimize churn).
