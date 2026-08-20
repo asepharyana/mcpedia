@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface Doc {
   slug: string;
@@ -11,16 +12,17 @@ interface Doc {
 }
 
 const SECTIONS = [
-  { id: "docs", label: "Documentation" },
-  { id: "writeups", label: "Writeups" },
-  { id: "research", label: "Research" },
-  { id: "notes", label: "Notes" },
+  { id: "docs", label: "Documentation", icon: "📄" },
+  { id: "writeups", label: "Writeups", icon: "📝" },
+  { id: "research", label: "Research", icon: "🔬" },
+  { id: "notes", label: "Notes", icon: "📌" },
 ] as const;
 
 /** Client-side sidebar (fetches doc list via /api/docs at runtime).
  *  Client component so `next build` SSG doesn't hit Postgres (CI has no DB). */
 export default function Sidebar() {
   const [docs, setDocs] = useState<Doc[]>([]);
+  const pathname = usePathname();
 
   useEffect(() => {
     fetch("/api/docs")
@@ -41,12 +43,25 @@ export default function Sidebar() {
   return (
     <nav className="h-full overflow-y-auto py-6">
       <ul className="space-y-1 px-3 text-sm">
-        {SECTIONS.map(({ id, label }) => {
+        {SECTIONS.map(({ id, label, icon }) => {
           const sectionDocs = bySection[id] || [];
           if (sectionDocs.length === 0) return null;
+
+          // Check if any doc in this section is the active page
+          const isActive = sectionDocs.some(
+            (doc) => pathname === `/${doc.slug}` || pathname === `/${doc.section}`,
+          );
+
           return (
             <li key={id}>
-              <div className="text-xs font-medium text-[#62666d] uppercase mb-1 mt-4 first:mt-0">
+              <div
+                className={`text-xs font-medium mb-1 mt-4 first:mt-0 flex items-center gap-1.5 ${
+                  isActive
+                    ? "text-[#7170ff]"
+                    : "text-[#62666d]"
+                }`}
+              >
+                <span>{icon}</span>
                 {label}
               </div>
               <ul className="space-y-0.5">
@@ -59,11 +74,19 @@ export default function Sidebar() {
                     .join(" ");
                   const depth = doc.slug.split("/").length;
                   const indent = depth - 1;
+                  const isDocActive = pathname === `/${doc.slug}`;
                   return (
-                    <li key={doc.slug} style={{ marginLeft: `${indent * 12}px` }}>
+                    <li
+                      key={doc.slug}
+                      style={{ marginLeft: `${indent * 12}px` }}
+                    >
                       <Link
                         href={`/${doc.slug}`}
-                        className="block text-[#d0d6e0] hover:text-[#f7f8f8] hover:bg-[#191a1b] rounded px-2 py-0.5 transition-colors"
+                        className={`block text-xs py-0.5 rounded transition-all ${
+                          isDocActive
+                            ? "text-[#7170ff] bg-[#191a1b]"
+                            : "text-[#d0d6e0] hover:text-[#f7f8f8] hover:bg-[#191a1b]"
+                        }`}
                         title={doc.title}
                       >
                         {formatted || doc.slug}
