@@ -257,6 +257,57 @@ mod:    apps/api/src/index.ts (thin re-export), apps/api/src/router.ts (unchange
 renamed: apps/mcp/src/smoke.test.ts -> smoke.ts (fixed stale assertions)
 ```
 
+## Phase 10 — Audit + Bug fixes (live verification)
+
+> Full feature audit against live services. Found + fixed one real bug.
+
+### Bug: Frontmatter leaking into rendered doc pages + MCP doc body
+
+- **Symptom:** Doc pages showed raw YAML frontmatter (`id: websocket-contract`,
+  `title: WebSocket Contract`, etc.) as visible plain text between `<hr/>`
+  markers. MCP `mcpedia://docs/{+slug}` resource had the same leak.
+- **Root cause:** `getDocument()` in `@mcpedia/core` preferred the on-disk file
+  via `readFileSync(abs, "utf8")` — returning **raw** file content including the
+  `---` frontmatter block. The indexer correctly stripped frontmatter via
+  `parseFile` (gray-matter), but `getDocument` bypassed it. `ReactMarkdown`
+  rendered `---` as `<hr/>` and the YAML as paragraphs.
+- **Fix:** `package/core/src/document.service.ts` — replaced `readFileSync` with
+  `parseFile(abs, row.path).body` (same frontmatter stripping as the indexer).
+  DB fallback (`row.body`) unchanged (already clean).
+- **Verified:** 9/9 doc pages render clean (no frontmatter `id:` text, proper
+  `<h2>` + `<code>` elements in SSR HTML); MCP `mcpedia://` doc body resource
+  returns clean markdown (starts with `# WebSocket Contract`).
+
+### Audit findings (all phases verified live)
+
+| Phase | Feature | Live check | Status |
+|-------|---------|------------|--------|
+| P1 | Web UI `/docs/<section>/<slug>` | 200, renders markdown | ✅ |
+| P1 | Search page (`?q=` + `?mode=hybrid`) | 200, returns results | ✅ |
+| P1 | MCP stdio + HTTP (`/4021`) | 10 tools, 4 resources | ✅ |
+| P2 | Semantic/hybrid search | returns ranked chunks | ✅ |
+| P2 | tRPC API on domain (`/trpc/*`) | listDocuments → 4 docs | ✅ |
+| P3 | BullMQ worker drains jobs | queue completed 17→19 after enqueue | ✅ |
+| P3 | Revision system | listRevisions → rev #1 "phase4-final-clean" | ✅ |
+| P3 | Git webhook auth gate | 401 w/o secret, 200 w/ secret | ✅ |
+| P4 | Dashboard | `/dashboard` → 200 HTML | ✅ |
+| P6 | All 4 systemd services | web/api/mcp/worker all `active` | ✅ |
+| P6 | restoreRevision mutation locked | 401 w/o secret, executes w/ secret | ✅ |
+| P7 | 10 MCP tools (6 read + 4 write) | tools/list → 10 | ✅ |
+| P7 | Write-tool auth gate | reindex_all w/o secret → isError | ✅ |
+| P7 | Prometheus metrics | `/metrics` → 7 gauges, 200 | ✅ |
+| P8 | Dashboard live search | `fetch("/metrics")` + `hybrid_search` via `/mcp` | ✅ |
+| P9 | Test suite | 6/6 packages, 32 tests, 0 fail | ✅ |
+
+### Notes / non-bugs
+- Doc URLs follow `/<section>/<slug>` (e.g. `/docs/caddy/reverse-proxy`,
+  `/writeups/infra/cloudflare-525`, `/notes/postgres/full-text-search`).
+  The route is `[section]/[...slug]` — `/docs/websocket/contract` works because
+  the section IS `docs` for that doc; `/notes/postgres/fts` does not (the correct
+  slug is `notes/postgres/full-text-search`).
+- `restoreRevision` via tRPC needs the `x-webhook-secret` as an **HTTP header**
+  (not inside the JSON body) — the fetch adapter reads `c.req.raw.headers`.
+
 
 ## Decisions locked (from initial planning)
 
