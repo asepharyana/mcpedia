@@ -122,6 +122,38 @@ bun run api              # Hono+tRPC API on :4020 (added /hooks/* webhooks)
 - [ ] Object storage for assets
 - [ ] Advanced ranking, distributed workers, observability, multi-tenant
 
+## Phase 6 — Network deployment + review hardening ✅ DONE
+
+> Closed the real gaps found during review: the MCP server was stdio-only (unreachable
+> over the network) and the tRPC API was not routed on the domain (swallowed by web →
+> `/trpc/*` returned Next.js 404). Also found + fixed a security hole.
+
+- [x] **MCP over Streamable HTTP** — `apps/mcp/src/http.ts` serves the 6 tools + 4
+  resources via MCP 2025-03-26 Streamable HTTP on `:4021`, stateless mode
+  (`sessionIdGenerator: undefined`, one server+transport per request, CORS on `/mcp`).
+  Deployed as `mcpedia-mcp.service`; reachable at `https://mcp.asepharyana.my.id/mcp`.
+  Stdio entry (`bun run mcp`) retained for local subprocess use.
+- [x] **tRPC API routed on the domain** — Caddy `wiki.asepharyana.my.id` now forwards
+  `/trpc/*` (+ `/hooks/*`, `/health`) to the API on `:4020`; web stays on `:4016`.
+  Read-only procedures (search, list, revisions, job status) are public; the
+  `restoreRevision` mutation is gated by `x-webhook-secret` (see security fix below).
+- [x] **Security: lock down `restoreRevision`** — the state-changing tRPC mutation was
+  anonymously callable over the network. Now requires `x-webhook-secret` (consistent
+  with `/hooks` auth). The Web UI calls `@mcpedia/core` directly in a server component,
+  so the gate does not affect the UI's restore button. Verified: no-secret → 401-class
+  rejection, with-secret → reaches handler.
+- [x] **All four services live + supervised** — `mcpedia-web` (:4016), `mcpedia-api`
+  (:4020), `mcpedia-worker` (BullMQ), `mcpedia-mcp` (:4021) all `active`, reboot-safe.
+  GitHub push webhook → `https://wiki.asepharyana.my.id/hooks/reindex` (verified 200,
+  worker drains, 0 failed).
+
+### Verification done (real, against live services)
+- `https://mcp.asepharyana.my.id/mcp` initialize → 200 + serverInfo; tools/list → 6;
+  resources/list → 4 (Streamable HTTP SSE framing).
+- `https://wiki.asepharyana.my.id/` → 200; `/health` → 200; `/trpc/listDocuments` → 200.
+- GitHub push webhook delivers 200; `queueStatus` shows completed:N, failed:0.
+- `turbo run typecheck` green across all 4 apps.
+
 ## Decisions locked (from initial planning)
 
 - **Tooling:** bun workspaces + Turborepo (repo already used bun; pnpm rejected to minimize churn).
