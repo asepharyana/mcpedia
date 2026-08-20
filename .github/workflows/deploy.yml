@@ -34,22 +34,19 @@ jobs:
         run: bun --cwd apps/web run build
 
       - name: Deploy to VPS over SSH
-        env:
-          SSH_DEPLOY_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
-          SSH_DEPLOY_PORT: ${{ secrets.SSH_DEPLOY_PORT }}
-          SSH_DEPLOY_USER: ${{ secrets.SSH_DEPLOY_USER }}
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_DEPLOY_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$SSH_DEPLOY_PORT" "$SSH_DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key -p "$SSH_DEPLOY_PORT" "$SSH_DEPLOY_USER@$SSH_DEPLOY_HOST" \
-            'set -e
-             cd /home/code/mcpedia
-             git pull origin main
-             /home/code/.bun/bin/bun install --frozen-lockfile
-             /home/code/.bun/bin/bun --cwd apps/web run build
-             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
-             sleep 3
-             systemctl --no-pager status mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker --no-legend'
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SSH_DEPLOY_HOST }}
+          port: ${{ secrets.SSH_DEPLOY_PORT }}
+          username: ${{ secrets.SSH_DEPLOY_USER }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          envs: SSH_DEPLOY_HOST
+          script: |
+            set -e
+            cd /home/code/mcpedia
+            git pull origin main
+            /home/code/.bun/bin/bun install --frozen-lockfile
+            /home/code/.bun/bin/bun --cwd apps/web run build
+            sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
+            sleep 3
+            systemctl --no-pager status mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker --no-legend
