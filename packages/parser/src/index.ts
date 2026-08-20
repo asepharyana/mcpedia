@@ -17,6 +17,16 @@ const VALID_TYPES: DocType[] = [
   "note",
 ];
 
+// Standard frontmatter keys that are rendered explicitly in the UI template.
+// Any other key in frontmatter becomes a dynamic "extra field" badge.
+// This makes the system fully content-driven — creators add whatever
+// metadata they need (event, challenge, category, difficulty, points, etc.)
+// without code changes.
+const STANDARD_FRONTMATTER_KEYS = new Set([
+  "id", "slug", "title", "type", "section", "status",
+  "author", "tags", "path", "created_at", "updated_at",
+]);
+
 export interface ParsedFile {
   meta: DocumentMeta;
   body: string;
@@ -48,17 +58,13 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
   const createdAt = data.created_at ?? nowIso;
   const updatedAt = data.updated_at ?? data.created_at ?? nowIso;
 
-  // Extract any additional frontmatter keys as dynamic extra fields.
-  // These are written to DB as JSONB + rendered as dynamic badges in the UI.
-  const STANDARD_FRONTMATTER_KEYS = new Set([
-    "id", "slug", "title", "type", "section", "status",
-    "author", "tags", "path", "created_at", "updated_at", "event",
-    "challenge", "category", "difficulty", "points",
-  ]);
+  // Extract any non-standard frontmatter keys as dynamic extra fields.
+  // These are stored in DB as JSONB + rendered as dynamic badges in the UI.
   const extraFields: Record<string, string> = {};
   for (const [k, v] of Object.entries(data)) {
     if (!STANDARD_FRONTMATTER_KEYS.has(k) && v !== undefined && v !== null) {
-      extraFields[k] = String(v);
+      // Serialize non-string values (numbers, booleans) to string
+      extraFields[k] = typeof v === "string" ? v : JSON.stringify(v);
     }
   }
 
@@ -74,17 +80,6 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
     path: relPath,
     createdAt: String(createdAt),
     updatedAt: String(updatedAt),
-    // CTF writeup metadata (optional)
-    event: typeof data.event === "string" ? data.event : undefined,
-    challenge: typeof data.challenge === "string" ? data.challenge : undefined,
-    category: typeof data.category === "string" ? data.category : undefined,
-    difficulty:
-      data.difficulty === "easy" ||
-      data.difficulty === "medium" ||
-      data.difficulty === "hard"
-        ? data.difficulty
-        : undefined,
-    points: typeof data.points === "number" ? data.points : undefined,
     extraFields,
   };
 
@@ -118,13 +113,11 @@ export function stringifyFile(
     path: relPath,
     created_at: meta.createdAt,
     updated_at: meta.updatedAt,
-    // CTF writeup metadata (only written if present)
-    ...(meta.event && { event: meta.event }),
-    ...(meta.challenge && { challenge: meta.challenge }),
-    ...(meta.category && { category: meta.category }),
-    ...(meta.difficulty && { difficulty: meta.difficulty }),
-    ...(meta.points !== undefined && { points: meta.points }),
-    // Dynamic custom fields (any key the content creator added)
+    // Dynamic custom fields — any key the content creator added.
+    // These are written as-is to YAML frontmatter, and read back via parseFile
+    // into meta.extraFields. Fully content-driven: no code changes needed
+    // to support new metadata fields (e.g. CTF: event, challenge, category,
+    // difficulty, points, or anything else).
     ...(meta.extraFields ?? {}),
   };
   const yaml = "---\n" +

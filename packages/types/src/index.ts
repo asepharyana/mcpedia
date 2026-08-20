@@ -14,14 +14,8 @@ export interface DocumentMeta {
   path: string; // relative path under content/
   createdAt: string; // ISO
   updatedAt: string; // ISO
-  // CTF writeup metadata (optional — only set for writeups)
-  event?: string;
-  challenge?: string;
-  category?: string;
-  difficulty?: "easy" | "medium" | "hard";
-  points?: number;
-  // Dynamic custom frontmatter fields (serialized as-is to YAML frontmatter).
-  // Allows content creators to add arbitrary metadata keys without code changes.
+  // Dynamic custom frontmatter fields (e.g. CTF: event, challenge, category,
+  // difficulty, points). Content creators add arbitrary key-value pairs.
   extraFields?: Record<string, string>;
 }
 

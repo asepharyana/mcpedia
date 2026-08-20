@@ -48,6 +48,7 @@ jobs:
             /home/code/.bun/bin/bun install --frozen-lockfile
             /home/code/.bun/bin/bun --cwd apps/web run build
             /home/code/.bun/bin/bun --cwd packages/db run db:migrate
+            /home/code/.bun/bin/bun run index
             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
             sleep 3
             systemctl --no-pager status mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker --no-legend
