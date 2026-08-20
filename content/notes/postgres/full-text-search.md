@@ -49,6 +49,12 @@ WHERE search_vector @@ q
 ORDER BY rank DESC;
 ```
 
+| Config       | Stemming | Use case                         |
+| ------------ | -------- | -------------------------------- |
+| `simple`     | none     | Identifiers, ports, exact codes  |
+| `english`    | yes      | Natural-language body text       |
+| `websearch`  | yes      | Google-like queries (`"a" OR b`) |
+
 A headline snippet for the UI comes from `ts_headline`, which bolds the matched lexemes.
 
 ## Hybrid fusion
