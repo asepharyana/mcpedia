@@ -1,5 +1,14 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listDocuments } from "@mcpedia/core";
+
+interface Doc {
+  slug: string;
+  title: string;
+  section: string;
+  tags: string[];
+}
 
 const SECTIONS = [
   { id: "docs", label: "Documentation" },
@@ -8,20 +17,25 @@ const SECTIONS = [
   { id: "notes", label: "Notes" },
 ] as const;
 
-export default async function Sidebar() {
-  const docs = await listDocuments();
+/** Client-side sidebar (fetches doc list via /api/docs at runtime).
+ *  Client component so `next build` SSG doesn't hit Postgres (CI has no DB). */
+export default function Sidebar() {
+  const [docs, setDocs] = useState<Doc[]>([]);
 
-  // Build a tree: section → top-level slugs + children
-  const bySection: Record<string, { slug: string; title: string; depth: number }[]> = {};
+  useEffect(() => {
+    fetch("/api/docs")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setDocs(data);
+        else if (data?.docs) setDocs(data.docs);
+      })
+      .catch(() => setDocs([]));
+  }, []);
+
+  const bySection: Record<string, Doc[]> = {};
   for (const doc of docs) {
     if (!bySection[doc.section]) bySection[doc.section] = [];
-    // Count depth from dots in a flattened slug: docs/websocket/contract
-    // We'll show all docs at their depth level
-    bySection[doc.section].push({
-      slug: doc.slug,
-      title: doc.title,
-      depth: doc.slug.split("/").length,
-    });
+    bySection[doc.section].push(doc);
   }
 
   return (
@@ -37,13 +51,14 @@ export default async function Sidebar() {
               </div>
               <ul className="space-y-0.5">
                 {sectionDocs.map((doc) => {
-                  const parts = doc.slug.split("/").slice(1); // remove section prefix
+                  const parts = doc.slug.split("/").slice(1);
                   const label = parts[parts.length - 1];
                   const formatted = label
                     .split(/[-_]/)
                     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                     .join(" ");
-                  const indent = doc.depth - 1;
+                  const depth = doc.slug.split("/").length;
+                  const indent = depth - 1;
                   return (
                     <li key={doc.slug} style={{ marginLeft: `${indent * 12}px` }}>
                       <Link

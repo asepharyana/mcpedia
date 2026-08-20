@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createDocument,
+  updateDocument,
+  deleteDocument,
+  listDocuments,
 } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import { timingSafeEqual } from "node:crypto";
 
-// Web CRUD auth: either the `x-webhook-secret` header (API/MCP style) OR the
-// `mcpedia_admin` cookie (web login). One of the two must be present + valid.
+// Web CRUD auth: either the x-webhook-secret header (API/MCP style) OR the
+// mcpedia_admin cookie (web login). One of the two must be valid.
 function isAuthorized(req: NextRequest): boolean {
   if (!WEBHOOK_SECRET) return false;
   const headerSecret = req.headers.get("x-webhook-secret") ?? "";
@@ -21,8 +24,13 @@ function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 }
 
+// GET /api/docs — list all documents (for sidebar navigation).
+export async function GET() {
+  const docs = await listDocuments();
+  return NextResponse.json(docs);
+}
+
 // POST /api/docs — Create a new document.
-// Body: { slug, title, section, body, type?, status?, author?, tags? }
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) return unauthorized();
 
