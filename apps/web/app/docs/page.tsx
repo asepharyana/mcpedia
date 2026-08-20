@@ -53,34 +53,28 @@ export default async function DocsIndexPage() {
         </p>
 
         {/* Search bar */}
-        <div className="mt-8 relative max-w-2xl">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#62666d]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="mt-8">
+          <Link
+            href="/search"
+            className="relative flex items-center max-w-2xl group"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search documents, tags, authors..."
-            readOnly
-            className="w-full pl-10 pr-4 py-3 bg-[#191a1b] border border-[#1f2022] rounded-lg text-[#e2e4e7] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]/30 transition-colors"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.currentTarget.value) {
-                window.location.href = `/search?q=${encodeURIComponent(e.currentTarget.value)}`;
-              }
-            }}
-          />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#62666d] bg-[#0f1011] border border-[#1f2022] rounded px-1.5 py-0.5">
-            ↵
-          </kbd>
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#62666d] group-focus-within:text-[#5e6ad2] transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <span className="w-full pl-10 pr-4 py-3 bg-[#191a1b] border border-[#1f2022] rounded-lg text-[#62666d] group-hover:border-[#5e6ad2]/40 transition-colors">
+              Search documents, tags, authors...
+            </span>
+          </Link>
         </div>
 
         {/* Recent strip */}
