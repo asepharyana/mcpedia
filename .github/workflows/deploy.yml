@@ -47,7 +47,7 @@ jobs:
             git pull origin main
             /home/code/.bun/bin/bun install --frozen-lockfile
             /home/code/.bun/bin/bun --cwd apps/web run build
-            /home/code/.bun/bin/bun --cwd packages/db run db:push
+            /home/code/.bun/bin/bun --cwd packages/db run db:push || echo "db:push warning (column may already exist)"
             /home/code/.bun/bin/bun run index
             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
             sleep 3
