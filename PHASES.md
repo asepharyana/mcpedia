@@ -154,6 +154,30 @@ bun run api              # Hono+tRPC API on :4020 (added /hooks/* webhooks)
 - GitHub push webhook delivers 200; `queueStatus` shows completed:N, failed:0.
 - `turbo run typecheck` green across all 4 apps.
 
+## Phase 7 — Corpus, MCP write-tools + auth, observability ✅ DONE
+
+> Closed the remaining review gaps: tiny corpus (4 docs), MCP read-only (no write/auth),
+> no observability.
+
+- [x] **Content corpus grown** — added 5 real docs (Caddy reverse proxy, BullMQ workers,
+  MCP Streamable HTTP, Postgres FTS, Cloudflare-525 debugging writeup) across
+  docs/writeups/notes. `bun run index` reindexed: **9 documents, 17 chunks, 5 new
+  revisions** (was 4 docs). Search/semantic/revisions now operate on a real corpus.
+- [x] **MCP write-tools + auth** — added `index_document`, `reindex_all`,
+  `restore_revision` (write, require `x-webhook-secret`) and `queue_status` (public).
+  `createMcpServer(authSecret?)` threads the request header; stdio keeps write tools
+  open (trusted local). Verified: unauthenticated `index_document` → `isError` +
+  "unauthorized"; authenticated → enqueues job, worker drains.
+- [x] **Observability** — `GET /metrics` on the API (Prometheus text exposition:
+  `mcpedia_uptime_seconds`, `mcpedia_queue_jobs{state=...}`). Exposed on the domain at
+  `https://wiki.asepharyana.my.id/metrics`. Public, safe to scrape.
+
+### Verification done (real, against live services)
+- `https://wiki.asepharyana.my.id/metrics` → 200 Prometheus text (uptime + queue gauges).
+- `tools/list` over MCP → 10 tools (6 read + 4 new). `index_document` auth gate works.
+- Worker drained the MCP-enqueued job (completed count incremented, failed:0).
+- `turbo run typecheck` green across all 4 apps.
+
 ## Decisions locked (from initial planning)
 
 - **Tooling:** bun workspaces + Turborepo (repo already used bun; pnpm rejected to minimize churn).

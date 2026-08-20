@@ -32,9 +32,12 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
     return;
   }
 
-  // Stateless: fresh server + transport per request.
+  // Stateless: fresh server + transport per request. The x-webhook-secret header
+  // (if present) is threaded into the server so write tools can require it.
+  const rawSecret = req.headers["x-webhook-secret"];
+  const authSecret = Array.isArray(rawSecret) ? rawSecret[0] : rawSecret;
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-  const server = createMcpServer();
+  const server = createMcpServer(authSecret);
   await server.connect(transport);
   await transport.handleRequest(req, res);
 });

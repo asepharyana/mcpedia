@@ -6,7 +6,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { db } from "@mcpedia/db";
 import { appRouter } from "./router";
 import type { Context } from "./trpc";
-import { enqueueIndexDoc, enqueueFullIndex } from "@mcpedia/queue";
+import { enqueueIndexDoc, enqueueFullIndex, getQueue, INDEX_QUEUE } from "@mcpedia/queue";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 
 // Fail fast: never expose an open git-sync endpoint. If the operator hasn't
@@ -21,6 +21,34 @@ const app = new Hono();
 
 // Health check (no auth — safe to expose).
 app.get("/health", (c) => c.json({ ok: true }));
+
+// --- Phase 7: Prometheus metrics (public, safe to scrape) ---
+const startedAt = Date.now();
+app.get("/metrics", async (c) => {
+  const queue = getQueue();
+  const [waiting, active, completed, failed, delayed] = await Promise.all([
+    queue.getWaitingCount(),
+    queue.getActiveCount(),
+    queue.getCompletedCount(),
+    queue.getFailedCount(),
+    queue.getDelayedCount(),
+  ]);
+  const lines = [
+    "# HELP mcpedia_uptime_seconds seconds since process start",
+    "# TYPE mcpedia_uptime_seconds gauge",
+    `mcpedia_uptime_seconds ${((Date.now() - startedAt) / 1000).toFixed(1)}`,
+    `# HELP mcpedia_queue_jobs queue job counts for "${INDEX_QUEUE}"`,
+    "# TYPE mcpedia_queue_jobs gauge",
+    `mcpedia_queue_jobs{state="waiting"} ${waiting}`,
+    `mcpedia_queue_jobs{state="active"} ${active}`,
+    `mcpedia_queue_jobs{state="completed"} ${completed}`,
+    `mcpedia_queue_jobs{state="failed"} ${failed}`,
+    `mcpedia_queue_jobs{state="delayed"} ${delayed}`,
+  ];
+  return c.text(lines.join("\n") + "\n", 200, {
+    "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+  });
+});
 
 // Shared guard for the git-sync webhooks: require `x-webhook-secret` header to
 // match the configured secret. Reject anything else with 401.

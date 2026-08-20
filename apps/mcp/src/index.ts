@@ -10,12 +10,24 @@ import {
   hybridSearch,
   keywordSearch,
   listRevisions,
+  getRevision,
+  restoreRevision,
   readContentFile,
 } from "@mcpedia/core";
+import { enqueueIndexDoc, enqueueFullIndex, getQueue, INDEX_QUEUE } from "@mcpedia/queue";
 import { CONTENT_ROOT } from "@mcpedia/config";
 import { join } from "node:path";
 
-export function createMcpServer(): McpServer {
+// Write tools require the caller to supply `x-webhook-secret` matching the
+// configured WEBHOOK_SECRET. Read tools are open. `authSecret` is threaded from
+// the HTTP transport (the request header); for stdio it is undefined (local use).
+function requireMcpAuth(authSecret?: string) {
+  if (!authSecret) {
+    throw new Error("unauthorized: this tool requires the x-webhook-secret header");
+  }
+}
+
+export function createMcpServer(authSecret?: string): McpServer {
   const server = new McpServer({
     name: "mcpedia",
     version: "0.1.0",
@@ -127,6 +139,88 @@ export function createMcpServer(): McpServer {
       const hits = await hybridSearch(query, limit ?? 10);
       return {
         content: [{ type: "text", text: JSON.stringify(hits, null, 2) }],
+      };
+    },
+  );
+
+  // --- Phase 7: mutating + admin tools (require x-webhook-secret) ---
+  server.registerTool(
+    "index_document",
+    {
+      description:
+        "Enqueue a single-document reindex job (parses, upserts, re-embeds). Requires the x-webhook-secret header. slug is the content path without extension, e.g. 'docs/caddy/reverse-proxy'.",
+      inputSchema: z.object({
+        slug: z.string().describe("Document slug, e.g. 'docs/caddy/reverse-proxy'"),
+      }),
+    },
+    async ({ slug }) => {
+      requireMcpAuth(authSecret);
+      const relPath = slug.endsWith(".md") || slug.endsWith(".mdx") ? slug : `${slug}.md`;
+      const job = await enqueueIndexDoc(relPath, "mcp");
+      return {
+        content: [{ type: "text", text: JSON.stringify({ ok: true, jobId: job.id, slug }) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "reindex_all",
+    {
+      description:
+        "Enqueue a full-corpus reindex (walks every content file). Requires the x-webhook-secret header.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      requireMcpAuth(authSecret);
+      const job = await enqueueFullIndex("mcp");
+      return {
+        content: [{ type: "text", text: JSON.stringify({ ok: true, jobId: job.id, kind: "full" }) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "restore_revision",
+    {
+      description:
+        "Restore a document revision by id (writes its body back into the live row + rebuilds chunks). Requires the x-webhook-secret header.",
+      inputSchema: z.object({ id: z.string().describe("Revision UUID") }),
+    },
+    async ({ id }) => {
+      requireMcpAuth(authSecret);
+      const result = await restoreRevision(id);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result ?? { ok: false, error: "not found" }) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "queue_status",
+    {
+      description: "Current BullMQ index-queue counts (waiting/active/completed/failed/delayed).",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const queue = getQueue();
+      const [waiting, active, completed, failed, delayed] = await Promise.all([
+        queue.getWaitingCount(),
+        queue.getActiveCount(),
+        queue.getCompletedCount(),
+        queue.getFailedCount(),
+        queue.getDelayedCount(),
+      ]);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              { queue: INDEX_QUEUE, counts: { waiting, active, completed, failed, delayed } },
+              null,
+              2,
+            ),
+          },
+        ],
       };
     },
   );
