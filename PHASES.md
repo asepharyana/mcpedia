@@ -439,9 +439,64 @@ new dep: github-slugger                    # matching slug algorithm for client-
 6. **Next.js SSG + DB** — client components (`"use client"`) don't block SSG
    during `next build` even if they fetch at runtime. Used for Sidebar (fetches
    /api/docs at runtime) to avoid ECONNREFUSED on CI.
+7. **MCP SDK zod-v4 skew** — `@modelcontextprotocol/sdk@1.30` compiled `.d.ts`
+   references zod-4 internal types. Pin `zod: ^4.0.0` in the MCP app (not
+   workspace-wide) to match the SDK.
+8. **StreamableHTTP transport headers** — use `requestInit: { headers: {...} }`
+   (not a top-level `headers` option) on `StreamableHTTPClientTransport`.
+9. **SDK type noise** — use type-cast helpers (`as AnyContent`, `as CallToolResult`)
+   for the SDK's content union types which don't expose `.content[0].text` cleanly.
 
 
-## Decisions locked (from initial planning)
+## Phase 12 — MCP Client + Full Layout Overhaul ✅ DONE
+
+> User: "buat mcp untuk client nya" (create the MCP client) + "fokus ke web nya"
+> (the user also said the UI was "boring, only style changed despite requesting
+> a full layout overhaul").
+
+### MCP Client (`apps/mcp-client/`)
+
+New independent bun workspace package that connects to the MCPedia MCP server
+over Streamable HTTP and provides both a programmatic API + CLI interface.
+
+- **`src/client.ts`** — `McpediaClient` class wrapping the SDK's
+  `StreamableHTTPClientTransport` + `Client`. Typed methods for all 13 tools:
+  `listDocuments`, `getDocument`, `search`, `semanticSearch`, `hybridSearch`,
+  `getRelated`, `indexDocument`, `reindexAll`, `queueStatus`, `createDocument`,
+  `updateDocument`, `deleteDocument`, `listTools`, `callTool`, `listResources`,
+  `readResource`, `disconnect`. Accepts custom headers (`x-webhook-secret` for
+  write tools).
+- **`src/index.ts`** — Interactive REPL (`bun run chat`): `/tools`, `/resources`,
+  `/search`, `/ss`, `/hybrid`, `/doc`, `/related`, `/create` (prompts), `/update`,
+  `/delete`, `/index`, `/status`, `/help`, `/quit`.
+- **`src/ask.ts`** — One-shot CLI (`bun run ask <cmd> [args]`) for scripting.
+- **`src/client.test.ts`** — 7 tests (mock SDK, no network/DB).
+
+### Layout Overhaul (Linear design system)
+
+Complete web UI redesign, not just style changes:
+
+- **Dark-mode-first** — near-black canvas (`#08090a`), white-opacity borders
+  (`rgba(255,255,255,0.05–0.08)`), Inter font with `cv01/ss03` features.
+- **Sticky header** — MCPedia brand + Docs/Search/Login + theme toggle.
+- **Sticky sidebar** (xl+) — hierarchical doc tree with indented children.
+- **Editorial homepage** — H1 + description, "Create Document" button,
+  section-organized doc listings with tag previews.
+- **Doc page** — breadcrumb nav links, title + metadata bar (author/date/tags),
+  TOC (CONTENTS), clean prose rendering, Related + History sections.
+- **Create/Edit** — `/create` page, `?edit=1` inline form (DocForm).
+- **Login** — `/login` with dark-themed form + brand-indigo CTA.
+- **Search** — `/search?q=` with dark-themed results + snippets.
+- **Docs index** — `/docs` listing all documents by section.
+
+### Gotchas
+- Next.js catch-all `[...slug]/edit/` is invalid — used `?edit=1` query param.
+- Next.js App Router: PUT/DELETE need `/api/docs/[...slug]/route.ts`.
+- tRPC fetch adapter expects JSON body directly (not JSON-RPC envelope).
+- `requireWriteAuth` env-constant bug: use `ctx.expectedSecret` from deps.
+- Next.js SSG + DB: Sidebar as `"use client"` to avoid DB connection during build.
+- MCP SDK zod-v4 skew: pin `zod: ^4.0.0` in the MCP app.
+- `StreamableHTTPClientTransport`: use `requestInit: { headers }` not top-level `headers`.
 
 - **Tooling:** bun workspaces + Turborepo (repo already used bun; pnpm rejected to minimize churn).
 - **DB:** imrnes Postgres `100.121.180.82:6432/mcpedia` for both dev and deploy; driver `prepare:false` (PgBouncer). Docker Compose reserved for future prod.
