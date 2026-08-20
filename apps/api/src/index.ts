@@ -1,5 +1,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import type { Context as HonoContext } from "hono";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { db } from "@mcpedia/db";
 import { appRouter } from "./router";
@@ -22,8 +24,25 @@ app.get("/health", (c) => c.json({ ok: true }));
 
 // Shared guard for the git-sync webhooks: require `x-webhook-secret` header to
 // match the configured secret. Reject anything else with 401.
-function assertWebhookAuth(c: { req: { header: (k: string) => string | undefined } }): boolean {
-  const provided = c.req.header("x-webhook-secret");
+// Verify a git-provider webhook. Supports GitHub's native HMAC signature
+// (X-Hub-Signature-256 = HMAC-SHA256 of the raw body with the webhook secret) and a
+// plain `x-webhook-secret` header for manual/local triggers. GitHub does NOT send a
+// custom header, so the HMAC path is what a real GitHub delivery will hit.
+async function assertWebhookAuth(c: HonoContext): Promise<boolean> {
+  if (!WEBHOOK_SECRET) return false;
+  const raw = c.req.raw;
+  const ghSig = raw.headers.get("x-hub-signature-256");
+  if (ghSig && ghSig.startsWith("sha256=")) {
+    try {
+      const body = await raw.text();
+      const mac = createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
+      const expected = `sha256=${mac}`;
+      return timingSafeEqual(Buffer.from(ghSig), Buffer.from(expected));
+    } catch {
+      return false;
+    }
+  }
+  const provided = raw.headers.get("x-webhook-secret");
   return provided != null && provided === WEBHOOK_SECRET;
 }
 
@@ -32,13 +51,13 @@ function assertWebhookAuth(c: { req: { header: (k: string) => string | undefined
 // POST /hooks/index?slug=... -> enqueue a single document reindex
 // Returns the created job id(s). The worker processes them asynchronously.
 app.post("/hooks/reindex", async (c) => {
-  if (!assertWebhookAuth(c)) return c.json({ ok: false, error: "unauthorized" }, 401);
+  if (!(await assertWebhookAuth(c))) return c.json({ ok: false, error: "unauthorized" }, 401);
   const job = await enqueueFullIndex("git-push");
   return c.json({ ok: true, jobId: job.id, kind: "full" });
 });
 
 app.post("/hooks/index", async (c) => {
-  if (!assertWebhookAuth(c)) return c.json({ ok: false, error: "unauthorized" }, 401);
+  if (!(await assertWebhookAuth(c))) return c.json({ ok: false, error: "unauthorized" }, 401);
   const slug = c.req.query("slug");
   if (!slug) return c.json({ ok: false, error: "slug query param required" }, 400);
   // slug is the relative path without extension, e.g. docs/websocket/contract

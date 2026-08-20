@@ -15,9 +15,9 @@
     "typecheck": "turbo run typecheck",
     "index": "bun run scripts/indexer.ts",
     "enqueue": "bun run scripts/enqueue.ts",
-    "worker": "bun --cwd apps/worker run start",
+    "worker": "/home/code/.bun/bin/bun --cwd apps/worker src/index.ts",
     "mcp": "bun --cwd apps/mcp run start",
-    "api": "bun --cwd apps/api run dev"
+    "api": "/home/code/.bun/bin/bun --cwd apps/api src/index.ts"
   },
   "devDependencies": {
     "@trpc/client": "^11.18.0",
