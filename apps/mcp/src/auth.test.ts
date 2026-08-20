@@ -46,6 +46,9 @@ mock.module("@mcpedia/core", () => ({
     return Promise.resolve({ slug: "docs/test", documentId: "d1" });
   },
   readContentFile: () => "",
+  createDocument: (_input: unknown) => Promise.resolve({ slug: "docs/test", title: "Test" }),
+  updateDocument: (_slug: string, _input: unknown) => Promise.resolve({ slug: "docs/test", title: "Test" }),
+  deleteDocument: (_slug: string) => Promise.resolve({ deleted: true }),
 }));
 
 // Import AFTER mocking so the modules resolve to our fakes.
@@ -150,6 +153,55 @@ test("queue_status is public (no auth needed)", async () => {
   await server.close();
 });
 
+// --- Phase 11: CRUD write tools auth gates ---
+
+test("create_document without auth secret -> tool returns isError", async () => {
+  const { client, server } = await connect(); // no secret
+  const res = await client.callTool({
+    name: "create_document",
+    arguments: { slug: "docs/test", title: "Test", section: "docs", body: "# Hi" },
+  });
+  expect(res.isError).toBe(true);
+  await client.close();
+  await server.close();
+});
+
+test("create_document with auth secret -> success", async () => {
+  const { client, server } = await connect("secret");
+  const res = await client.callTool({
+    name: "create_document",
+    arguments: { slug: "docs/test", title: "Test", section: "docs", body: "# Hi" },
+  });
+  expect(res.isError).toBeFalsy();
+  const text = (res.content as any[])[0].text;
+  const parsed = JSON.parse(text);
+  expect(parsed.ok).toBe(true);
+  await client.close();
+  await server.close();
+});
+
+test("update_document with auth secret -> success", async () => {
+  const { client, server } = await connect("secret");
+  const res = await client.callTool({
+    name: "update_document",
+    arguments: { slug: "docs/test", body: "# Updated" },
+  });
+  expect(res.isError).toBeFalsy();
+  await client.close();
+  await server.close();
+});
+
+test("delete_document without auth secret -> tool returns isError", async () => {
+  const { client, server } = await connect(); // no secret
+  const res = await client.callTool({
+    name: "delete_document",
+    arguments: { slug: "docs/test" },
+  });
+  expect(res.isError).toBe(true);
+  await client.close();
+  await server.close();
+});
+
 test("tool discovery works without auth (read tools present)", async () => {
   const { client, server } = await connect();
   const tools = await client.listTools();
@@ -166,6 +218,10 @@ test("tool discovery works without auth (read tools present)", async () => {
   expect(names).toContain("reindex_all");
   expect(names).toContain("restore_revision");
   expect(names).toContain("queue_status");
+  // Phase 11: CRUD write tools also present in discovery.
+  expect(names).toContain("create_document");
+  expect(names).toContain("update_document");
+  expect(names).toContain("delete_document");
   await client.close();
   await server.close();
 });

@@ -2,6 +2,7 @@ import { test, expect, beforeEach, mock } from "bun:test";
 import { createApp } from "../src/app";
 import type { ApiDeps } from "../src/app";
 import { DASHBOARD_HTML } from "../src/dashboard";
+import { Hono } from "hono";
 
 // -------------------------------------------------------------------
 // A fake queue that records calls and returns canned counts. Injected into
@@ -37,6 +38,37 @@ mock.module("@mcpedia/queue", () => ({
   enqueueFullIndex: async () => ({ id: "real-full" }),
   enqueueIndexDoc: async () => ({ id: "real-doc" }),
   INDEX_QUEUE: "mcpedia-index",
+}));
+
+// Mock @mcpedia/core so tRPC CRUD procedures don't hit Postgres.
+// Only the functions used by the router are faked; assertions record calls.
+const coreCalls = {
+  createDocument: [] as Array<any[]>,
+  updateDocument: [] as Array<any[]>,
+  deleteDocument: [] as Array<any[]>,
+};
+mock.module("@mcpedia/core", () => ({
+  keywordSearch: () => Promise.resolve([]),
+  getDocument: () => Promise.resolve(null),
+  getRelated: () => Promise.resolve([]),
+  hybridSearch: () => Promise.resolve([]),
+  semanticSearch: () => Promise.resolve([]),
+  listDocuments: () => Promise.resolve([]),
+  listRevisions: () => Promise.resolve([]),
+  getRevision: () => Promise.resolve(null),
+  restoreRevision: () => Promise.resolve(null),
+  createDocument: (...args: any[]) => {
+    coreCalls.createDocument.push(args);
+    return Promise.resolve({ slug: "docs/test", title: "Test" });
+  },
+  updateDocument: (...args: any[]) => {
+    coreCalls.updateDocument.push(args);
+    return Promise.resolve({ slug: args[0], title: "Updated" });
+  },
+  deleteDocument: (...args: any[]) => {
+    coreCalls.deleteDocument.push(args);
+    return Promise.resolve({ deleted: true });
+  },
 }));
 
 let SECRET: string;
@@ -130,4 +162,67 @@ test("GET /dashboard returns the self-contained HTML", async () => {
   expect(html).toContain("MCPedia Dashboard");
   expect(html).toContain("Index Queue (BullMQ)");
   expect(html).toContain(DASHBOARD_HTML.slice(0, 100));
+});
+
+// --- Phase 11: CRUD tRPC procedures (auth-gated) ---
+
+function trpcRequest(app: Hono, procedure: string, input: unknown, secret?: string) {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+  };
+  if (secret) headers["x-webhook-secret"] = secret;
+  // tRPC fetch adapter expects the procedure input directly as the JSON body
+  // (not wrapped in a JSON-RPC envelope). The procedure name comes from the URL.
+  return app.request("/trpc/" + procedure, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(input),
+  });
+}
+
+test("tRPC createDocument without secret -> rejects (tRPC error)", async () => {
+  const app = await createApp(makeDeps(SECRET, fakeQueue({})));
+  const res = await trpcRequest(app, "createDocument", {
+    slug: "docs/test", title: "Test", section: "docs", body: "# Hi"
+  });
+  // tRPC middleware throws Error -> JSON-RPC error (httpStatus 500, not 401)
+  expect(res.status).toBe(500);
+  expect(coreCalls.createDocument).toHaveLength(0);
+});
+
+test("tRPC createDocument with secret -> 200 + calls core", async () => {
+  const app = await createApp(makeDeps(SECRET, fakeQueue({})));
+  const res = await trpcRequest(app, "createDocument", {
+    slug: "docs/test", title: "Test", section: "docs", body: "# Hi"
+  }, SECRET);
+  expect(res.status).toBe(200);
+  expect(coreCalls.createDocument).toHaveLength(1);
+});
+
+test("tRPC updateDocument with secret -> 200 + calls core", async () => {
+  const app = await createApp(makeDeps(SECRET, fakeQueue({})));
+  const res = await trpcRequest(app, "updateDocument", {
+    slug: "docs/test", body: "# Updated"
+  }, SECRET);
+  expect(res.status).toBe(200);
+  expect(coreCalls.updateDocument).toHaveLength(1);
+});
+
+test("tRPC deleteDocument without secret -> rejects (tRPC error)", async () => {
+  const app = await createApp(makeDeps(SECRET, fakeQueue({})));
+  const res = await trpcRequest(app, "deleteDocument", {
+    slug: "docs/test"
+  });
+  // tRPC middleware throws Error -> JSON-RPC error (httpStatus 500, not 401)
+  expect(res.status).toBe(500);
+  expect(coreCalls.deleteDocument).toHaveLength(0);
+});
+
+test("tRPC deleteDocument with secret -> 200 + calls core", async () => {
+  const app = await createApp(makeDeps(SECRET, fakeQueue({})));
+  const res = await trpcRequest(app, "deleteDocument", {
+    slug: "docs/test"
+  }, SECRET);
+  expect(res.status).toBe(200);
+  expect(coreCalls.deleteDocument).toHaveLength(1);
 });

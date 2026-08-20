@@ -13,6 +13,9 @@ import {
   getRevision,
   restoreRevision,
   readContentFile,
+  createDocument,
+  updateDocument,
+  deleteDocument,
 } from "@mcpedia/core";
 import { enqueueIndexDoc, enqueueFullIndex, getQueue, INDEX_QUEUE } from "@mcpedia/queue";
 import { CONTENT_ROOT } from "@mcpedia/config";
@@ -191,6 +194,90 @@ export function createMcpServer(authSecret?: string): McpServer {
       const result = await restoreRevision(id);
       return {
         content: [{ type: "text", text: JSON.stringify(result ?? { ok: false, error: "not found" }) }],
+      };
+    },
+  );
+
+  // --- Phase 11: CRUD write tools (require x-webhook-secret) ---
+  server.registerTool(
+    "create_document",
+    {
+      description:
+        "Create a new document (writes markdown file + DB row + revision + chunks). Requires the x-webhook-secret header.",
+      inputSchema: z.object({
+        slug: z.string().describe("URL-safe slug (e.g. 'docs/my-new-doc')"),
+        title: z.string().describe("Document title"),
+        section: z.enum(["docs", "writeups", "research", "notes"]).describe("Content section"),
+        body: z.string().describe("Markdown body"),
+        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        status: z.enum(["published", "draft"]).optional(),
+        author: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      }),
+    },
+    async ({ slug, title, section, body, type, status, author, tags }) => {
+      requireMcpAuth(authSecret);
+      const doc = await createDocument({
+        slug,
+        title,
+        section,
+        body,
+        type,
+        status,
+        author,
+        tags,
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify({ ok: true, slug: doc.slug }) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "update_document",
+    {
+      description:
+        "Update an existing document (title, body, tags, status, etc.). Requires the x-webhook-secret header.",
+      inputSchema: z.object({
+        slug: z.string().describe("Document slug to update"),
+        title: z.string().optional(),
+        body: z.string().optional(),
+        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        status: z.enum(["published", "draft"]).optional(),
+        tags: z.array(z.string()).optional(),
+        author: z.string().optional(),
+      }),
+    },
+    async ({ slug, title, body, type, status, tags, author }) => {
+      requireMcpAuth(authSecret);
+      const doc = await updateDocument(slug, {
+        title,
+        body,
+        type,
+        status,
+        tags,
+        author,
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify({ ok: true, slug: doc.slug }) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "delete_document",
+    {
+      description:
+        "Delete a document (removes file + DB rows + chunks + revisions). Requires the x-webhook-secret header.",
+      inputSchema: z.object({
+        slug: z.string().describe("Document slug to delete"),
+      }),
+    },
+    async ({ slug }) => {
+      requireMcpAuth(authSecret);
+      const result = await deleteDocument(slug);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ ok: true, deleted: result.deleted }) }],
       };
     },
   );

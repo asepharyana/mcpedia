@@ -1,5 +1,6 @@
 import matter from "gray-matter";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type {
   DocSection,
   DocStatus,
@@ -62,4 +63,50 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
   };
 
   return { meta, body: content };
+}
+
+/**
+ * Serialize document metadata + body back to a markdown file with YAML
+ * frontmatter. The file is written to `absPath`, creating parent dirs as needed.
+ * The `relPath` is stored in frontmatter as `path` so the file is round-trip
+ * stable (parseFile → stringifyFile → parseFile yields the same meta+body).
+ *
+ * @param absPath absolute path on disk
+ * @param relPath path relative to content root (e.g. "docs/my/doc.md")
+ * @param meta    document metadata
+ * @param body    markdown body (frontmatter stripped — same as parseFile.body)
+ */
+export function stringifyFile(
+  absPath: string,
+  relPath: string,
+  meta: DocumentMeta,
+  body: string,
+): void {
+  const data: Record<string, unknown> = {
+    title: meta.title,
+    type: meta.type,
+    section: meta.section,
+    status: meta.status,
+    author: meta.author,
+    tags: meta.tags,
+    path: relPath,
+    created_at: meta.createdAt,
+    updated_at: meta.updatedAt,
+  };
+  const yaml = "---\n" +
+    Object.entries(data)
+      .map(([k, v]) => {
+        if (Array.isArray(v)) {
+          return `${k}: [${v.map((x) => `"${x}"`).join(", ")}]`;
+        }
+        if (typeof v === "string") {
+          return `${k}: ${JSON.stringify(v)}`;
+        }
+        return `${k}: ${v}`;
+      })
+      .join("\n") +
+    "\n---\n";
+  const content = yaml + body;
+  mkdirSync(dirname(absPath), { recursive: true });
+  writeFileSync(absPath, content, "utf8");
 }

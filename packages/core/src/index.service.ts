@@ -105,7 +105,7 @@ export function shouldCreateRevision(
  * (or no prior revision exists), create a new revision with an incremented
  * per-document revisionNo.
  */
-async function snapshotRevision(
+export async function snapshotRevision(
   slug: string,
   meta: ReturnType<typeof parseFile>["meta"],
   body: string,

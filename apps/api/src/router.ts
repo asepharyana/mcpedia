@@ -10,20 +10,22 @@ import {
   listRevisions,
   getRevision,
   restoreRevision,
+  createDocument,
+  updateDocument,
+  deleteDocument,
 } from "@mcpedia/core";
 import { getQueue, INDEX_QUEUE } from "@mcpedia/queue";
 import { getConnection, BULLMQ_PREFIX } from "@mcpedia/queue/client";
-import { WEBHOOK_SECRET } from "@mcpedia/config";
 
 // restoreRevision is a state-changing action (it rewrites the live document row
 // + rebuilds its chunks). It must NOT be callable anonymously over the network —
 // only the Web UI (which calls @mcpedia/core directly) and an operator with the
 // webhook secret may use it. Anything else is rejected.
 const requireWriteAuth = t.middleware(({ ctx, next }) => {
-  if (!WEBHOOK_SECRET) {
+  if (!ctx.expectedSecret) {
     throw new Error("WEBHOOK_SECRET is not configured; writes are disabled");
   }
-  if (ctx.webhookSecret !== WEBHOOK_SECRET) {
+  if (ctx.webhookSecret !== ctx.expectedSecret) {
     throw new Error("unauthorized: missing or invalid x-webhook-secret");
   }
   return next();
@@ -67,6 +69,46 @@ export const appRouter = router({
     .use(requireWriteAuth)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => restoreRevision(input.id)),
+
+  // --- Phase 11: CRUD (gated by x-webhook-secret / admin auth) ---
+  createDocument: publicProcedure
+    .use(requireWriteAuth)
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        title: z.string().min(1),
+        section: z.enum(["docs", "writeups", "research", "notes"]),
+        body: z.string(),
+        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        status: z.enum(["published", "draft"]).optional(),
+        author: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      }),
+    )
+    .mutation(async ({ input }) => createDocument(input)),
+
+  updateDocument: publicProcedure
+    .use(requireWriteAuth)
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        title: z.string().min(1).optional(),
+        body: z.string().optional(),
+        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        status: z.enum(["published", "draft"]).optional(),
+        tags: z.array(z.string()).optional(),
+        author: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { slug, ...rest } = input;
+      return updateDocument(slug, rest);
+    }),
+
+  deleteDocument: publicProcedure
+    .use(requireWriteAuth)
+    .input(z.object({ slug: z.string().min(1) }))
+    .mutation(async ({ input }) => deleteDocument(input.slug)),
 
   // --- Phase 3: async job status ---
   jobStatus: publicProcedure

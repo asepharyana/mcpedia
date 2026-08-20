@@ -50,6 +50,10 @@ export const QUEUE_PREFIX = process.env.QUEUE_PREFIX ?? "mcpedia";
 // this header (x-webhook-secret) to match, so an open port can't trigger reindex.
 export const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? "";
 
+// Phase 11: Admin password for web-based CRUD (create/update/delete documents).
+// Used by the Web UI login flow. MCP/API writes still use WEBHOOK_SECRET.
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
+
 // NOTE: we deliberately do NOT throw here if DATABASE_URL is empty. Throwing at
 // import time breaks `next build` (SSG data collection imports config before
 // any .env is present) and any runtime-injected env (containers/systemd set env

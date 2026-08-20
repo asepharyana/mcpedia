@@ -140,6 +140,7 @@ export async function createApp(deps?: ApiDeps): Promise<Hono> {
       createContext: (): Context => ({
         db, // real Postgres connection (read procedures use it via @mcpedia/db).
         webhookSecret: c.req.raw.headers.get("x-webhook-secret") ?? undefined,
+        expectedSecret: d.webhookSecret,
       }),
     }),
   );

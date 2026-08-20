@@ -1,0 +1,49 @@
+import { WEBHOOK_SECRET } from "@mcpedia/config";
+import { cookies } from "next/headers";
+import DocForm from "@/components/DocForm";
+import Link from "next/link";
+
+// GET /docs/create — show the create form.
+// Auth: requires the mcpedia_admin cookie (set via /api/auth/login).
+export default async function CreateDocPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ slug?: string; section?: string }>;
+}) {
+  const params = await searchParams;
+  const section =
+    (params.section as "docs" | "writeups" | "research" | "notes") ?? "docs";
+  const slug = params.slug ?? "";
+
+  // Auth check: cookie must be present.
+  const cookieStore = await cookies();
+  const adminCookie = cookieStore.get("mcpedia_admin");
+  if (!adminCookie?.value) {
+    return (
+      <div className="p-8 max-w-md mx-auto">
+        <h1 className="text-xl font-semibold mb-4">Authentication required</h1>
+        <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+          You must be logged in to create documents.
+        </p>
+        <Link
+          href="/login"
+          className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded"
+        >
+          Login
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">Create Document</h1>
+      <DocForm
+        mode="create"
+        slug={slug}
+        secret={WEBHOOK_SECRET}
+        initial={{ section }}
+      />
+    </div>
+  );
+}
