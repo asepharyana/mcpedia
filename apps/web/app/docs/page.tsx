@@ -154,10 +154,6 @@ export default async function DocsIndexPage() {
                   <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-2">
                     {d.title}
                   </h3>
-                  <p className="text-xs text-[#8a8f98] mb-3 line-clamp-2">
-                    {d.author && `by ${d.author} · `}
-                    {d.tags.slice(0, 2).map((t) => `#${t}`).join(" ") || "—"}
-                  </p>
                   <div className="flex flex-wrap gap-1">
                     {d.tags.slice(0, 4).map((t) => (
                       <span
