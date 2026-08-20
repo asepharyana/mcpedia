@@ -257,9 +257,10 @@ mod:    apps/api/src/index.ts (thin re-export), apps/api/src/router.ts (unchange
 renamed: apps/mcp/src/smoke.test.ts -> smoke.ts (fixed stale assertions)
 ```
 
-## Phase 10 — Audit + Bug fixes (live verification)
+## Phase 10 — Audit + Bug fixes + CI/CD deploy (live verification)
 
-> Full feature audit against live services. Found + fixed one real bug.
+> Full feature audit against live services. Found + fixed one real bug. Added the
+> missing CI/CD deploy pipeline.
 
 ### Bug: Frontmatter leaking into rendered doc pages + MCP doc body
 
@@ -271,7 +272,7 @@ renamed: apps/mcp/src/smoke.test.ts -> smoke.ts (fixed stale assertions)
   `---` frontmatter block. The indexer correctly stripped frontmatter via
   `parseFile` (gray-matter), but `getDocument` bypassed it. `ReactMarkdown`
   rendered `---` as `<hr/>` and the YAML as paragraphs.
-- **Fix:** `package/core/src/document.service.ts` — replaced `readFileSync` with
+- **Fix:** `packages/core/src/document.service.ts` — replaced `readFileSync` with
   `parseFile(abs, row.path).body` (same frontmatter stripping as the indexer).
   DB fallback (`row.body`) unchanged (already clean).
 - **Verified:** 9/9 doc pages render clean (no frontmatter `id:` text, proper
@@ -307,6 +308,41 @@ renamed: apps/mcp/src/smoke.test.ts -> smoke.ts (fixed stale assertions)
   slug is `notes/postgres/full-text-search`).
 - `restoreRevision` via tRPC needs the `x-webhook-secret` as an **HTTP header**
   (not inside the JSON body) — the fetch adapter reads `c.req.raw.headers`.
+
+### CI/CD deploy pipeline (Phase 10 addition)
+
+Before this audit the CI workflow only built+tested — it did **not** deploy.
+The VPS services were configured manually (systemd units in `deploy/`). Added a
+`deploy.yml` workflow per the nix-ci-deploy pattern (CI builds, deploy is separate):
+
+- **Trigger:** `workflow_run` on `CI` completion (only runs if CI passes).
+- **Build:** same as CI (bun install + typecheck + web build) on the GitHub
+  runner — fails fast if the build is broken.
+- **Deploy:** SSHes to the VPS over the public IP (`45.127.35.244`, not the
+  Tailscale `100.79.111.61` which GitHub runners can't reach), pulls from git,
+  reinstalls deps, rebuilds the web app, and restarts all 4 services via
+  `sudo systemctl restart` (NOPASSWD already configured for `code` user).
+- **Secrets** (GitHub repo secrets, not files): `SSH_DEPLOY_HOST`,
+  `SSH_DEPLOY_PORT`, `SSH_DEPLOY_USER`, `SSH_DEPLOY_KEY` (ed25519 deploy key).
+  Deploy key's public half is in `/home/code/.ssh/authorized_keys` on the VPS.
+
+#### Gotchas discovered + fixed during setup
+1. **SSH host = public IP, not Tailscale IP.** `100.79.111.61` is a Tailscale
+  `tailscale0` interface IP (CGNAT `100.64.0.0/10`); GitHub Actions runners can't
+  route to it. Use the real public IP `45.127.35.244` (port 22 open in iptables).
+2. **SSH key storage.** Storing the key via shell variable (`gh secret set --body "$VAR"`)
+  mangles newlines → `ssh.ParsePrivateKey: no key found`. Store directly from file:
+  `cat keyfile | gh secret set SSH_DEPLOY_KEY --repo ...`
+   Use `appleboy/ssh-action@v1` (not `@v1.1.0`) which correctly parses the key.
+   Add `-o IdentitiesOnly=yes` to prevent "too many authentication failures".
+3. **Key rotation.** Force-pushing amended commits changes the SHA but CI triggers
+  on `push: branches: [main]` (CI) + `workflow_run` (deploy) — both fire correctly.
+
+### Verification done (real)
+- CI `workflow_run` → Deploy triggers after CI success; all 4 services `active`.
+- All public URLs return 200: web `/`, `/docs/...`, `/search`, `/dashboard`,
+  `/metrics`, `/trpc/*`, `mcp.asepharyana.my.id/mcp`.
+- Doc pages render clean markdown (no frontmatter); History panel + Restore work.
 
 
 ## Decisions locked (from initial planning)
