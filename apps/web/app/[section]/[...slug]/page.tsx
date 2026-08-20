@@ -7,10 +7,7 @@ import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
 
-// Render at request time. The content lives in Postgres (populated by the
-// indexer/worker), which is not available at build time (CI has no DB), so we
-// opt out of static generation. At this corpus scale request-time rendering is
-// instant.
+// Render at request time (content in Postgres, not available at build time).
 export const dynamic = "force-dynamic";
 
 interface DocPageProps {
@@ -25,15 +22,22 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   const doc = await getDocument(fullSlug);
   if (!doc) notFound();
 
-  // Check auth for edit mode.
   const cookieStore = await cookies();
   const canEdit = cookieStore.get("mcpedia_admin")?.value != null;
 
-  // If ?edit=1 and authenticated → show the edit form.
+  // Edit mode: inline form
   if (edit === "1" && canEdit) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-6">Edit: {doc.title}</h1>
+      <div>
+        <Link
+          href={`/${doc.slug}`}
+          className="text-xs text-[#8a8f98] hover:text-[#d0d6e0] mb-4 inline-block"
+        >
+          ← Back to {doc.title}
+        </Link>
+        <h1 className="text-2xl font-light text-[#f7f8f8] mb-6">
+          Edit: {doc.title}
+        </h1>
         <DocForm
           mode="edit"
           slug={fullSlug}
@@ -56,38 +60,67 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   const revisions = await listRevisions(fullSlug, 10);
 
   return (
-    <article className="space-y-4">
-      <div>
-        <Link href="/" className="text-sm text-zinc-500 hover:underline">
-          ← Back
+    <article>
+      <div className="mb-2 flex items-center gap-2 text-xs text-[#62666d]">
+        <Link
+          href="/"
+          className="hover:text-[#d0d6e0] transition-colors"
+        >
+          MCPedia
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight mt-2">
-          {doc.title}
-        </h1>
-        <div className="text-xs text-zinc-500 mt-1">
-          {doc.tags.map((t) => `#${t}`).join(" ")} · {doc.author || "unknown"}
-        </div>
+        <span>/</span>
+        <Link
+          href="/docs"
+          className="hover:text-[#d0d6e0] transition-colors"
+        >
+          Docs
+        </Link>
         {canEdit && (
-          <Link
-            href={`/${doc.slug}?edit=1`}
-            className="inline-block mt-2 px-3 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          >
-            Edit
-          </Link>
+          <>
+            <span>/</span>
+            <Link
+              href={`/${doc.slug}?edit=1`}
+              className="hover:text-[#d0d6e0] text-[#8a8f98] hover:text-[#5e6ad2] transition-colors"
+            >
+              Edit
+            </Link>
+          </>
         )}
       </div>
 
-      <TOC source={doc.body} />
+      <h1 className="text-3xl font-light text-[#f7f8f8] mb-2">{doc.title}</h1>
 
-      <Markdown source={doc.body} />
+      <div className="flex items-center gap-3 text-xs text-[#62666d] mb-6">
+        <span>{doc.author || "unknown"}</span>
+        <span>•</span>
+        <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
+        {doc.tags.map((t) => (
+          <span
+            key={t}
+            className="px-2 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
+          >
+            #{t}
+          </span>
+        ))}
+      </div>
+
+      <div className="mb-8">
+        <TOC source={doc.body} />
+        <Markdown source={doc.body} />
+      </div>
 
       {related.length > 0 && (
-        <aside className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4">
-          <h2 className="text-sm font-medium mb-2">Related</h2>
-          <ul className="text-sm space-y-1">
+        <aside className="mt-12 pt-6 border-t border-[#1f2022]">
+          <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-3">
+            Related
+          </h2>
+          <ul className="space-y-2">
             {related.map((r) => (
               <li key={r.slug}>
-                <Link href={`/${r.slug}`} className="hover:underline">
+                <Link
+                  href={`/${r.slug}`}
+                  className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+                >
                   {r.title}
                 </Link>
               </li>
@@ -97,23 +130,25 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       )}
 
       {revisions.length > 0 && (
-        <aside className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-4">
-          <h2 className="text-sm font-medium mb-2">History</h2>
-          <ul className="text-sm space-y-1">
+        <aside className="mt-12 pt-6 border-t border-[#1f2022]">
+          <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-3">
+            History
+          </h2>
+          <ul className="text-sm">
             {revisions.map((rev) => (
               <li
                 key={rev.id}
-                className="flex items-center justify-between gap-2"
+                className="flex items-center justify-between gap-3 py-1.5 border-b border-[#141516]"
               >
-                <span className="text-zinc-600 dark:text-zinc-400">
+                <span className="text-[#8a8f98]">
                   #{rev.revisionNo} · {rev.reason} ·{" "}
-                  {new Date(rev.createdAt).toLocaleString()} · {rev.bodyLength} chars
+                  {new Date(rev.createdAt).toLocaleString()}
                 </span>
                 <form action="/api/revisions/restore" method="post">
                   <input type="hidden" name="id" value={rev.id} />
                   <button
                     type="submit"
-                    className="rounded border border-zinc-300 dark:border-zinc-700 px-2 py-0.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    className="text-xs text-[#d0d6e0] hover:text-[#5e6ad2] px-2 py-0.5 rounded border border-[#1f2022] hover:border-[#5e6ad2] transition-colors"
                   >
                     Restore
                   </button>

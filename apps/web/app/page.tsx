@@ -1,75 +1,82 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
-import type { DocumentMeta } from "@mcpedia/core";
 import { cookies } from "next/headers";
 
-// Render at request time — content is in Postgres (not available at build in
-// CI, which has no DB). Request-time rendering is instant at this corpus scale.
 export const dynamic = "force-dynamic";
 
-const SECTIONS = ["docs", "writeups", "research", "notes"] as const;
+const SECTIONS = [
+  { id: "docs", label: "Documentation" },
+  { id: "writeups", label: "Writeups" },
+  { id: "research", label: "Research" },
+  { id: "notes", label: "Notes" },
+] as const;
 
-export default async function Home() {
+export default async function HomePage() {
   const all = await listDocuments();
   const bySection = SECTIONS.map((section) => ({
-    section,
-    docs: all.filter((d) => d.section === section),
+    ...section,
+    docs: all.filter((d) => d.section === section.id),
   }));
 
-  // Auth check for edit/create buttons.
   const cookieStore = await cookies();
   const canEdit = cookieStore.get("mcpedia_admin")?.value != null;
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-2xl font-semibold tracking-tight">MCPedia</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          A content-first knowledge base. Humans read the Web UI; AI agents use
-          the MCP server. Both share one Core.
+    <div>
+      <div className="mb-12">
+        <h1 className="text-[2.5rem] font-light text-[#f7f8f8] mb-2">
+          MCPedia
+        </h1>
+        <p className="text-[#8a8f98] text-lg max-w-2xl">
+          A content-first knowledge base. Humans read the Web UI; AI agents
+          use the MCP server. Both share one Core.
         </p>
-        {canEdit && (
+      </div>
+
+      {canEdit && (
+        <div className="mb-8">
           <Link
             href="/create"
-            className="inline-block mt-3 px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#5e6ad2] text-white hover:bg-[#7170ff] transition-colors font-medium text-sm"
           >
             + Create Document
           </Link>
-        )}
-      </section>
+        </div>
+      )}
 
-      {bySection.map(({ section, docs }) => (
-        <section key={section}>
-          <h2 className="text-lg font-medium capitalize mb-2">{section}</h2>
-          {docs.length === 0 ? (
-            <p className="text-sm text-zinc-500">No documents yet.</p>
-          ) : (
-            <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {docs.map((d: DocumentMeta) => (
-              <li key={d.slug} className="py-2">
-                <Link
-                  href={`/${d.slug}`}
-                  className="hover:underline font-medium"
-                >
-                  {d.title}
-                </Link>
-                {canEdit && (
+      {bySection.map(({ id, label, docs }) => {
+        if (docs.length === 0) return null;
+        return (
+          <section key={id} className="mb-10">
+            <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-4">
+              {label}
+            </h2>
+            <ul className="space-y-px text-sm">
+              {docs.map((d) => (
+                <li key={d.slug}>
                   <Link
-                    href={`/${d.slug}/edit`}
-                    className="ml-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                    href={`/${d.slug}`}
+                    className="group flex items-start gap-3 py-2 text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
                   >
-                    ✎
+                    <span className="text-[#8a8f98] group-hover:text-[#d0d6e0] w-5 text-center mt-0.5">
+                      •
+                    </span>
+                    <span>
+                      <span className="font-medium">{d.title}</span>
+                      {d.tags.length > 0 && (
+                        <span className="mt-0.5 text-xs text-[#62666d]">
+                          {" "}
+                          {d.tags.slice(0, 3).map((t) => `#${t}`).join(" ")}
+                        </span>
+                      )}
+                    </span>
                   </Link>
-                )}
-                <div className="text-xs text-zinc-500 mt-0.5">
-                  {d.tags.map((t) => `#${t}`).join(" ")}
-                </div>
-              </li>
+                </li>
               ))}
             </ul>
-          )}
-        </section>
-      ))}
+          </section>
+        );
+      })}
     </div>
   );
 }

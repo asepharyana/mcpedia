@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 interface DocFormProps {
   mode: "create" | "edit";
   slug?: string;
-  secret: string; // injected server-side (never visible to the client JS bundle)
+  secret: string;
   initial?: {
     title?: string;
     body?: string;
@@ -39,20 +39,15 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
     .map((t) => t.trim())
     .filter(Boolean);
 
+  const baseInputCls =
+    "w-full px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const payload = {
-      title,
-      body,
-      section,
-      type,
-      status,
-      author,
-      tags: tagList,
-    };
+    const payload = { title, body, section, type, status, author, tags: tagList };
 
     try {
       let res: Response;
@@ -87,68 +82,50 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-800 dark:text-red-200">
+        <div className="p-3 rounded border border-[#274360] text-[#fca5a5] text-sm">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900"
-          required
-        />
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Title</label>
+        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={baseInputCls} required />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Slug</label>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Slug</label>
         <input
           type="text"
           value={slug ?? ""}
-          onChange={(e) => router.replace(`/docs/${section}/edit?slug=${e.target.value}`)}
-          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-800"
+          readOnly
+          className="w-full px-3 py-2 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
           placeholder={section}
         />
-        <p className="text-xs text-zinc-500 mt-1">URL-safe path under the section (e.g. "websocket/contract").</p>
+        <p className="text-xs text-[#62666d] mt-1">URL-safe path under the section.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Section</label>
-          <select
-            value={section}
-            onChange={(e) => setSection(e.target.value as typeof section)}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900"
-          >
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Section</label>
+          <select value={section} onChange={(e) => setSection(e.target.value as typeof section)} className={baseInputCls}>
             {SECTION_OPTIONS.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Type</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as typeof type)}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900"
-          >
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value as typeof type)} className={baseInputCls}>
             {TYPE_OPTIONS.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as typeof status)}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900"
-          >
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Status</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className={baseInputCls}>
             <option value="published">Published</option>
             <option value="draft">Draft</option>
           </select>
@@ -156,32 +133,21 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Tags</label>
-        <input
-          type="text"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900"
-          placeholder="comma, separated, tags"
-        />
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Tags</label>
+        <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} className={baseInputCls} placeholder="comma, separated, tags" />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Author</label>
-        <input
-          type="text"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          className="w-fill px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900"
-        />
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Author</label>
+        <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} className={baseInputCls} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Body (Markdown)</label>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Body (Markdown)</label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          className="w-full h-96 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 font-mono text-sm"
+          className="w-full h-96 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#d0d6e0] placeholder-[#62666d] font-mono text-sm focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
           placeholder="# Heading&#10;&#10;Content here..."
         />
       </div>
@@ -190,14 +156,14 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded hover:bg-zinc-800 disabled:opacity-50"
+          className="px-4 py-2 bg-[#5e6ad2] text-white rounded hover:bg-[#7170ff] disabled:opacity-50 font-medium text-sm"
         >
           {loading ? "Saving..." : mode === "create" ? "Create" : "Update"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="px-4 py-2 border border-[#23252a] rounded text-[#d0d6e0] hover:text-[#f7f8f8] hover:border-[#3e3e44] transition-colors text-sm"
         >
           Cancel
         </button>

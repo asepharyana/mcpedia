@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
-  title: "MCPedia",
-  description: "Knowledge base for humans and AI agents via MCP.",
+  title: "MCPedia — Knowledge base for humans and AI agents",
+  description:
+    "A content-first knowledge base. Humans read the Web UI; AI agents use the MCP server. Both share one Core.",
 };
 
 export default function RootLayout({
@@ -14,28 +16,51 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-        <header className="border-b border-zinc-200 dark:border-zinc-800">
-          <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
-            <Link href="/" className="font-semibold tracking-tight">
+    <html lang="en" className="h-full scroll-smooth">
+      <body className="min-h-screen bg-[#08090a] text-[#e2e4e7] font-inter">
+        <header className="sticky top-0 z-20 border-b border-[#1f2022]">
+          <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
+            <Link href="/" className="font-medium text-[#f7f8f8] text-lg">
               MCPedia
             </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link href="/" className="hover:underline">
-                Home
+            <nav className="flex items-center gap-6 text-sm">
+              <Link
+                href="/docs"
+                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+              >
+                Docs
               </Link>
-              <Link href="/search" className="hover:underline">
+              <Link
+                href="/search"
+                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+              >
                 Search
               </Link>
-              <Link href="/docs" className="hover:underline">
-                Docs
+              <Link
+                href="/login"
+                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+              >
+                Login
               </Link>
               <ThemeToggle />
             </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-5xl w-full flex-1 px-4 py-8">{children}</main>
+
+        <div className="mx-auto max-w-7xl">
+          <div className="flex">
+            {/* Sticky sidebar for doc navigation */}
+            <aside className="hidden xl:block w-64 shrink-0 border-r border-[#1f2022]">
+              <Sidebar />
+            </aside>
+
+            <main className="flex-1 min-w-0">
+              <div className="px-8 py-10 max-w-3xl mx-auto">
+                {children}
+              </div>
+            </main>
+          </div>
+        </div>
       </body>
     </html>
   );

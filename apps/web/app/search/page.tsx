@@ -1,91 +1,86 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { keywordSearch, hybridSearch } from "@mcpedia/core";
 
-// Render at request time — queries Postgres on each request (not at build,
-// where CI has no DB).
-export const dynamic = "force-dynamic";
+interface DocHit {
+  slug: string;
+  title: string;
+  section: string;
+  score: number;
+  snippet: string;
+}
 
-type Mode = "keyword" | "hybrid";
+export default function SearchPage() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<DocHit[]>([]);
+  const [loading, setLoading] = useState(false);
 
-export default async function SearchPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; mode?: string }>;
-}) {
-  const { q, mode } = await searchParams;
-  const query = q?.trim() ?? "";
-  const activeMode: Mode = mode === "hybrid" ? "hybrid" : "keyword";
+  async function handleSearch(q: string) {
+    if (!q.trim()) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setResults(data.results || []);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const hits = query
-    ? activeMode === "hybrid"
-      ? await hybridSearch(query, 30)
-      : await keywordSearch(query, 30)
-    : [];
-
-  const toggle = (m: Mode) => `/search?q=${encodeURIComponent(query)}&mode=${m}`;
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setQuery(val);
+    handleSearch(val);
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Search</h1>
-        <div className="flex rounded overflow-hidden border border-zinc-300 dark:border-zinc-700 text-sm">
-          <Link
-            href={toggle("keyword")}
-            className={`px-3 py-1.5 ${activeMode === "keyword" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
-          >
-            Keyword
-          </Link>
-          <Link
-            href={toggle("hybrid")}
-            className={`px-3 py-1.5 ${activeMode === "hybrid" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
-          >
-            Hybrid
-          </Link>
-        </div>
+    <div>
+      <h1 className="text-2xl font-light text-[#f7f8f8] mb-6">Search</h1>
+      <div className="mb-6">
+        <input
+          type="search"
+          value={query}
+          onChange={handleChange}
+          placeholder="Search documents..."
+          className="w-full px-4 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
+          autoFocus
+        />
       </div>
 
-      <form method="get" className="flex gap-2">
-        <input
-          name="q"
-          defaultValue={query}
-          placeholder="e.g. websocket contract typescript"
-          className="flex-1 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
-        />
-        <input type="hidden" name="mode" value={activeMode} />
-        <button
-          type="submit"
-          className="rounded bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-4 py-2 text-sm font-medium"
-        >
-          Search
-        </button>
-      </form>
+      {loading && <p className="text-[#8a8f98]">Searching...</p>}
 
-      {query && hits.length === 0 && (
-        <p className="text-sm text-zinc-500">No results for “{query}”.</p>
+      {!loading && results.length === 0 && query && (
+        <p className="text-[#8a8f98]">No results for "{query}".</p>
       )}
 
-      <ul className="space-y-3">
-        {hits.map((h) => (
-          <li
-            key={h.doc.slug}
-            className="rounded border border-zinc-200 dark:border-zinc-800 p-3"
-          >
-            <Link
-              href={`/${h.doc.slug}`}
-              className="font-medium hover:underline"
-            >
-              {h.doc.title}
-            </Link>
-            {/* Snippet comes from Postgres ts_headline (keyword mode) or our own
-                chunk content (hybrid mode) — both trusted, first-party data, not
-                user input. The only markup is <mark> from ts_headline. */}
-            <p
-              className="text-sm text-zinc-600 dark:text-zinc-400 mt-1"
-              dangerouslySetInnerHTML={{ __html: h.snippet }}
-            />
-          </li>
-        ))}
-      </ul>
+      {!loading && results.length > 0 && (
+        <ul className="space-y-3">
+          {results.map((r) => (
+            <li key={r.slug} className="border-b border-[#1f2022] pb-3">
+              <Link
+                href={`/${r.slug}`}
+                className="text-[#f7f8f8] hover:text-[#7170ff] font-medium transition-colors"
+              >
+                {r.title}
+              </Link>
+              <span className="block text-xs text-[#62666d]">
+                {r.section} · {Math.round(r.score * 100)}% match
+              </span>
+              {r.snippet && (
+                <p className="mt-1 text-sm text-[#8a8f98] line-clamp-2">
+                  {r.snippet}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

@@ -1,22 +1,44 @@
 @import "tailwindcss";
 
-/* Enable class-based dark mode (toggled by ThemeToggle via .dark on <html>). */
+/* Linear design system: dark-mode-first */
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme inline {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --color-background: #08090a;
+  --color-surface: #0f1011;
+  --color-elevated: #191a1b;
+  --color-border: #1f2022;
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-standard: rgba(255, 255, 255, 0.08);
+
+  --color-text-primary: #f7f8f8;
+  --color-text-secondary: #d0d6e0;
+  --color-text-tertiary: #8a8f98;
+  --color-text-quaternary: #62666d;
+
+  --color-brand: #5e6ad2;
+  --color-accent: #7170ff;
+  --color-accent-hover: #828fff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv01", "ss03";
+}
+
+/* Inter font loading */
+@font-face {
+  font-family: "Inter";
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/inter/v19/UcCO3FwrK3iLTeHuS_nVMrNCGw.woff2") format("woff2");
 }
