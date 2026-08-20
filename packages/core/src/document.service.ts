@@ -2,7 +2,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@mcpedia/db";
 import { documentChunks, documents } from "@mcpedia/db/schema";
 import { CONTENT_ROOT } from "@mcpedia/config";
-import { existsSync, readFileSync } from "node:fs";
+import { parseFile } from "@mcpedia/parser";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type {
   Document,
@@ -33,8 +34,16 @@ export async function getDocument(slug: string): Promise<Document | null> {
   const [row] = await db.select().from(documents).where(eq(documents.slug, slug));
   if (!row) return null;
   // Prefer the on-disk file (source of truth); fall back to stored body.
+  // Use parseFile (gray-matter) so the frontmatter is stripped — matches what
+  // the indexer stores and what ReactMarkdown expects.
   const abs = join(CONTENT_ROOT, row.path);
-  const body = existsSync(abs) ? readFileSync(abs, "utf8") : row.body;
+  let body: string;
+  if (existsSync(abs)) {
+    const { body: parsedBody } = parseFile(abs, row.path);
+    body = parsedBody;
+  } else {
+    body = row.body;
+  }
   return { ...toMeta(row), body };
 }
 
