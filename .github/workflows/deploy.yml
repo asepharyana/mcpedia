@@ -1,13 +1,11 @@
 name: Deploy
 
-# Only run after the CI workflow succeeds on the same push to main.
 on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
     branches: [main]
 
-# Skip if CI failed — the condition below gates on workflow_run's conclusion.
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -45,15 +43,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Add VPS host key (non-interactive)
-          ssh-keyscan -p "$SSH_DEPLOY_PORT" "$SSH_DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          # Deploy: pull latest, reinstall, rebuild web, restart all 4 services
+          ssh-keyscan -p "$SSH_DEPLOY_PORT" "$SSH_DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
           ssh -i ~/.ssh/deploy_key -p "$SSH_DEPLOY_PORT" "$SSH_DEPLOY_USER@$SSH_DEPLOY_HOST" \
-            'set -e;
-             cd /home/code/mcpedia &&
-             git pull origin main &&
-             /home/code/.bun/bin/bun install --frozen-lockfile &&
-             /home/code/.bun/bin/bun --cwd apps/web run build &&
-             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker &&
-             sleep 3 &&
+            'set -e
+             cd /home/code/mcpedia
+             git pull origin main
+             /home/code/.bun/bin/bun install --frozen-lockfile
+             /home/code/.bun/bin/bun --cwd apps/web run build
+             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
+             sleep 3
              systemctl --no-pager status mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker --no-legend'
