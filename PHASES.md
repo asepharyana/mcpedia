@@ -391,13 +391,23 @@ The VPS services were configured manually (systemd units in `deploy/`). Added a
 ### Files changed
 ```
 new: apps/web/app/api/auth/login/route.ts  # cookie-based login + verify
-new: apps/web/app/api/docs/route.ts        # REST CRUD
+new: apps/web/app/api/docs/route.ts        # GET (list) + POST (create)
+new: apps/web/app/api/docs/[...slug]/route.ts  # PUT (update) + DELETE (delete)
 new: apps/web/app/components/DocForm.tsx   # shared create/edit form
+new: apps/web/app/components/Sidebar.tsx   # client-side doc navigation tree
+new: apps/web/app/components/TOC.tsx       # auto-generated TOC (github-slugger)
+new: apps/web/app/components/ThemeToggle.tsx  # dark mode toggle
 new: apps/web/app/create/page.tsx          # create UI
 new: apps/web/app/login/page.tsx           # login UI
-new: apps/web/app/components/TOC.tsx       # auto-generated TOC
-mod: apps/web/app/page.tsx                 # edit/create buttons (auth-gated)
-mod: apps/web/app/[section]/[...slug]/page.tsx # ?edit=1 + TOC + dark mode
+new: apps/web/app/docs/page.tsx            # docs index listing
+mod: apps/web/app/layout.tsx               # Linear design: sticky header + sidebar + dark canvas
+mod: apps/web/app/page.tsx                 # editorial-style homepage w/ section doc listings
+mod: apps/web/app/[section]/[...slug]/page.tsx # Linear doc layout (breadcrumb, TOC, metadata)
+mod: apps/web/app/search/page.tsx          # dark-themed search w/ result cards
+mod: apps/web/app/components/Markdown.tsx  # Linear typography + rehype-slug
+mod: apps/web/app/globals.css              # Inter font, Linear dark-mode-first palette
+mod: apps/web/app/app/api/docs/route.ts    # dual auth: cookie OR x-webhook-secret
+mod: apps/web/app/api/docs/[...slug]/route.ts
 mod: packages/core/src/document.service.ts # createDocument/updateDocument/deleteDocument
 mod: packages/core/src/index.service.ts    # export snapshotRevision
 mod: packages/core/src/index.ts            # re-export CRUD + types
@@ -410,6 +420,8 @@ mod: apps/mcp/src/index.ts                 # 3 new CRUD write tools
 mod: apps/mcp/src/auth.test.ts             # +4 CRUD auth tests
 mod: apps/api/src/app.test.ts              # +5 tRPC CRUD auth tests
 mod: .env.example                          # ADMIN_PASSWORD
+new dep: rehype-slug                       # heading anchors for TOC links
+new dep: github-slugger                    # matching slug algorithm for client-side TOC
 ```
 
 ### Gotchas / lessons
@@ -419,9 +431,14 @@ mod: .env.example                          # ADMIN_PASSWORD
    (module-level env constant) is untestable. Fix: thread `expectedSecret` through
    `Context` from `createApp(deps)`.
 3. **Next.js catch-all routes** — `[...slug]/edit/` is invalid (catch-all must be
-   last). Used `?edit=1` query param instead.
-4. **`stringifyFile` YAML** — quote string values with `JSON.stringify` for
+   last). Used `?edit=1` query param instead. Also, Next.js App Router won't match
+   PUT/DELETE on `/api/docs/route.ts` for nested paths — need a dynamic segment
+   `/api/docs/[...slug]/route.ts`.
+5. **`stringifyFile` YAML** — quote string values with `JSON.stringify` for
    special-char safety; arrays use `[...]` syntax.
+6. **Next.js SSG + DB** — client components (`"use client"`) don't block SSG
+   during `next build` even if they fetch at runtime. Used for Sidebar (fetches
+   /api/docs at runtime) to avoid ECONNREFUSED on CI.
 
 
 ## Decisions locked (from initial planning)
