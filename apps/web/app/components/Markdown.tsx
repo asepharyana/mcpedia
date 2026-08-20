@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 
 export default function Markdown({ source }: { source: string }) {
@@ -12,9 +13,24 @@ export default function Markdown({ source }: { source: string }) {
       prose-pre:bg-[#191a1b] prose-pre:border prose-pre:border-[#23252a] prose-pre:rounded-lg
       prose-pre code:bg-transparent prose-pre code:p-0 prose-pre code:text-sm
       prose-blockquote:border-l-[#23252a] prose-blockquote:text-[#a0a4a8]
-      prose-ul:text-[#d0d6e0] prose-ol:text-[#d0d6e0]"
+      prose-ul:text-[#d0d6e0] prose-ol:text-[#d0d6e0]
+      prose-table:border-collapse [&>_table]:overflow-x-auto
+      prose-th:bg-[#191a1b] prose-th:text-[#f7f8f8] prose-th:font-medium
+      prose-td:border-[#1f2022] prose-th:border-[#1f2022]"
     >
-      <ReactMarkdown rehypePlugins={[rehypeSlug]}>{source}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSlug]}
+        components={{
+          table: ({ node, ...props }) => (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse" {...props} />
+            </div>
+          ),
+        }}
+      >
+        {source}
+      </ReactMarkdown>
     </div>
   );
 }
