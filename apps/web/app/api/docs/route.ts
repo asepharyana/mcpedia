@@ -68,14 +68,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { standard, extraFields } = splitPayload(body);
-    // Coerce all extra field values to strings (form sends strings; API/MCP may send objects).
-    const stringExtra: Record<string, string> = {};
-    for (const [k, v] of Object.entries(extraFields)) {
-      if (v !== undefined && v !== null) {
-        stringExtra[k] = typeof v === "string" ? v : JSON.stringify(v);
-      }
-    }
-    const doc = await createDocument({ ...standard, extraFields: stringExtra } as any);
+    const doc = await createDocument({ ...standard, extraFields } as any);
     return NextResponse.json({ ok: true, slug: doc.slug, doc });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

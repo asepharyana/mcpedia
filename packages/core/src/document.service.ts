@@ -128,7 +128,7 @@ export interface CreateDocInput {
   status?: DocStatus;
   author?: string;
   tags?: string[];
-  extraFields?: Record<string, string>;
+  extraFields?: Record<string, unknown>;
 }
 
 export interface UpdateDocInput {
@@ -138,7 +138,7 @@ export interface UpdateDocInput {
   status?: DocStatus;
   tags?: string[];
   author?: string;
-  extraFields?: Record<string, string>;
+  extraFields?: Record<string, unknown>;
 }
 
 /** Validate that a slug is safe (no path traversal, only [a-z0-9/_-]). */

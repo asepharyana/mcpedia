@@ -16,7 +16,8 @@ export interface DocumentMeta {
   updatedAt: string; // ISO
   // Dynamic custom frontmatter fields (e.g. CTF: event, challenge, category,
   // difficulty, points). Content creators add arbitrary key-value pairs.
-  extraFields?: Record<string, string>;
+  // Values can be strings, numbers, booleans, arrays, or objects.
+  extraFields?: Record<string, unknown>;
 }
 
 export interface Document extends DocumentMeta {

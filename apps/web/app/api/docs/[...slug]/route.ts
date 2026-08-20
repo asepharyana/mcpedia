@@ -24,15 +24,15 @@ const STANDARD_FIELDS = new Set([
 
 function splitPayload(body: Record<string, unknown>): {
   standard: Record<string, unknown>;
-  extraFields: Record<string, string>;
+  extraFields: Record<string, unknown>;
 } {
   const standard: Record<string, unknown> = {};
-  const extraFields: Record<string, string> = {};
+  const extraFields: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(body)) {
     if (STANDARD_FIELDS.has(key)) {
       standard[key] = value;
     } else if (value !== undefined && value !== null) {
-      extraFields[key] = typeof value === "string" ? value : JSON.stringify(value);
+      extraFields[key] = value;
     }
   }
   return { standard, extraFields };
