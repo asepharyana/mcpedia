@@ -19,6 +19,7 @@
     "mcp": "bun --cwd apps/mcp run start",
     "mcp:http": "/home/code/.bun/bin/bun --cwd apps/mcp src/http.ts",
     "api": "/home/code/.bun/bin/bun --cwd apps/api src/index.ts",
+    "db:migrate": "/home/code/.bun/bin/bun --cwd packages/db run db:migrate",
     "test": "turbo run test"
   },
   "devDependencies": {

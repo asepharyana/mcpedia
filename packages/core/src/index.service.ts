@@ -48,6 +48,7 @@ export async function indexContentFile(
       tags: meta.tags,
       path: meta.path,
       body,
+      extraFields: meta.extraFields ?? {},
       createdAt: new Date(meta.createdAt || nowIso),
       updatedAt: new Date(nowIso),
     })
@@ -62,6 +63,7 @@ export async function indexContentFile(
         tags: meta.tags,
         path: meta.path,
         body,
+        extraFields: meta.extraFields ?? {},
         updatedAt: new Date(nowIso),
       },
     });

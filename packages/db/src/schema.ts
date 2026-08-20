@@ -43,6 +43,10 @@ export const documents = pgTable(
       ),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    // Dynamic custom metadata fields (JSONB) — e.g. CTF writeup fields
+    // (event, challenge, category, difficulty, points). Content creators
+    // add arbitrary key-value pairs that are rendered as dynamic badges.
+    extraFields: jsonb("extra_fields").notNull().default(sql`'{}'::jsonb`),
   },
   (t) => ({
     searchIdx: index("documents_search_idx").using("gin", t.searchVector),

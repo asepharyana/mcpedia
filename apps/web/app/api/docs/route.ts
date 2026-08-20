@@ -24,6 +24,33 @@ function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 }
 
+// Standard DocumentMeta field names — NOT custom fields.
+const STANDARD_FIELDS = new Set([
+  "slug", "title", "body", "section", "type", "status",
+  "author", "tags", "createdAt", "updatedAt", "id", "path",
+]);
+
+/**
+ * Separate a flat payload into standard CRUD fields + extraFields (custom metadata).
+ * The DocForm sends all fields flat — any key not in STANDARD_FIELDS becomes an
+ * entry in extraFields, which is stored as JSONB in the documents table.
+ */
+function splitPayload(body: Record<string, unknown>): {
+  standard: Record<string, unknown>;
+  extraFields: Record<string, unknown>;
+} {
+  const standard: Record<string, unknown> = {};
+  const extraFields: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (STANDARD_FIELDS.has(key)) {
+      standard[key] = value;
+    } else {
+      extraFields[key] = value;
+    }
+  }
+  return { standard, extraFields };
+}
+
 // GET /api/docs — list all documents (for sidebar navigation).
 export async function GET() {
   const docs = await listDocuments();
@@ -36,11 +63,19 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   if (!body) {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status:400 });
+    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
   try {
-    const doc = await createDocument(body);
+    const { standard, extraFields } = splitPayload(body);
+    // Coerce all extra field values to strings (form sends strings; API/MCP may send objects).
+    const stringExtra: Record<string, string> = {};
+    for (const [k, v] of Object.entries(extraFields)) {
+      if (v !== undefined && v !== null) {
+        stringExtra[k] = typeof v === "string" ? v : JSON.stringify(v);
+      }
+    }
+    const doc = await createDocument({ ...standard, extraFields: stringExtra } as any);
     return NextResponse.json({ ok: true, slug: doc.slug, doc });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

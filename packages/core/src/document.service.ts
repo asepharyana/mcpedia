@@ -128,6 +128,7 @@ export interface CreateDocInput {
   status?: DocStatus;
   author?: string;
   tags?: string[];
+  extraFields?: Record<string, string>;
 }
 
 export interface UpdateDocInput {
@@ -137,6 +138,7 @@ export interface UpdateDocInput {
   status?: DocStatus;
   tags?: string[];
   author?: string;
+  extraFields?: Record<string, string>;
 }
 
 /** Validate that a slug is safe (no path traversal, only [a-z0-9/_-]). */
@@ -186,6 +188,7 @@ export async function createDocument(input: CreateDocInput): Promise<DocumentMet
     path: relPath,
     createdAt: nowIso,
     updatedAt: nowIso,
+    extraFields: input.extraFields ?? {},
   };
 
   // Write file to disk first (source of truth).
@@ -204,6 +207,7 @@ export async function createDocument(input: CreateDocInput): Promise<DocumentMet
     tags: meta.tags,
     path: meta.path,
     body: input.body,
+    extraFields: input.extraFields ?? {},
     createdAt: new Date(meta.createdAt),
     updatedAt: new Date(meta.updatedAt),
   });
@@ -241,6 +245,11 @@ export async function updateDocument(
     tags: input.tags ?? doc.tags,
     author: input.author ?? doc.author,
     updatedAt,
+    // Merge: new extraFields override old ones; merge with existing
+    extraFields:
+      input.extraFields !== undefined
+        ? { ...doc.extraFields, ...input.extraFields }
+        : doc.extraFields,
   };
   const body = input.body ?? doc.body;
 
@@ -259,6 +268,7 @@ export async function updateDocument(
       status: updated.status,
       author: updated.author,
       tags: updated.tags,
+      extraFields: input.extraFields ?? doc.extraFields ?? {},
       body,
       updatedAt: new Date(updatedAt),
     })

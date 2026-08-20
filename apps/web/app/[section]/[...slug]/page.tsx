@@ -29,6 +29,71 @@ const SECTION_ICON: Record<string, string> = {
   notes: "📌",
 };
 
+/**
+ * Render any extra/custom frontmatter fields as badges.
+ * This makes the system dynamic — the content creator decides what metadata
+ * to include, not the UI template. Standard fields (title, author, tags, etc.)
+ * are handled explicitly; any OTHER keys in frontmatter become badges here.
+ */
+function CustomFieldBadges({
+  doc,
+  standardKeys,
+}: {
+  doc: Record<string, unknown>;
+  standardKeys: Set<string>;
+}) {
+  // Convert doc to a plain record to get index signature
+  const docRecord: Record<string, unknown> = { ...doc } as Record<string, unknown>;
+  const customEntries = Object.entries(docRecord).filter(
+    ([k, v]) => !standardKeys.has(k) && v !== undefined && v !== null && v !== "" && !k.startsWith("_"),
+  );
+
+  if (customEntries.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-3">
+      {customEntries.map(([key, value]) => {
+        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
+        let colorClass = "bg-[#191a1b] border-[#23252a] text-[#d0d6e0]";
+        let prefix = "";
+
+        // Auto-style common CTF fields based on key name
+        if (key === "points") {
+          prefix = "pts";
+          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+        } else if (key === "difficulty" || key === "level") {
+          const v = String(value).toLowerCase();
+          if (v === "easy")
+            colorClass = "bg-green-500/10 border-green-500/30 text-green-400";
+          else if (v === "medium")
+            colorClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
+          else if (v === "hard")
+            colorClass = "bg-red-500/10 border-red-500/30 text-red-400";
+          else
+            colorClass = "bg-[#191a1b] border-[#23252a] text-[#d0d6e0]";
+        } else if (key === "event" || key === "category") {
+          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+        }
+
+        const displayValue = Array.isArray(value)
+          ? value.join(", ")
+          : typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value);
+
+        return (
+          <span
+            key={key}
+            className={`px-2 py-0.5 border rounded text-xs ${colorClass}`}
+          >
+            {prefix ? `${displayValue} ${prefix}` : `${label}: ${displayValue}`}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export default async function DocPage({ params, searchParams }: DocPageProps) {
   const { section, slug } = await params;
   const { edit } = await searchParams;
@@ -38,6 +103,13 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
   const cookieStore = await cookies();
   const canEdit = cookieStore.get("mcpedia_admin")?.value != null;
+
+  // Standard frontmatter keys that are rendered explicitly in the template.
+  // Any other key in the document metadata becomes a dynamic badge.
+  const STANDARD_KEYS = new Set([
+    "id", "slug", "title", "type", "section", "status",
+    "author", "tags", "path", "createdAt", "updatedAt",
+  ]);
 
   // Edit mode: inline form
   if (edit === "1" && canEdit) {
@@ -106,7 +178,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           {doc.title}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-[#62666d] mb-6">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-[#62666d] mb-3">
           <span className="text-[#d0d6e0]">{doc.author || "unknown"}</span>
           <span>·</span>
           <time dateTime={doc.updatedAt}>
@@ -125,6 +197,9 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
             </span>
           ))}
         </div>
+
+        {/* Dynamic custom field badges — content creator controls what shows */}
+        <CustomFieldBadges doc={{ ...doc }} standardKeys={STANDARD_KEYS} />
       </div>
 
       {/* Content + TOC */}

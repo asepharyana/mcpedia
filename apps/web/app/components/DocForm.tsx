@@ -34,6 +34,12 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
   const [tags, setTags] = useState(initial?.tags?.join(", ") ?? "");
   const [author, setAuthor] = useState(initial?.author ?? "");
 
+  // Dynamic custom fields — content creators can add any metadata they want
+  // (e.g. CTF: event, challenge, category, difficulty, points, team_name, ...)
+  const [customFields, setCustomFields] = useState<
+    Array<{ key: string; value: string }>
+  >([]);
+
   const tagList = tags
     .split(",")
     .map((t) => t.trim())
@@ -42,27 +48,68 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
   const baseInputCls =
     "w-full px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]";
 
+  function addCustomField() {
+    setCustomFields([...customFields, { key: "", value: "" }]);
+  }
+
+  function updateCustomField(index: number, field: "key" | "value", value: string) {
+    const updated = [...customFields];
+    updated[index][field] = value;
+    setCustomFields(updated);
+  }
+
+  function removeCustomField(index: number) {
+    setCustomFields(customFields.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const payload = { title, body, section, type, status, author, tags: tagList };
+    // Build payload with custom fields flattened at top level
+    const payload: Record<string, unknown> = {
+      title,
+      body,
+      section,
+      type,
+      status,
+      author,
+      tags: tagList,
+    };
+
+    // Merge dynamic custom fields
+    for (const field of customFields) {
+      if (field.key.trim() && field.value.trim()) {
+        payload[field.key.trim()] = field.value.trim();
+      }
+    }
 
     try {
       let res: Response;
       if (mode === "create") {
-        const slugVal = slug ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        const slugVal =
+          slug ??
+          title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
         res = await fetch("/api/docs", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-webhook-secret": secret },
+          headers: {
+            "Content-Type": "application/json",
+            "x-webhook-secret": secret,
+          },
           body: JSON.stringify({ slug: slugVal, ...payload }),
         });
       } else {
         const editSlug = slug ?? "";
         res = await fetch(`/api/docs/${editSlug}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json", "x-webhook-secret": secret },
+          headers: {
+            "Content-Type": "application/json",
+            "x-webhook-secret": secret,
+          },
           body: JSON.stringify(payload),
         });
       }
@@ -90,12 +137,22 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
       )}
 
       <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Title</label>
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={baseInputCls} required />
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          Title
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={baseInputCls}
+          required
+        />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Slug</label>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          Slug
+        </label>
         <input
           type="text"
           value={slug ?? ""}
@@ -103,29 +160,53 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
           className="w-full px-3 py-2 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
           placeholder={section}
         />
-        <p className="text-xs text-[#62666d] mt-1">URL-safe path under the section.</p>
+        <p className="text-xs text-[#62666d] mt-1">
+          URL-safe path under the section.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Section</label>
-          <select value={section} onChange={(e) => setSection(e.target.value as typeof section)} className={baseInputCls}>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            Section
+          </label>
+          <select
+            value={section}
+            onChange={(e) => setSection(e.target.value as typeof section)}
+            className={baseInputCls}
+          >
             {SECTION_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Type</label>
-          <select value={type} onChange={(e) => setType(e.target.value as typeof type)} className={baseInputCls}>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            Type
+          </label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as typeof type)}
+            className={baseInputCls}
+          >
             {TYPE_OPTIONS.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className={baseInputCls}>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            Status
+          </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+            className={baseInputCls}
+          >
             <option value="published">Published</option>
             <option value="draft">Draft</option>
           </select>
@@ -133,17 +214,88 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Tags</label>
-        <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} className={baseInputCls} placeholder="comma, separated, tags" />
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          Tags
+        </label>
+        <input
+          type="text"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          className={baseInputCls}
+          placeholder="comma, separated, tags"
+        />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Author</label>
-        <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} className={baseInputCls} />
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          Author
+        </label>
+        <input
+          type="text"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          className={baseInputCls}
+        />
+      </div>
+
+      {/* Dynamic custom fields — creators add whatever metadata they need */}
+      <div>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-2">
+          Custom metadata fields
+        </label>
+        <p className="text-xs text-[#62666d] mb-3">
+          Add extra frontmatter fields. These will be stored in the document's
+          YAML frontmatter and rendered as badges on the doc page. Examples for
+          CTF writeups: <code className="text-[#7170ff]">event</code>,{" "}
+          <code className="text-[#7170ff]">challenge</code>,{" "}
+          <code className="text-[#7170ff]">category</code>,{" "}
+          <code className="text-[#7170ff]">difficulty</code>,{" "}
+          <code className="text-[#7170ff]">points</code>.
+        </p>
+        {customFields.length > 0 && (
+          <div className="space-y-3 mb-3">
+            {customFields.map((field, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="field name (e.g. event)"
+                  value={field.key}
+                  onChange={(e) => updateCustomField(i, "key", e.target.value)}
+                  className="flex-1 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
+                />
+                <input
+                  type="text"
+                  placeholder="value"
+                  value={field.value}
+                  onChange={(e) =>
+                    updateCustomField(i, "value", e.target.value)
+                  }
+                  className="flex-1 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCustomField(i)}
+                  className="text-xs text-[#fca5a5] hover:text-[#ff6b6b] px-2 py-1 rounded hover:bg-[#191a1b] transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addCustomField}
+          className="text-xs text-[#7170ff] hover:text-[#828fff] px-3 py-1.5 rounded border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 transition-colors"
+        >
+          + Add field
+        </button>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">Body (Markdown)</label>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          Body (Markdown)
+        </label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}

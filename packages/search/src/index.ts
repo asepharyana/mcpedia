@@ -32,6 +32,7 @@ const VALID_TYPES: DocType[] = ["documentation", "writeup", "research", "note"];
 
 /** Map a Drizzle row (text columns, Date timestamps) into the strict types. */
 function toMeta(row: DocumentRow): DocumentMeta {
+  const extra = row.extraFields as Record<string, unknown> | null;
   return {
     id: row.id,
     slug: row.slug,
@@ -46,6 +47,8 @@ function toMeta(row: DocumentRow): DocumentMeta {
     path: row.path,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    // Spread dynamic extra fields (CTF: event, challenge, category, difficulty, points, etc.)
+    ...(extra ?? {}),
   };
 }
 

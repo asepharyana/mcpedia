@@ -48,6 +48,20 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
   const createdAt = data.created_at ?? nowIso;
   const updatedAt = data.updated_at ?? data.created_at ?? nowIso;
 
+  // Extract any additional frontmatter keys as dynamic extra fields.
+  // These are written to DB as JSONB + rendered as dynamic badges in the UI.
+  const STANDARD_FRONTMATTER_KEYS = new Set([
+    "id", "slug", "title", "type", "section", "status",
+    "author", "tags", "path", "created_at", "updated_at", "event",
+    "challenge", "category", "difficulty", "points",
+  ]);
+  const extraFields: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (!STANDARD_FRONTMATTER_KEYS.has(k) && v !== undefined && v !== null) {
+      extraFields[k] = String(v);
+    }
+  }
+
   const meta: DocumentMeta = {
     id: slug,
     slug,
@@ -60,6 +74,18 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
     path: relPath,
     createdAt: String(createdAt),
     updatedAt: String(updatedAt),
+    // CTF writeup metadata (optional)
+    event: typeof data.event === "string" ? data.event : undefined,
+    challenge: typeof data.challenge === "string" ? data.challenge : undefined,
+    category: typeof data.category === "string" ? data.category : undefined,
+    difficulty:
+      data.difficulty === "easy" ||
+      data.difficulty === "medium" ||
+      data.difficulty === "hard"
+        ? data.difficulty
+        : undefined,
+    points: typeof data.points === "number" ? data.points : undefined,
+    extraFields,
   };
 
   return { meta, body: content };
@@ -92,6 +118,14 @@ export function stringifyFile(
     path: relPath,
     created_at: meta.createdAt,
     updated_at: meta.updatedAt,
+    // CTF writeup metadata (only written if present)
+    ...(meta.event && { event: meta.event }),
+    ...(meta.challenge && { challenge: meta.challenge }),
+    ...(meta.category && { category: meta.category }),
+    ...(meta.difficulty && { difficulty: meta.difficulty }),
+    ...(meta.points !== undefined && { points: meta.points }),
+    // Dynamic custom fields (any key the content creator added)
+    ...(meta.extraFields ?? {}),
   };
   const yaml = "---\n" +
     Object.entries(data)

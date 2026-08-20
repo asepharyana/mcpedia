@@ -17,6 +17,27 @@ function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 }
 
+const STANDARD_FIELDS = new Set([
+  "title", "body", "type", "status",
+  "author", "tags", "createdAt", "updatedAt", "id", "path", "slug",
+]);
+
+function splitPayload(body: Record<string, unknown>): {
+  standard: Record<string, unknown>;
+  extraFields: Record<string, string>;
+} {
+  const standard: Record<string, unknown> = {};
+  const extraFields: Record<string, string> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (STANDARD_FIELDS.has(key)) {
+      standard[key] = value;
+    } else if (value !== undefined && value !== null) {
+      extraFields[key] = typeof value === "string" ? value : JSON.stringify(value);
+    }
+  }
+  return { standard, extraFields };
+}
+
 // PUT /api/docs/{slug...} — Update an existing document.
 export async function PUT(
   req: NextRequest,
@@ -35,7 +56,8 @@ export async function PUT(
   }
 
   try {
-    const doc = await updateDocument(fullSlug, body);
+    const { standard, extraFields } = splitPayload(body);
+    const doc = await updateDocument(fullSlug, { ...standard, extraFields } as any);
     return NextResponse.json({ ok: true, slug: doc.slug, doc });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
