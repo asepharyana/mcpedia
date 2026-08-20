@@ -344,6 +344,85 @@ The VPS services were configured manually (systemd units in `deploy/`). Added a
   `/metrics`, `/trpc/*`, `mcp.asepharyana.my.id/mcp`.
 - Doc pages render clean markdown (no frontmatter); History panel + Restore work.
 
+## Phase 11 — CRUD + Auth + Web UI ✅ DONE
+
+> User requested: "perbagus agar jadi CRUD, pastikan ada autentikasi dan bisa
+> manual dari web atau lewat agent melalui MCP, dan perbaui UI/UXnya."
+
+### Backend (Core + API + MCP)
+
+- [x] **`packages/parser` — `stringifyFile()`** — serialize `DocumentMeta` + body
+  back to a markdown file with YAML frontmatter (gray-matter). Round-trip stable
+  with `parseFile`.
+- [x] **`@mcpedia/core` — CRUD functions:**
+  - `createDocument({slug, title, section, body, type?, status?, author?, tags?})`
+    — writes file to `content/{section}/{slug}.md`, upserts `documents` row,
+    snapshots revision, indexes chunks.
+  - `updateDocument(slug, {...})` — writes file, updates DB row, snapshots
+    revision (if body changed), reindexes chunks.
+  - `deleteDocument(slug)` — removes file + `documents`/`document_chunks`/
+    `document_revisions` rows.
+  - Slug validation: `[a-z0-9][a-z0-9/_-]*`, no `//`, no `..` traversal.
+- [x] **`apps/api` — tRPC CRUD routers** — `createDocument`, `updateDocument`,
+  `deleteDocument` (all `.use(requireWriteAuth)`). Fixed `requireWriteAuth` to
+  compare against `ctx.expectedSecret` (injected from deps) instead of the
+  module-level `WEBHOOK_SECRET` env constant — latent bug that made the middleware
+  untestable without env manipulation.
+- [x] **`apps/mcp` — 3 new write tools** — `create_document`, `update_document`,
+  `delete_document` (all require `x-webhook-secret`). Tools: 10 → 13.
+- [x] **Auth** — MCP/API writes reuse the existing `WEBHOOK_SECRET` /
+  `x-webhook-secret` pattern. Web CRUD adds cookie-based auth: `ADMIN_PASSWORD`
+  env + `/api/auth/login` (HMAC-signed `mcpedia_admin` cookie, HttpOnly).
+
+### Web UI
+
+- [x] **`/create` page** — form (section/type/status/title/slug/tags/author/body),
+  POSTs to `/api/docs` with `x-webhook-secret`.
+- [x] **`?edit=1` on doc pages** — inline edit form (`DocForm` component),
+  PUTs to `/api/docs/{slug}`.
+- [x] **`/login` page** — password → `/api/auth/login` → cookie → redirect `/create`.
+- [x] **Edit buttons** — homepage "+ Create Document" + per-doc "✎" (auth-gated);
+  doc page "Edit" button (auth-gated).
+- [x] **TOC** — doc page auto-generates a table of contents from `h2` headings.
+- [x] **Dark mode** — toggle persisted in `localStorage`, defaults to system.
+- [x] **`/api/docs` REST routes** — POST (create), PUT (update), DELETE (delete),
+  all `x-webhook-secret` gated.
+
+### Files changed
+```
+new: apps/web/app/api/auth/login/route.ts  # cookie-based login + verify
+new: apps/web/app/api/docs/route.ts        # REST CRUD
+new: apps/web/app/components/DocForm.tsx   # shared create/edit form
+new: apps/web/app/create/page.tsx          # create UI
+new: apps/web/app/login/page.tsx           # login UI
+new: apps/web/app/components/TOC.tsx       # auto-generated TOC
+mod: apps/web/app/page.tsx                 # edit/create buttons (auth-gated)
+mod: apps/web/app/[section]/[...slug]/page.tsx # ?edit=1 + TOC + dark mode
+mod: packages/core/src/document.service.ts # createDocument/updateDocument/deleteDocument
+mod: packages/core/src/index.service.ts    # export snapshotRevision
+mod: packages/core/src/index.ts            # re-export CRUD + types
+mod: packages/parser/src/index.ts          # stringifyFile
+mod: packages/config/src/index.ts          # ADMIN_PASSWORD
+mod: apps/api/src/router.ts                # CRUD routers + fix requireWriteAuth
+mod: apps/api/src/app.ts                   # createContext passes expectedSecret
+mod: apps/api/src/trpc.ts                  # Context.expectedSecret
+mod: apps/mcp/src/index.ts                 # 3 new CRUD write tools
+mod: apps/mcp/src/auth.test.ts             # +4 CRUD auth tests
+mod: apps/api/src/app.test.ts              # +5 tRPC CRUD auth tests
+mod: .env.example                          # ADMIN_PASSWORD
+```
+
+### Gotchas / lessons
+1. **tRPC fetch adapter** expects input directly as JSON body, NOT JSON-RPC
+   envelope (`{"slug":...}` not `{"jsonrpc":"2.0","method":...,"params":{...}}`).
+2. **`requireWriteAuth` env-constant bug** — comparing `ctx.webhookSecret !== WEBHOOK_SECRET`
+   (module-level env constant) is untestable. Fix: thread `expectedSecret` through
+   `Context` from `createApp(deps)`.
+3. **Next.js catch-all routes** — `[...slug]/edit/` is invalid (catch-all must be
+   last). Used `?edit=1` query param instead.
+4. **`stringifyFile` YAML** — quote string values with `JSON.stringify` for
+   special-char safety; arrays use `[...]` syntax.
+
 
 ## Decisions locked (from initial planning)
 

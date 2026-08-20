@@ -8,11 +8,14 @@
 3. **UI/UX**: Polish doc page, edit forms, search UX, dark mode
 4. **Agent integration**: MCP tools for CRUD with auth
 
-### Files to touch:
-- `packages/db/` — migrations (users table, if needed)
-- `apps/api/src/` — auth routes, CRUD tRPC routers
-- `apps/mcp/src/` — add create/update/delete tools
-- `apps/web/app/` — edit/create pages, auth UI
+## Requirements:
+1. **Source of truth is the filesystem** — each doc is a markdown file under `content/{section}/{slug}.md` with YAML frontmatter (parsed/striped by gray-matter).
+2. **DB mirrors disk** — `documents` table has slug/title/section/body/status/tags/etc; `document_chunks` stores embeddings; `document_revisions` snapshots body+meta.
+3. **Single indexing path** — `indexContentFile` in `@mcpedia/core` writes DB + revisions + chunks; CRUD ops call it (or its pieces) after writing the file.
+4. **Auth** — MCP/API writes require `x-webhook-secret` matching `WEBHOOK_SECRET` (Phase 4 pattern). Web CRUD uses cookie-based auth (Phase 11 addition: `ADMIN_PASSWORD`).
+5. **Slug rules** — `[a-z0-9][a-z0-9/_-]*`, no `//`, no path traversal (`..`). The slug in the URL is `<section>/<slug-parts>`.
+6. **No breaking existing features** — read tools/routes unchanged; existing 32 tests still green.
+7. **UI/UX** — edit button on doc pages (auth-gated), `?edit=1` inline form, `/create` page, login page, table of contents auto-generated from h2, dark mode toggle.
 
 ### Schema changes:
 - Optional: `users` table if auth is user-based

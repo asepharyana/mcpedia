@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "MCPedia",
@@ -20,15 +21,17 @@ export default function RootLayout({
             <Link href="/" className="font-semibold tracking-tight">
               MCPedia
             </Link>
-            <nav className="flex gap-4 text-sm">
-              <Link href="/" className="hover:underline">Home</Link>
-              <Link href="/search" className="hover:underline">Search</Link>
-              <Link
-                href="/docs"
-                className="hover:underline"
-              >
+            <nav className="flex items-center gap-4 text-sm">
+              <Link href="/" className="hover:underline">
+                Home
+              </Link>
+              <Link href="/search" className="hover:underline">
+                Search
+              </Link>
+              <Link href="/docs" className="hover:underline">
                 Docs
               </Link>
+              <ThemeToggle />
             </nav>
           </div>
         </header>

@@ -5,6 +5,7 @@ import { getDocument, getRelated, listRevisions } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
+import TOC from "@/components/TOC";
 
 // Render at request time. The content lives in Postgres (populated by the
 // indexer/worker), which is not available at build time (CI has no DB), so we
@@ -76,6 +77,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
         )}
       </div>
 
+      <TOC source={doc.body} />
+
       <Markdown source={doc.body} />
 
       {related.length > 0 && (
@@ -84,10 +87,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           <ul className="text-sm space-y-1">
             {related.map((r) => (
               <li key={r.slug}>
-                <Link
-                  href={`/${r.slug}`}
-                  className="hover:underline"
-                >
+                <Link href={`/${r.slug}`} className="hover:underline">
                   {r.title}
                 </Link>
               </li>
