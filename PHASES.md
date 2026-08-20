@@ -501,3 +501,84 @@ Complete web UI redesign, not just style changes:
 - **Tooling:** bun workspaces + Turborepo (repo already used bun; pnpm rejected to minimize churn).
 - **DB:** imrnes Postgres `100.121.180.82:6432/mcpedia` for both dev and deploy; driver `prepare:false` (PgBouncer). Docker Compose reserved for future prod.
 - **Phase 1 scope:** Core + Web + MCP only. tRPC/Hono API, pgvector, auth, BullMQ deferred (YAGNI).
+
+## Phase 13 — CTF Writeup Template System + Table Rendering Fix ✅ DONE
+
+> User: "apakah bisa diperbagus agar isi kontennya bisa memiliki bagian contohnya
+> jika untuk writeup ctf kan ada banyak event ctf nya dan tiap event banyak wu nya"
+> → User clarified: "jadikan dinamis field nya jangan static begini, jadi yg
+> membuat yg menentukan isinya" (make it dynamic, not static — content creators
+> determine the fields).
+
+### Problem
+CTF writeups need per-event organization (a CTF event has many challenges/writeups).
+No standardized template existed. Additionally, **tables weren't rendering** —
+two bugs:
+
+1. **`remark-gfm` missing** — `react-markdown` without the GFM plugin rendered
+   markdown table pipe characters as plain text, not as `<table>` HTML.
+2. **`@tailwindcss/typography` not installed** — the `Markdown.tsx` component uses
+   `prose` classes for typography, but the plugin wasn't registered, so all
+   markdown content (tables, headings, paragraphs) had zero CSS styling.
+
+### Fixes
+- **Installed `remark-gfm@4`** — enables GFM table/strikethrough/task-list parsing
+  in `ReactMarkdown`. Tables now render as proper `<table>`/`<thead>`/`<tbody>`/
+  `<th>`/`<td>` HTML.
+- **Installed `@tailwindcss/typography@0.5.20`** — `@plugin "@tailwindcss/typography"`
+  directive in `globals.css` (Tailwind v4 approach). Generates `prose` CSS including
+  `prose table` styles, `prose-headings:`, `prose-code:` etc.
+- **Added custom dark-theme table CSS** in `globals.css` for `prose table`,
+  `prose th`, `prose td` with dark-mode-appropriate colors.
+- **Added `overflow-x-auto` wrapper** in `Markdown.tsx` for responsive table scrolling.
+
+### Dynamic Custom Fields System
+Replaced hardcoded CTF fields (event/challenge/category/difficulty/points) with
+a **fully content-driven** system:
+
+- **`documents.extra_fields` JSONB column** — stores arbitrary key-value metadata
+  per document (migration `0003_document_extra_fields.sql`).
+- **`parseFile`** — any frontmatter key not in the standard set (`title`,
+  `type`, `section`, `status`, `author`, `tags`, `created_at`, `updated_at`) is
+  automatically extracted as an `extraField` → stored in DB + rendered as badge.
+- **`stringifyFile`** — writes `extraFields` back to YAML frontmatter for
+  round-trip stability (parse → stringify → parse yields same result).
+- **`DocForm`** — new "+ Add field" UI lets content creators add ANY metadata
+  key at create/edit time. Auto-labels and auto-styles common patterns:
+  - `difficulty` → colored badge (easy:green, medium:yellow, hard:red)
+  - `points` → purple badge with "pts" suffix
+  - `event` → purple badge with trophy icon
+  - Any other key → labeled badge (e.g. "Category: pwn")
+- **API routes** (`POST /api/docs`, `PUT /api/docs/[...slug]`) — `splitPayload()`
+  separates standard CRUD fields from custom fields, sends custom fields as
+  `extraFields` to `createDocument`/`updateDocument`.
+- **`toMeta`** (search → DB mapping) — spreads `extraFields` from DB row into
+  `DocumentMeta`, making them available to the UI.
+
+### CTF Writeup Template + Sample
+- **`content/writeups/ctf/template/writeup-template.md`** — standardized template
+  with: Challenge Info table, Initial Recon, Approach, Step-by-Step Solve,
+  Flag, Summary sections.
+- **`content/writeups/ctf/defcon-quals-2024/pwn-100-ret2win-alignment.md`** —
+  sample writeup demonstrating the template with frontmatter fields:
+  `event: DEF CON CTF Quals 2024`, `challenge: pwn-100`, `category: pwn`,
+  `difficulty: easy`, `points: 100`.
+
+### Deploy workflow fix
+- Added `db:push` step to deploy workflow for schema migrations (with `yes |`
+  to auto-accept non-interactive confirmation prompts).
+- Fixed `bun run index` → `bun run scripts/indexer.ts` (explicit path to avoid
+  resolution ambiguity in SSH deploy context).
+
+### Verification done (real, against live services)
+- All endpoints return 200: `/`, `/docs`, `/docs/mcp/streamable-http`,
+  `/notes/postgres/full-text-search`, `/writeups/ctf/defcon-quals-2024/pwn-100-...`,
+  `/writeups/ctf/template/writeup-template`, `/search`, `/login`, `/create`,
+  `/dashboard`, `/metrics`.
+- CTF writeup page renders: TOC (all h2 headings auto-linked), Challenge Info
+  table (thead + tbody + cells), code blocks, dynamic badges (Event/purple,
+  Category/default, Challenge/default, Difficulty/green, Points/purple).
+- Postgres FTS doc renders table properly (GFM + typography CSS working).
+- `bun run test` → 7 task groups pass. `turbo run typecheck` → green across 14 packages.
+- DB `extra_fields` column verified: `ALTER TABLE documents ADD COLUMN
+  extra_fields jsonb DEFAULT '{}'::jsonb NOT NULL`.
