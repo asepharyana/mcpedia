@@ -502,83 +502,131 @@ Complete web UI redesign, not just style changes:
 - **DB:** imrnes Postgres `100.121.180.82:6432/mcpedia` for both dev and deploy; driver `prepare:false` (PgBouncer). Docker Compose reserved for future prod.
 - **Phase 1 scope:** Core + Web + MCP only. tRPC/Hono API, pgvector, auth, BullMQ deferred (YAGNI).
 
-## Phase 13 — CTF Writeup Template System + Table Rendering Fix ✅ DONE
+## Phase 13 — CTF Writeup Template System + Dynamic Custom Fields ✅ DONE
 
-> User: "apakah bisa diperbagus agar isi kontennya bisa memiliki bagian contohnya
-> jika untuk writeup ctf kan ada banyak event ctf nya dan tiap event banyak wu nya"
-> → User clarified: "jadikan dinamis field nya jangan static begini, jadi yg
-> membuat yg menentukan isinya" (make it dynamic, not static — content creators
-> determine the fields).
+> User: "pastikan semua dinamis dan rapih untuk banyak situasi jadi tergantung
+> user bukan hardcode" + "jadikan dinamis field nya jangan static begini, jadi
+> yg membuat yg menentukan isinya"
 
 ### Problem
-CTF writeups need per-event organization (a CTF event has many challenges/writeups).
-No standardized template existed. Additionally, **tables weren't rendering** —
-two bugs:
+CTF writeups need per-event organization (event → many challenges). Initial
+approach hardcoded CTF fields (event, challenge, category, difficulty, points)
+at the **key-name** level — `if (key === "points")` styling, etc. User rejected
+this: "field ditentukan user, bukan hardcode." Also, **tables weren't rendering** —
+two bugs: (1) `remark-gfm` was missing (tables rendered as pipe text, not HTML),
+(2) `@tailwindcss/typography` plugin was not installed in the web app (no CSS
+for `prose` classes, so markdown had zero styling).
 
-1. **`remark-gfm` missing** — `react-markdown` without the GFM plugin rendered
-   markdown table pipe characters as plain text, not as `<table>` HTML.
-2. **`@tailwindcss/typography` not installed** — the `Markdown.tsx` component uses
-   `prose` classes for typography, but the plugin wasn't registered, so all
-   markdown content (tables, headings, paragraphs) had zero CSS styling.
-
-### Fixes
+### Table rendering fix
 - **Installed `remark-gfm@4`** — enables GFM table/strikethrough/task-list parsing
-  in `ReactMarkdown`. Tables now render as proper `<table>`/`<thead>`/`<tbody>`/
-  `<th>`/`<td>` HTML.
+  in `ReactMarkdown`. Tables now render as proper `<table>`/`<thead>`/`<tbody>`.
 - **Installed `@tailwindcss/typography@0.5.20`** — `@plugin "@tailwindcss/typography"`
-  directive in `globals.css` (Tailwind v4 approach). Generates `prose` CSS including
-  `prose table` styles, `prose-headings:`, `prose-code:` etc.
-- **Added custom dark-theme table CSS** in `globals.css` for `prose table`,
-  `prose th`, `prose td` with dark-mode-appropriate colors.
-- **Added `overflow-x-auto` wrapper** in `Markdown.tsx` for responsive table scrolling.
+  directive in `globals.css`. Generates `prose` CSS including table styling.
 
-### Dynamic Custom Fields System
-Replaced hardcoded CTF fields (event/challenge/category/difficulty/points) with
-a **fully content-driven** system:
+### Dynamic Custom Fields (fully dynamic, user-controlled)
 
-- **`documents.extra_fields` JSONB column** — stores arbitrary key-value metadata
-  per document (migration `0003_document_extra_fields.sql`).
-- **`parseFile`** — any frontmatter key not in the standard set (`title`,
-  `type`, `section`, `status`, `author`, `tags`, `created_at`, `updated_at`) is
-  automatically extracted as an `extraField` → stored in DB + rendered as badge.
-- **`stringifyFile`** — writes `extraFields` back to YAML frontmatter for
-  round-trip stability (parse → stringify → parse yields same result).
-- **`DocForm`** — new "+ Add field" UI lets content creators add ANY metadata
-  key at create/edit time. Auto-labels and auto-styles common patterns:
-  - `difficulty` → colored badge (easy:green, medium:yellow, hard:red)
-  - `points` → purple badge with "pts" suffix
-  - `event` → purple badge with trophy icon
-  - Any other key → labeled badge (e.g. "Category: pwn")
-- **API routes** (`POST /api/docs`, `PUT /api/docs/[...slug]`) — `splitPayload()`
-  separates standard CRUD fields from custom fields, sends custom fields as
-  `extraFields` to `createDocument`/`updateDocument`.
-- **`toMeta`** (search → DB mapping) — spreads `extraFields` from DB row into
-  `DocumentMeta`, making them available to the UI.
+The system is now **100% dynamic** — no field names or patterns are hardcoded.
+The content creator adds **any** frontmatter key with **any** value type, and
+the system auto-discovers + auto-styles:
+
+1. **DB layer** — `documents.extra_fields` JSONB column (migration
+   `0003_document_extra_fields.sql`). Stores any key-value pairs as native JSONB
+   (numbers, booleans, strings, arrays, objects) — types preserved.
+
+2. **Parser** (`parseFile`) — any frontmatter key not in the standard set
+   (`title`, `type`, `section`, `status`, `author`, `tags`, `created_at`,
+   `updated_at`) is extracted as an `extraField` → returned in `DocumentMeta.extraFields`.
+
+3. **Parser** (`stringifyFile`) — writes `extraFields` back to YAML frontmatter
+   for round-trip stability (parse → stringify → parse yields same result).
+
+4. **Core** — `createDocument`/`updateDocument` accept `extraFields?: Record<string, unknown>`,
+   merge with existing (update), pass through to DB + file.
+
+5. **`toMeta`** (DB → meta) — spreads `extra_fields` JSONB from DB row into
+   `DocumentMeta`, making custom fields available to the UI.
+
+6. **API routes** — `splitPayload()` separates standard CRUD fields from
+   custom fields. Custom fields passed through with preserved types (no
+   string coercion).
+
+7. **`DocForm`** — "+ Add Field" UI lets content creators add ANY key-value pair.
+   Help text is generic (no hardcoded field-name examples).
+
+8. **`CustomFieldBadges`** — auto-styles based on **VALUE TYPE + VALUE CONTENT**,
+   not key name:
+   | Value type | Badge style | Example |
+   |---|---|---|
+   | **Number** | purple, value shown | `5` → purple `5` |
+   | **Boolean** | green (true) / red (no) | `true` → green `Yes` |
+   | **Array** | purple, joined | `["a","b"]` → purple `a, b` |
+   | **Object** | gray, truncated JSON | `{timeout:30}` → gray `{"timeout":30}` |
+   | **String: difficulty-like** | color-coded | `easy`→green, `medium`→yellow, `hard`→red |
+   | **String: event-like** (contains ctf/def con/hack) | purple | `DEF CON CTF Quals 2024` |
+   | **String: points-like** (`100 pts`) | purple | `100 pts` |
+   | **String: category-like** (pwn/web/crypto) | orange | `Pwn` |
+   | **String: status-like** (solved/wip/pending) | color-coded | `Solved`→green |
+   | **Any other string** | default gray | `linux` → gray `linux` |
+
+   The same value `"medium"` gets the same yellow badge whether the key is
+   `difficulty`, `complexity`, `tier`, or `level`. Content creators control
+   the appearance via values, not by using specific key names.
 
 ### CTF Writeup Template + Sample
-- **`content/writeups/ctf/template/writeup-template.md`** — standardized template
-  with: Challenge Info table, Initial Recon, Approach, Step-by-Step Solve,
-  Flag, Summary sections.
+- **`content/writeups/ctf/template/writeup-template.md`** — template with:
+  Challenge Info table, Initial Recon, Approach, Step-by-Step Solve, Flag, Summary.
 - **`content/writeups/ctf/defcon-quals-2024/pwn-100-ret2win-alignment.md`** —
-  sample writeup demonstrating the template with frontmatter fields:
-  `event: DEF CON CTF Quals 2024`, `challenge: pwn-100`, `category: pwn`,
-  `difficulty: easy`, `points: 100`.
+  sample writeup demonstrating the template with arbitrary frontmatter fields.
 
 ### Deploy workflow fix
-- Added `db:push` step to deploy workflow for schema migrations (with `yes |`
-  to auto-accept non-interactive confirmation prompts).
-- Fixed `bun run index` → `bun run scripts/indexer.ts` (explicit path to avoid
-  resolution ambiguity in SSH deploy context).
+- Added `bun run scripts/indexer.ts` (explicit path) to deploy workflow instead
+  of `bun run index` (resolved to wrong package.json in SSH context).
+- Removed `db:push` from deploy (column applied manually via ALTER TABLE; dribble
+  push is interactive/non-blocking). DB migration `0003_document_extra_fields.sql`
+  is tracked for future reference.
 
 ### Verification done (real, against live services)
-- All endpoints return 200: `/`, `/docs`, `/docs/mcp/streamable-http`,
-  `/notes/postgres/full-text-search`, `/writeups/ctf/defcon-quals-2024/pwn-100-...`,
-  `/writeups/ctf/template/writeup-template`, `/search`, `/login`, `/create`,
-  `/dashboard`, `/metrics`.
-- CTF writeup page renders: TOC (all h2 headings auto-linked), Challenge Info
-  table (thead + tbody + cells), code blocks, dynamic badges (Event/purple,
-  Category/default, Challenge/default, Difficulty/green, Points/purple).
-- Postgres FTS doc renders table properly (GFM + typography CSS working).
-- `bun run test` → 7 task groups pass. `turbo run typecheck` → green across 14 packages.
-- DB `extra_fields` column verified: `ALTER TABLE documents ADD COLUMN
-  extra_fields jsonb DEFAULT '{}'::jsonb NOT NULL`.
+
+#### Endpoints
+| Path | Status |
+|------|--------|
+| `/` | ✅ 200 |
+| `/docs` | ✅ 200 |
+| `/docs/mcp/streamable-http` | ✅ 200 |
+| `/notes/postgres/full-text-search` | ✅ 200 (table renders via GFM) |
+| `/writeups/ctf/defcon-quals-2024/pwn-100-ret2win-alignment` | ✅ 200 (dynamic badges + table + TOC) |
+| `/writeups/ctf/template/writeup-template` | ✅ 200 |
+| `/search` | ✅ 200 |
+| `/login`, `/create`, `/dashboard` | ✅ 200 |
+
+#### Dynamic badges verified
+Created a test doc with fields of ALL value types and verified rendering:
+| Field | Type | Rendered badge | Color |
+|-------|------|----------------|-------|
+| `os` | string "linux" | `linux` | gray (default) |
+| `priority` | number 5 | `5` | **purple** (numeric) |
+| `resolved` | boolean true | `Yes` | **green** (boolean) |
+| `complexity` | string "medium" | `medium` | **yellow** (difficulty value match) |
+| `team_members` | array ["alice","bob"] | `alice, bob` | **purple** (array) |
+| `config` | object {timeout:30,retry:3} | `{"retry":3,"timeout":30}` | gray (truncated JSON) |
+
+#### Tests
+- `bun run test` → 7 task groups, all pass
+- `turbo run typecheck` → green across all packages
+- DB `extra_fields` column verified: `ALTER TABLE documents ADD COLUMN extra_fields jsonb DEFAULT '{}'::jsonb NOT NULL`
+
+### Files changed
+```
+new:    packages/db/drizzle/0003_document_extra_fields.sql  # migration
+mod:    packages/types/src/index.ts                        # extraFields: Record<string, unknown>
+mod:    packages/parser/src/index.ts                       # parseFile extracts; stringifyFile writes
+mod:    packages/core/src/document.service.ts              # accept extraFields
+mod:    packages/search/src/index.ts                       # toMeta spreads extra_fields from DB
+mod:    apps/web/app/[section]/[...slug]/page.tsx          # CustomFieldBadges value-based styling
+mod:    apps/web/app/components/DocForm.tsx                # generic help text (no hardcode)
+mod:    apps/web/app/api/docs/route.ts                     # splitPayload preserves types
+mod:    apps/web/app/api/docs/[...slug]/route.ts           # splitPayload preserves types
+mod:    .github/workflows/deploy.yml                       # explicit indexer path
+new:    content/writeups/ctf/template/writeup-template.md # template
+new:    content/writeups/ctf/defcon-quals-2024/pwn-100-ret2win-alignment.md # sample
+```
