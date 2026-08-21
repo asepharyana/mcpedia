@@ -46,7 +46,7 @@ jobs:
             cd /home/code/mcpedia
             git pull origin main
             /home/code/.bun/bin/bun install --frozen-lockfile
-            /home/code/.bun/bin/bun run build --filter=@mcpedia/web
+            cd apps/web && /home/code/.bun/bin/bun run build && cd /home/code/mcpedia
             /home/code/.bun/bin/bun run scripts/indexer.ts
             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
             sleep 3
