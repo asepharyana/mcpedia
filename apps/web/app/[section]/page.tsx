@@ -84,10 +84,10 @@ function renderTree(nodes: TreeNode[], pathname: string) {
               href={`/${node.slug}`}
               className={`flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg transition-all ${
                 isActive
-                  ? "text-[#7170ff] bg-[#5e6ad2]/15 font-medium border border-[#5e6ad2]/30"
+                  ? "text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/15 font-semibold border border-[#5e6ad2]/30"
                   : hasActiveChild
-                    ? "text-[#d0d6e0] bg-[#141517]"
-                    : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#141517]"
+                    ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
               }`}
             >
               <span className="flex items-center gap-2 truncate">
@@ -95,13 +95,13 @@ function renderTree(nodes: TreeNode[], pathname: string) {
                 <span className="truncate">{node.doc?.title || node.name}</span>
               </span>
               {isFolder && (
-                <span className="text-[10px] text-[#62666d] bg-[#191a1b] px-1.5 py-0.5 rounded font-mono">
+                <span className="text-[10px] text-[var(--text-dim)] bg-[var(--bg-surface)] border border-[var(--border-color)] px-1.5 py-0.5 rounded font-mono">
                   {node.docCount} docs
                 </span>
               )}
             </Link>
             {node.children.length > 0 && (
-              <div className="ml-4 border-l border-[#1f2022] pl-2 mt-1">
+              <div className="ml-4 border-l border-[var(--border-color)] pl-2 mt-1">
                 {renderTree(node.children, pathname)}
               </div>
             )}
@@ -123,8 +123,8 @@ export default async function SectionIndexPage({
   if (!sectionInfo) {
     return (
       <div className="py-12 text-center">
-        <h1 className="text-2xl font-semibold text-[#f7f8f8]">Unknown section</h1>
-        <p className="text-sm text-[#8a8f98] mt-2">Section &quot;{section}&quot; does not exist.</p>
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Unknown section</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-2">Section &quot;{section}&quot; does not exist.</p>
       </div>
     );
   }
@@ -136,33 +136,33 @@ export default async function SectionIndexPage({
   return (
     <div className="space-y-10">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-[#62666d]">
-        <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
+      <nav className="flex items-center gap-2 text-xs text-[var(--text-dim)]">
+        <Link href="/" className="hover:text-[var(--text-primary)] transition-colors">
           MCPedia
         </Link>
         <span>/</span>
-        <span className="text-[#8a8f98] font-medium">{sectionInfo.label}</span>
+        <span className="text-[var(--text-muted)] font-medium">{sectionInfo.label}</span>
       </nav>
 
       {/* Hero Card */}
-      <div className="bg-[#0f1011] border border-[#1f2022] rounded-xl p-6 shadow-sm">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[#141517] border border-[#23252a] flex items-center justify-center text-2xl shadow-inner">
+            <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-color)] flex items-center justify-center text-2xl shadow-inner">
               {sectionInfo.icon}
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                 {sectionInfo.label}
               </h1>
-              <p className="text-xs text-[#8a8f98] mt-0.5 font-mono uppercase">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-mono uppercase">
                 Section: {section}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-[#7170ff] bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 px-2.5 py-1 rounded-md">
+            <span className="text-xs font-mono text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 px-2.5 py-1 rounded-md">
               {sectionDocs.length} document{sectionDocs.length !== 1 ? "s" : ""}
             </span>
             <Link
@@ -174,15 +174,15 @@ export default async function SectionIndexPage({
           </div>
         </div>
 
-        <p className="text-sm text-[#8a8f98] leading-relaxed max-w-2xl mt-2">
+        <p className="text-sm text-[var(--text-muted)] leading-relaxed max-w-2xl mt-2">
           {sectionInfo.desc}
         </p>
       </div>
 
       {/* Hierarchical Folder Directory */}
       {tree.length > 0 && (
-        <section className="bg-[#0c0d0e] border border-[#1f2022] rounded-xl p-6">
-          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-4 flex items-center gap-2">
+        <section className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 shadow-sm">
+          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
             <span>Folder Structure</span>
           </h2>
           {renderTree(tree, section)}
@@ -192,7 +192,7 @@ export default async function SectionIndexPage({
       {/* Document List */}
       {sectionDocs.length > 0 ? (
         <section>
-          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-4">
+          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4">
             All Documents in {sectionInfo.label}
           </h2>
           <div className="space-y-2">
@@ -205,12 +205,12 @@ export default async function SectionIndexPage({
                 <Link
                   key={d.slug}
                   href={`/${d.slug}`}
-                  className="group flex items-center justify-between gap-4 p-4 bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-xl transition-all shadow-sm"
+                  className="group flex items-center justify-between gap-4 p-4 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-lg opacity-70 group-hover:opacity-100">📄</span>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors truncate">
+                      <h3 className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors truncate">
                         {d.title}
                       </h3>
                       {d.tags.length > 0 && (
@@ -218,7 +218,7 @@ export default async function SectionIndexPage({
                           {d.tags.slice(0, 4).map((t) => (
                             <span
                               key={t}
-                              className="text-[10px] px-1.5 py-0.25 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98]"
+                              className="text-[10px] px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)]"
                             >
                               #{t}
                             </span>
@@ -227,7 +227,7 @@ export default async function SectionIndexPage({
                       )}
                     </div>
                   </div>
-                  <time className="text-xs text-[#62666d] font-mono shrink-0">
+                  <time className="text-xs text-[var(--text-dim)] font-mono shrink-0">
                     {new Date(d.updatedAt).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
@@ -239,8 +239,8 @@ export default async function SectionIndexPage({
           </div>
         </section>
       ) : (
-        <div className="text-center py-12 border border-[#1f2022] rounded-xl bg-[#0f1011]">
-          <p className="text-sm text-[#8a8f98]">No documents in this section yet.</p>
+        <div className="text-center py-12 border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)]">
+          <p className="text-sm text-[var(--text-muted)]">No documents in this section yet.</p>
         </div>
       )}
     </div>

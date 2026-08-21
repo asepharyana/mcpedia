@@ -32,14 +32,14 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
         onClick={handleCopyMarkdown}
         type="button"
         title="Copy raw markdown content"
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] hover:border-[#383b42] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition-all"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-sm"
       >
         {copiedMd ? (
           <>
-            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-emerald-400">Copied MD</span>
+            <span className="text-emerald-500 font-medium">Copied MD</span>
           </>
         ) : (
           <>
@@ -56,14 +56,14 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
         onClick={handleCopyLink}
         type="button"
         title="Copy link to document"
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] hover:border-[#383b42] text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition-all"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-sm"
       >
         {copiedLink ? (
           <>
-            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-emerald-400">Copied</span>
+            <span className="text-emerald-500 font-medium">Copied Link</span>
           </>
         ) : (
           <>
@@ -78,12 +78,12 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
       {/* Edit Link */}
       <Link
         href={canEdit ? `/${slug}?edit=1` : `/login?redirect=/${slug}`}
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[#5e6ad2]/15 hover:bg-[#5e6ad2]/25 border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 text-[#7170ff] hover:text-white rounded-md transition-all"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 text-[#5e6ad2] dark:text-[#7170ff] rounded-md transition-all font-medium"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
-        <span>{canEdit ? "Edit" : "Edit"}</span>
+        <span>Edit</span>
       </Link>
     </div>
   );

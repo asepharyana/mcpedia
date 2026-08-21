@@ -102,14 +102,14 @@ function TreeNodeItem({
   const isCollapsed = collapsedMap[node.slug] ?? false;
 
   return (
-    <li className={`select-none ${depth > 0 ? "ml-3 pl-2 border-l border-[#1f2022]" : ""}`}>
+    <li className={`select-none ${depth > 0 ? "ml-3 pl-2 border-l border-[var(--border-color)]" : ""}`}>
       <div
         className={`group flex items-center justify-between gap-1.5 text-xs py-1.5 px-2 rounded-md transition-all ${
           isActive
-            ? "text-[#7170ff] bg-[#5e6ad2]/15 font-medium border border-[#5e6ad2]/30 shadow-sm"
+            ? "text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/15 font-semibold border border-[#5e6ad2]/30 shadow-sm"
             : isParentOfActive
-              ? "text-[#d0d6e0] bg-[#141517]/80"
-              : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#141517]"
+              ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
+              : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
         }`}
       >
         <Link
@@ -125,7 +125,7 @@ function TreeNodeItem({
 
         {isFolder && (
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[10px] text-[#62666d] bg-[#191a1b] px-1 py-0.2 rounded font-mono">
+            <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)] px-1 py-0.2 rounded font-mono">
               {node.docCount}
             </span>
             <button
@@ -135,7 +135,7 @@ function TreeNodeItem({
                 e.stopPropagation();
                 toggleCollapse(node.slug);
               }}
-              className="p-0.5 text-[#62666d] hover:text-[#d0d6e0] rounded hover:bg-[#23252a] transition-transform"
+              className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--bg-elevated-hover)] transition-transform"
               aria-label={isCollapsed ? "Expand folder" : "Collapse folder"}
             >
               <svg
@@ -210,10 +210,10 @@ export default function Sidebar() {
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
             placeholder="Filter docs..."
-            className="w-full pl-7 pr-3 py-1.5 bg-[#141517] border border-[#23252a] hover:border-[#383b42] rounded-md text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] transition-colors"
+            className="w-full pl-7 pr-3 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-md text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] transition-colors"
           />
           <svg
-            className="w-3.5 h-3.5 text-[#62666d] absolute left-2 top-2.5"
+            className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2 top-2.5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -223,7 +223,7 @@ export default function Sidebar() {
           {filterText && (
             <button
               onClick={() => setFilterText("")}
-              className="absolute right-2 top-2 text-xs text-[#62666d] hover:text-[#d0d6e0]"
+              className="absolute right-2 top-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               ✕
             </button>
@@ -232,7 +232,7 @@ export default function Sidebar() {
       </div>
 
       {/* Summary count */}
-      <div className="flex items-center justify-between px-1 mb-3 text-[11px] text-[#62666d]">
+      <div className="flex items-center justify-between px-1 mb-3 text-[11px] text-[var(--text-dim)]">
         <span className="uppercase tracking-wider font-mono">Documentation</span>
         <span>{filteredDocs.length} items</span>
       </div>
@@ -247,20 +247,20 @@ export default function Sidebar() {
           const isSectionActive = pathname === `/${id}` || pathname.startsWith(`/${id}/`);
 
           return (
-            <div key={id} className="border-b border-[#141516] pb-3 last:border-0">
+            <div key={id} className="border-b border-[var(--border-color)] pb-3 last:border-0">
               <Link
                 href={`/${id}`}
                 className={`flex items-center justify-between gap-1.5 px-1 py-1 mb-1 rounded text-xs font-semibold uppercase tracking-wider transition-colors ${
                   isSectionActive
-                    ? "text-[#7170ff]"
-                    : "text-[#8a8f98] hover:text-[#d0d6e0]"
+                    ? "text-[#5e6ad2] dark:text-[#7170ff]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <span>{icon}</span>
                   <span>{label}</span>
                 </div>
-                <span className="text-[10px] text-[#62666d] font-normal font-mono">
+                <span className="text-[10px] text-[var(--text-dim)] font-normal font-mono">
                   {sectionDocs.length}
                 </span>
               </Link>
@@ -283,10 +283,10 @@ export default function Sidebar() {
       </div>
 
       {/* Bottom quick links */}
-      <div className="pt-3 border-t border-[#1f2022] mt-auto">
+      <div className="pt-3 border-t border-[var(--border-color)] mt-auto">
         <Link
           href="/create"
-          className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] text-[#d0d6e0] hover:text-white rounded-md transition-colors font-medium"
+          className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors font-medium"
         >
           <span>+ Create New Document</span>
         </Link>

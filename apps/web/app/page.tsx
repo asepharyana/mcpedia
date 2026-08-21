@@ -62,7 +62,7 @@ function buildFolderTree(docs: { slug: string; title: string }[], section: strin
       const aFolder = a.children.length > 0 ? 0 : 1;
       const bFolder = b.children.length > 0 ? 0 : 1;
       if (aFolder !== bFolder) return aFolder - bFolder;
-      return a.title.localeCompare(b.title);
+      return (a.title || a.name).localeCompare(b.title || b.name);
     });
   }
 
@@ -86,16 +86,16 @@ function renderTree(nodes: TreeNode[], pathname: string) {
             href={`/${node.slug}`}
             className={`flex items-center gap-1.5 text-xs py-1 px-1.5 rounded transition-all ${
               pathname === `/${node.slug}`
-                ? "text-[#7170ff] bg-[#5e6ad2]/15 font-medium"
-                : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#141517]"
+                ? "text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/15 font-medium"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             }`}
             title={node.title}
           >
-            <span className="opacity-70">{node.isLeaf && node.children.length === 0 ? "📄" : "📁"}</span>
+            <span className="opacity-80">{node.isLeaf && node.children.length === 0 ? "📄" : "📁"}</span>
             <span className="truncate">{node.title || node.name}</span>
           </Link>
           {node.children.length > 0 && (
-            <div className="ml-3.5 border-l border-[#1f2022] pl-2 mt-0.5">
+            <div className="ml-3.5 border-l border-[var(--border-color)] pl-2 mt-0.5">
               {renderTree(node.children, pathname)}
             </div>
           )}
@@ -124,7 +124,7 @@ function SectionTree({ section, docs, pathname }: SectionTreeProps) {
       {tree.length > 0 ? (
         renderTree(tree, pathname)
       ) : (
-        <p className="text-xs text-[#62666d] pl-1">No documents</p>
+        <p className="text-xs text-[var(--text-dim)] pl-1">No documents</p>
       )}
     </div>
   );
@@ -144,19 +144,19 @@ export default async function HomePage() {
     <div className="space-y-16">
       {/* Hero Section */}
       <section className="relative pt-4 pb-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 text-[#7170ff] text-xs font-medium mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 text-[#5e6ad2] dark:text-[#7170ff] text-xs font-medium mb-6">
           <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
           <span>Model Context Protocol + Unified Knowledge Base</span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#f7f8f8] tracking-tight mb-5 leading-tight">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)] tracking-tight mb-5 leading-tight">
           Knowledge Base for <br />
-          <span className="bg-gradient-to-r from-[#7170ff] via-[#828fff] to-white bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#5e6ad2] via-[#7170ff] to-[#4338ca] dark:to-white bg-clip-text text-transparent">
             Humans and AI Agents
           </span>
         </h1>
 
-        <p className="text-base sm:text-lg text-[#8a8f98] max-w-2xl leading-relaxed mb-8">
+        <p className="text-base sm:text-lg text-[var(--text-muted)] max-w-2xl leading-relaxed mb-8">
           A high-performance, content-first documentation system. Browse hierarchical notes and CTF writeups in your browser, or connect AI coding assistants directly via native MCP tools.
         </p>
 
@@ -171,38 +171,38 @@ export default async function HomePage() {
           </Link>
           <Link
             href="/search"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] hover:border-[#383b42] text-[#d0d6e0] hover:text-white rounded-lg font-medium text-sm transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg font-medium text-sm transition-all shadow-sm"
           >
-            <svg className="w-4 h-4 text-[#8a8f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <span>Hybrid Search</span>
           </Link>
           <Link
             href="/create"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] text-[#8a8f98] hover:text-[#d0d6e0] rounded-lg text-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg text-sm transition-colors shadow-sm"
           >
             <span>+ Create Document</span>
           </Link>
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[#0c0d0e] border border-[#1f2022] rounded-xl max-w-3xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl max-w-3xl shadow-sm">
           <div>
-            <div className="text-xl font-semibold text-[#f7f8f8]">{all.length}</div>
-            <div className="text-xs text-[#62666d]">Documents indexed</div>
+            <div className="text-xl font-bold text-[var(--text-primary)]">{all.length}</div>
+            <div className="text-xs text-[var(--text-muted)]">Documents indexed</div>
           </div>
           <div>
-            <div className="text-xl font-semibold text-[#f7f8f8]">{SECTIONS.length}</div>
-            <div className="text-xs text-[#62666d]">Core sections</div>
+            <div className="text-xl font-bold text-[var(--text-primary)]">{SECTIONS.length}</div>
+            <div className="text-xs text-[var(--text-muted)]">Core sections</div>
           </div>
           <div>
-            <div className="text-xl font-semibold text-[#7170ff]">RRF Hybrid</div>
-            <div className="text-xs text-[#62666d]">FTS + 2048-dim vectors</div>
+            <div className="text-xl font-bold text-[#5e6ad2] dark:text-[#7170ff]">RRF Hybrid</div>
+            <div className="text-xs text-[var(--text-muted)]">FTS + 2048-dim vectors</div>
           </div>
           <div>
-            <div className="text-xl font-semibold text-emerald-400">10 MCP Tools</div>
-            <div className="text-xs text-[#62666d]">Streamable HTTP :4021</div>
+            <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">10 MCP Tools</div>
+            <div className="text-xs text-[var(--text-muted)]">Streamable HTTP :4021</div>
           </div>
         </div>
       </section>
@@ -210,7 +210,7 @@ export default async function HomePage() {
       {/* Browse by Section */}
       <section>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
+          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
             Browse by Section
           </h2>
         </div>
@@ -221,28 +221,28 @@ export default async function HomePage() {
             return (
               <div
                 key={s.id}
-                className="group flex flex-col justify-between bg-[#0f1011] hover:bg-[#131415] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-xl p-5 transition-all shadow-sm"
+                className="group flex flex-col justify-between bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl p-5 transition-all shadow-sm"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="text-2xl">{s.icon}</span>
                     <Link
                       href={`/${s.id}`}
-                      className="text-xs font-mono text-[#7170ff] hover:underline"
+                      className="text-xs font-mono text-[#5e6ad2] dark:text-[#7170ff] hover:underline"
                     >
                       {sectionDocs.length} docs →
                     </Link>
                   </div>
-                  <h3 className="font-semibold text-base text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors mb-1.5">
+                  <h3 className="font-semibold text-base text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors mb-1.5">
                     {s.label}
                   </h3>
-                  <p className="text-xs text-[#8a8f98] mb-4 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[var(--text-muted)] mb-4 line-clamp-2 leading-relaxed">
                     {s.desc}
                   </p>
                 </div>
 
                 {/* Inline folder tree */}
-                <div className="pt-3 border-t border-[#1a1b1d]">
+                <div className="pt-3 border-t border-[var(--border-color)]">
                   <SectionTree
                     section={s.id}
                     docs={all.map((d) => ({ slug: d.slug, title: d.title }))}
@@ -259,12 +259,12 @@ export default async function HomePage() {
       {recent.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
               Recently Updated Knowledge
             </h2>
             <Link
               href="/docs"
-              className="text-xs text-[#7170ff] hover:underline"
+              className="text-xs text-[#5e6ad2] dark:text-[#7170ff] hover:underline font-medium"
             >
               View all ({all.length}) →
             </Link>
@@ -277,20 +277,20 @@ export default async function HomePage() {
                 <Link
                   key={d.slug}
                   href={`/${d.slug}`}
-                  className="group block bg-[#0f1011] hover:bg-[#131415] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-xl p-4 transition-all shadow-sm"
+                  className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl p-4 transition-all shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs font-mono text-[#7170ff] uppercase">
+                    <span className="text-xs font-mono text-[#5e6ad2] dark:text-[#7170ff] uppercase">
                       {sInfo?.icon} {d.section}
                     </span>
-                    <time className="text-[11px] text-[#62666d] font-mono">
+                    <time className="text-[11px] text-[var(--text-dim)] font-mono">
                       {new Date(d.updatedAt).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
                     </time>
                   </div>
-                  <h3 className="font-medium text-sm text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-2">
+                  <h3 className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-2">
                     {d.title}
                   </h3>
                   {d.tags.length > 0 && (
@@ -298,7 +298,7 @@ export default async function HomePage() {
                       {d.tags.slice(0, 3).map((t) => (
                         <span
                           key={t}
-                          className="text-[10px] px-1.5 py-0.25 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98]"
+                          className="text-[10px] px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)]"
                         >
                           #{t}
                         </span>
@@ -313,15 +313,15 @@ export default async function HomePage() {
       )}
 
       {/* MCP Agent Integration Showcase */}
-      <section className="border-t border-[#1f2022] pt-12 pb-6">
+      <section className="border-t border-[var(--border-color)] pt-12 pb-6">
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#141517] border border-[#23252a] text-[#8a8f98] text-xs font-mono mb-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] text-xs font-mono mb-2">
             <span>⚡ Native Model Context Protocol (MCP)</span>
           </div>
-          <h2 className="text-2xl font-bold text-[#f7f8f8] tracking-tight mb-2">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-2">
             Connect AI Coding Assistants
           </h2>
-          <p className="text-sm text-[#8a8f98] max-w-xl">
+          <p className="text-sm text-[var(--text-muted)] max-w-xl">
             Give Claude Desktop, Cursor, Antigravity, or Zed direct access to your knowledge base via semantic search, read resources, and document tools.
           </p>
         </div>

@@ -82,7 +82,7 @@ export default function DocForm({
   const availableFolders = existingFolders?.[section] ?? [];
 
   const baseInputCls =
-    "w-full px-3.5 py-2 bg-[#0f1011] border border-[#23252a] hover:border-[#383b42] rounded-lg text-sm text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors";
+    "w-full px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[#5e6ad2] transition-colors";
 
   function addCustomField(key = "", value = "") {
     setCustomFields([...customFields, { key, value }]);
@@ -184,14 +184,14 @@ export default function DocForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       {error && (
-        <div className="p-3.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 text-sm">
+        <div className="p-3.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400 text-sm">
           {error}
         </div>
       )}
 
       {/* Title */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
           Document Title *
         </label>
         <input
@@ -207,7 +207,7 @@ export default function DocForm({
       {/* Section + Type + Status */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Section
           </label>
           <select
@@ -224,7 +224,7 @@ export default function DocForm({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Type
           </label>
           <select
@@ -240,7 +240,7 @@ export default function DocForm({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Status
           </label>
           <select
@@ -257,7 +257,7 @@ export default function DocForm({
       {/* Folder + Slug */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Parent Folder
           </label>
           <select
@@ -275,7 +275,7 @@ export default function DocForm({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             {isEdit ? "Full Slug" : "Slug (File name) *"}
           </label>
           {isEdit ? (
@@ -283,7 +283,7 @@ export default function DocForm({
               type="text"
               value={slug ?? ""}
               readOnly
-              className="w-full px-3.5 py-2 bg-[#141517] border border-[#23252a] rounded-lg text-sm text-[#8a8f98] font-mono"
+              className="w-full px-3.5 py-2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-muted)] font-mono"
             />
           ) : (
             <input
@@ -295,8 +295,8 @@ export default function DocForm({
               required
             />
           )}
-          <p className="text-[11px] text-[#62666d] mt-1 font-mono">
-            Path: <span className="text-[#7170ff]">{effectiveSlug || section}</span>
+          <p className="text-[11px] text-[var(--text-dim)] mt-1 font-mono">
+            Path: <span className="text-[#5e6ad2] dark:text-[#7170ff]">{effectiveSlug || section}</span>
           </p>
         </div>
       </div>
@@ -304,7 +304,7 @@ export default function DocForm({
       {/* Tags + Author */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Tags (comma separated)
           </label>
           <input
@@ -316,7 +316,7 @@ export default function DocForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#8a8f98] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Author
           </label>
           <input
@@ -330,25 +330,25 @@ export default function DocForm({
       </div>
 
       {/* Custom Metadata Fields */}
-      <div className="p-4 bg-[#0c0d0e] border border-[#1f2022] rounded-xl space-y-3">
+      <div className="p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl space-y-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98]">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
               Dynamic Custom Metadata
             </h3>
-            <p className="text-[11px] text-[#62666d] mt-0.5">
+            <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
               Add custom key-values (event, difficulty, points, etc.) rendered as styled badges.
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-[#62666d]">Presets:</span>
+            <span className="text-[11px] text-[var(--text-dim)]">Presets:</span>
             {PRESET_FIELDS.map((preset) => (
               <button
                 key={preset.key}
                 type="button"
                 onClick={() => addCustomField(preset.key, preset.value)}
-                className="px-2 py-0.5 text-[11px] bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] text-[#8a8f98] hover:text-[#d0d6e0] rounded transition-colors"
+                className="px-2 py-0.5 text-[11px] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded transition-colors"
               >
                 +{preset.key}
               </button>
@@ -375,7 +375,7 @@ export default function DocForm({
             <button
               type="button"
               onClick={() => removeCustomField(i)}
-              className="p-2 text-[#fca5a5] hover:text-rose-400 rounded hover:bg-[#191a1b] transition-colors"
+              className="p-2 text-rose-500 hover:text-rose-600 rounded hover:bg-[var(--bg-elevated)] transition-colors"
               title="Remove field"
             >
               ✕
@@ -386,16 +386,16 @@ export default function DocForm({
         <button
           type="button"
           onClick={() => addCustomField()}
-          className="text-xs text-[#7170ff] hover:text-[#828fff] px-3 py-1.5 rounded-lg border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 bg-[#5e6ad2]/5 transition-colors"
+          className="text-xs text-[#5e6ad2] dark:text-[#7170ff] hover:underline px-3 py-1.5 rounded-lg border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 bg-[#5e6ad2]/5 transition-colors font-medium"
         >
           + Add Custom Field
         </button>
       </div>
 
       {/* Body with Write / Preview Tabs */}
-      <div className="border border-[#1f2022] rounded-xl overflow-hidden bg-[#0c0d0e]">
+      <div className="border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-surface)] shadow-sm">
         {/* Editor Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-[#141517] border-b border-[#1f2022] flex-wrap gap-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-color)] flex-wrap gap-2">
           {/* Tabs */}
           <div className="flex items-center gap-1">
             <button
@@ -403,8 +403,8 @@ export default function DocForm({
               onClick={() => setActiveTab("write")}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                 activeTab === "write"
-                  ? "bg-[#5e6ad2] text-white"
-                  : "text-[#8a8f98] hover:text-[#d0d6e0]"
+                  ? "bg-[#5e6ad2] text-white shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               Write
@@ -414,8 +414,8 @@ export default function DocForm({
               onClick={() => setActiveTab("preview")}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                 activeTab === "preview"
-                  ? "bg-[#5e6ad2] text-white"
-                  : "text-[#8a8f98] hover:text-[#d0d6e0]"
+                  ? "bg-[#5e6ad2] text-white shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               Live Preview
@@ -424,11 +424,11 @@ export default function DocForm({
 
           {/* Markdown Action Shortcuts */}
           {activeTab === "write" && (
-            <div className="flex items-center gap-1 text-xs text-[#8a8f98]">
+            <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
               <button
                 type="button"
                 onClick={() => insertMarkdown("**", "**")}
-                className="px-2 py-0.5 hover:bg-[#23252a] rounded text-[#d0d6e0]"
+                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 title="Bold"
               >
                 <b>B</b>
@@ -436,7 +436,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("*", "*")}
-                className="px-2 py-0.5 hover:bg-[#23252a] rounded text-[#d0d6e0]"
+                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 title="Italic"
               >
                 <i>I</i>
@@ -444,7 +444,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("## ")}
-                className="px-2 py-0.5 hover:bg-[#23252a] rounded text-[#d0d6e0]"
+                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 title="Heading 2"
               >
                 H2
@@ -452,7 +452,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("```\n", "\n```")}
-                className="px-2 py-0.5 hover:bg-[#23252a] rounded text-[#d0d6e0] font-mono"
+                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-mono"
                 title="Code Block"
               >
                 {"</>"}
@@ -460,7 +460,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("[", "](https://)")}
-                className="px-2 py-0.5 hover:bg-[#23252a] rounded text-[#d0d6e0]"
+                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 title="Link"
               >
                 Link
@@ -468,7 +468,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("> [!NOTE]\n> ")}
-                className="px-2 py-0.5 hover:bg-[#23252a] rounded text-[#d0d6e0]"
+                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 title="Note Callout"
               >
                 Note
@@ -483,16 +483,16 @@ export default function DocForm({
             ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full h-96 p-4 bg-transparent text-[#f7f8f8] placeholder-[#62666d] font-mono text-sm focus:outline-none resize-y leading-relaxed"
+            className="w-full h-96 p-4 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] font-mono text-sm focus:outline-none resize-y leading-relaxed"
             placeholder="# Write your markdown document here..."
             required
           />
         ) : (
-          <div className="p-6 h-96 overflow-y-auto bg-[#08090a]">
+          <div className="p-6 h-96 overflow-y-auto bg-[var(--bg-app)]">
             {body.trim() ? (
               <Markdown source={body} />
             ) : (
-              <p className="text-xs text-[#62666d] italic">Nothing to preview yet.</p>
+              <p className="text-xs text-[var(--text-dim)] italic">Nothing to preview yet.</p>
             )}
           </div>
         )}
@@ -513,7 +513,7 @@ export default function DocForm({
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2.5 border border-[#23252a] hover:border-[#383b42] text-[#8a8f98] hover:text-[#d0d6e0] rounded-lg text-sm transition-colors"
+          className="px-4 py-2.5 border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-lg text-sm transition-colors shadow-sm"
         >
           Cancel
         </button>

@@ -60,9 +60,9 @@ export default function McpConfigSnippet() {
   }
 
   return (
-    <div className="bg-[#0c0d0e] border border-[#1f2022] rounded-xl overflow-hidden shadow-lg">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-md">
       {/* Header bar with tabs */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#141517] border-b border-[#1f2022] flex-wrap gap-2">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--bg-elevated)] border-b border-[var(--border-color)] flex-wrap gap-2">
         <div className="flex items-center gap-1.5">
           {CONFIGS.map((c) => (
             <button
@@ -71,7 +71,7 @@ export default function McpConfigSnippet() {
               className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                 activeTab === c.id
                   ? "bg-[#5e6ad2] text-white shadow-sm"
-                  : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#1b1d20]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
               }`}
             >
               {c.label}
@@ -82,14 +82,14 @@ export default function McpConfigSnippet() {
         <button
           onClick={handleCopy}
           type="button"
-          className="flex items-center gap-1.5 text-xs text-[#8a8f98] hover:text-white bg-[#1a1b1d] hover:bg-[#23252a] px-2.5 py-1 rounded border border-[#27292d] transition-all"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated-hover)] px-2.5 py-1 rounded border border-[var(--border-color)] transition-all shadow-sm"
         >
           {copied ? (
             <>
-              <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span className="text-emerald-400 font-medium">Copied!</span>
+              <span className="text-emerald-500 font-medium">Copied!</span>
             </>
           ) : (
             <>
@@ -103,12 +103,12 @@ export default function McpConfigSnippet() {
       </div>
 
       {/* Code preview */}
-      <pre className="p-4 text-xs font-mono text-[#d0d6e0] overflow-x-auto leading-relaxed">
+      <pre className="p-4 text-xs font-mono text-[var(--pre-text)] bg-[var(--code-block-bg)] overflow-x-auto leading-relaxed">
         <code>{current.content}</code>
       </pre>
 
-      <div className="px-4 py-2 bg-[#090a0b] border-t border-[#1a1b1d] text-[11px] text-[#62666d]">
-        Config location: <span className="font-mono text-[#8a8f98]">{current.filename}</span>
+      <div className="px-4 py-2 bg-[var(--bg-elevated)] border-t border-[var(--border-color)] text-[11px] text-[var(--text-dim)]">
+        Config location: <span className="font-mono text-[var(--text-muted)]">{current.filename}</span>
       </div>
     </div>
   );

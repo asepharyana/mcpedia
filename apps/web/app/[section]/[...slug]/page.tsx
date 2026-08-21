@@ -54,47 +54,47 @@ function CustomFieldBadges({
   if (customEntries.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-4 pt-3.5 border-t border-[#1f2022]">
+    <div className="flex flex-wrap items-center gap-2 mt-4 pt-3.5 border-t border-[var(--border-color)]">
       {customEntries.map(([key, value]) => {
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
-        let colorClass = "bg-[#141517] border-[#23252a] text-[#d0d6e0]";
+        let colorClass = "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)]";
         let icon = "🏷️";
         let displayValue: string;
 
         if (typeof value === "number") {
-          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff]";
           icon = "🎯";
           displayValue = `${value} pts`;
         } else if (typeof value === "boolean") {
           colorClass = value
-            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-            : "bg-rose-500/10 border-rose-500/30 text-rose-400";
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+            : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400";
           icon = value ? "✓" : "✕";
           displayValue = value ? "Solved" : "Pending";
         } else if (Array.isArray(value)) {
-          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff]";
           icon = "🗂️";
           displayValue = value.join(", ");
         } else {
           const v = String(value).toLowerCase();
           if (/^(easy|simple|beginner)/i.test(v)) {
-            colorClass = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+            colorClass = "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400";
             icon = "🟢";
             displayValue = "Easy";
           } else if (/^(medium|intermediate)/i.test(v)) {
-            colorClass = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+            colorClass = "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400";
             icon = "🟡";
             displayValue = "Medium";
           } else if (/^(hard|expert|advanced)/i.test(v)) {
-            colorClass = "bg-rose-500/10 border-rose-500/30 text-rose-400";
+            colorClass = "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400";
             icon = "🔴";
             displayValue = "Hard";
           } else if (/^(pwn|web|crypto|misc|forensic|reverse|binary)/i.test(v)) {
-            colorClass = "bg-indigo-500/10 border-indigo-500/30 text-indigo-300";
+            colorClass = "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-300";
             icon = "⚡";
             displayValue = v.toUpperCase();
           } else if (/ctf|def.?con|event/i.test(v)) {
-            colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+            colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff]";
             icon = "🏆";
             displayValue = String(value);
           } else {
@@ -108,7 +108,7 @@ function CustomFieldBadges({
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-md text-xs font-mono transition-colors ${colorClass}`}
           >
             <span className="text-[10px] opacity-70">{icon}</span>
-            <span className="text-[#8a8f98] font-sans">{label}:</span>
+            <span className="text-[var(--text-muted)] font-sans">{label}:</span>
             <span className="font-medium">{displayValue}</span>
           </span>
         );
@@ -157,12 +157,12 @@ function FolderIndexPage({
   return (
     <div>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6 flex-wrap">
-        <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
+      <nav className="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-6 flex-wrap">
+        <Link href="/" className="hover:text-[var(--text-primary)] transition-colors">
           MCPedia
         </Link>
         <span>/</span>
-        <Link href={`/${section}`} className="hover:text-[#d0d6e0] transition-colors">
+        <Link href={`/${section}`} className="hover:text-[var(--text-primary)] transition-colors">
           {sectionInfo.label}
         </Link>
         {slug.split("/").map((part, i) => {
@@ -172,7 +172,7 @@ function FolderIndexPage({
           return (
             <span key={path} className="flex items-center gap-2">
               <span>/</span>
-              <span className={isLast ? "text-[#8a8f98] font-medium" : "hover:text-[#d0d6e0]"}>
+              <span className={isLast ? "text-[var(--text-primary)] font-semibold" : "hover:text-[var(--text-primary)]"}>
                 {label}
               </span>
             </span>
@@ -181,22 +181,22 @@ function FolderIndexPage({
       </nav>
 
       {/* Header card */}
-      <div className="bg-[#0f1011] border border-[#1f2022] rounded-xl p-6 mb-8">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 mb-8 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#141517] border border-[#23252a] flex items-center justify-center text-xl">
+            <div className="w-10 h-10 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-color)] flex items-center justify-center text-xl">
               📁
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-[#f7f8f8] tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                 {folderName}
               </h1>
-              <p className="text-xs text-[#8a8f98] mt-0.5">
-                Directory path: <code className="text-[#7170ff] font-mono">{section}/{slug}</code>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Directory path: <code className="text-[#5e6ad2] dark:text-[#7170ff] font-mono">{section}/{slug}</code>
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono text-[#8a8f98] bg-[#141517] border border-[#23252a] px-2.5 py-1 rounded-md">
+          <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] border border-[var(--border-color)] px-2.5 py-1 rounded-md">
             {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -205,23 +205,23 @@ function FolderIndexPage({
       {/* Subfolders */}
       {folders.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase mb-3 tracking-wider flex items-center gap-2">
+          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase mb-3 tracking-wider flex items-center gap-2">
             <span>Subfolders</span>
-            <span className="text-[10px] text-[#62666d]">({folders.length})</span>
+            <span className="text-[10px] text-[var(--text-dim)]">({folders.length})</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {folders.map(([folder, info]) => (
               <Link
                 key={folder}
                 href={`/${section}/${slug}/${folder}`.replace(/\/+/g, "/")}
-                className="group flex items-center gap-3 p-3.5 bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-lg transition-all shadow-sm"
+                className="group flex items-center gap-3 p-3.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg transition-all shadow-sm"
               >
                 <span className="text-2xl group-hover:scale-110 transition-transform">📁</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors truncate">
+                  <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors truncate">
                     {folder.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
                   </div>
-                  <div className="text-xs text-[#62666d] mt-0.5 font-mono">
+                  <div className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
                     {info.docCount} document{info.docCount !== 1 ? "s" : ""}
                   </div>
                 </div>
@@ -234,21 +234,21 @@ function FolderIndexPage({
       {/* Documents */}
       {immediateDocs.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase mb-3 tracking-wider flex items-center gap-2">
+          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase mb-3 tracking-wider flex items-center gap-2">
             <span>Documents</span>
-            <span className="text-[10px] text-[#62666d]">({immediateDocs.length})</span>
+            <span className="text-[10px] text-[var(--text-dim)]">({immediateDocs.length})</span>
           </h2>
           <div className="space-y-2">
             {immediateDocs.map((doc) => (
               <Link
                 key={doc.slug}
                 href={`/${doc.slug}`}
-                className="group flex items-center justify-between gap-4 p-4 bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-lg transition-all shadow-sm"
+                className="group flex items-center justify-between gap-4 p-4 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg transition-all shadow-sm"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-xl opacity-70 group-hover:opacity-100">📄</span>
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors truncate">
+                    <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors truncate">
                       {doc.title}
                     </div>
                     {doc.tags.length > 0 && (
@@ -256,7 +256,7 @@ function FolderIndexPage({
                         {doc.tags.slice(0, 4).map((t) => (
                           <span
                             key={t}
-                            className="text-[11px] px-1.5 py-0.25 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98]"
+                            className="text-[11px] px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)]"
                           >
                             #{t}
                           </span>
@@ -265,7 +265,7 @@ function FolderIndexPage({
                     )}
                   </div>
                 </div>
-                <time className="text-xs text-[#62666d] shrink-0 font-mono">
+                <time className="text-xs text-[var(--text-dim)] shrink-0 font-mono">
                   {new Date(doc.updatedAt).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -278,8 +278,8 @@ function FolderIndexPage({
       )}
 
       {folders.length === 0 && immediateDocs.length === 0 && (
-        <div className="text-center py-12 border border-[#1f2022] rounded-xl bg-[#0f1011]">
-          <p className="text-sm text-[#8a8f98]">No documents found in this directory.</p>
+        <div className="text-center py-12 border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)]">
+          <p className="text-sm text-[var(--text-muted)]">No documents found in this directory.</p>
         </div>
       )}
     </div>
@@ -317,11 +317,11 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       <div>
         <Link
           href={`/${doc.slug}`}
-          className="inline-flex items-center gap-1 text-xs text-[#8a8f98] hover:text-[#d0d6e0] mb-4 transition-colors"
+          className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-4 transition-colors"
         >
           <span>← Back to document</span>
         </Link>
-        <h1 className="text-2xl font-semibold text-[#f7f8f8] mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-6">
           Edit: {doc.title}
         </h1>
         <DocForm
@@ -356,8 +356,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       {/* Main Content Column */}
       <article className="flex-1 min-w-0">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-4 flex-wrap">
-          <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
+        <nav className="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-4 flex-wrap">
+          <Link href="/" className="hover:text-[var(--text-primary)] transition-colors">
             MCPedia
           </Link>
           {doc.slug.split("/").map((part, i) => {
@@ -371,7 +371,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                 <span>/</span>
                 <Link
                   href={`/${crumbPath}`}
-                  className={isLast ? "text-[#8a8f98] font-medium" : "hover:text-[#d0d6e0] transition-colors"}
+                  className={isLast ? "text-[var(--text-primary)] font-semibold" : "hover:text-[var(--text-primary)] transition-colors"}
                 >
                   {label}
                 </Link>
@@ -381,24 +381,24 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
         </nav>
 
         {/* Hero Metadata Card */}
-        <div className="bg-[#0f1011] border border-[#1f2022] rounded-xl p-6 mb-8 shadow-sm">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 mb-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-[#5e6ad2]/15 text-[#7170ff] border border-[#5e6ad2]/30">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-[#5e6ad2]/15 text-[#5e6ad2] dark:text-[#7170ff] border border-[#5e6ad2]/30">
                   <span>{sectionInfo.icon}</span>
                   <span className="uppercase">{sectionInfo.label}</span>
                 </span>
-                <span className="text-xs text-[#62666d]">·</span>
-                <span className="text-xs text-[#8a8f98] capitalize">
+                <span className="text-xs text-[var(--text-dim)]">·</span>
+                <span className="text-xs text-[var(--text-muted)] capitalize">
                   {doc.type}
                 </span>
-                <span className="text-xs text-[#62666d]">·</span>
-                <span className="text-xs text-[#8a8f98] font-mono">
+                <span className="text-xs text-[var(--text-dim)]">·</span>
+                <span className="text-xs text-[var(--text-muted)] font-mono">
                   {readingTime}
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-[#f7f8f8] tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight leading-tight">
                 {doc.title}
               </h1>
             </div>
@@ -408,14 +408,14 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           </div>
 
           {/* Author + Date + Tags */}
-          <div className="flex flex-wrap items-center gap-3 text-xs text-[#8a8f98] pt-3 border-t border-[#1a1b1d]">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] pt-3 border-t border-[var(--border-color)]">
             {doc.author && (
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-4 rounded-full bg-[#5e6ad2] text-white flex items-center justify-center text-[10px] font-bold">
                   {doc.author.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-[#d0d6e0]">{doc.author}</span>
-                <span className="text-[#62666d]">·</span>
+                <span className="text-[var(--text-secondary)]">{doc.author}</span>
+                <span className="text-[var(--text-dim)]">·</span>
               </div>
             )}
             <span>
@@ -427,12 +427,12 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
             </span>
             {doc.tags.length > 0 && (
               <>
-                <span className="text-[#62666d]">·</span>
+                <span className="text-[var(--text-dim)]">·</span>
                 <div className="flex flex-wrap gap-1">
                   {doc.tags.map((t) => (
                     <span
                       key={t}
-                      className="px-2 py-0.5 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98] text-[11px]"
+                      className="px-2 py-0.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)] text-[11px]"
                     >
                       #{t}
                     </span>
@@ -447,7 +447,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
         </div>
 
         {/* Mobile TOC (rendered inline on smaller screens) */}
-        <div className="xl:hidden mb-6 p-4 bg-[#0f1011] border border-[#1f2022] rounded-lg">
+        <div className="xl:hidden mb-6 p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-sm">
           <TOC source={doc.body} />
         </div>
 
@@ -458,8 +458,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
         {/* Related Documents */}
         {related.length > 0 && (
-          <aside className="mt-12 pt-8 border-t border-[#1f2022]">
-            <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-4 flex items-center gap-2">
+          <aside className="mt-12 pt-8 border-t border-[var(--border-color)]">
+            <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
               <span>Related Knowledge</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -469,20 +469,20 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                   <Link
                     key={r.slug}
                     href={`/${r.slug}`}
-                    className="group block bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-lg p-4 transition-all shadow-sm"
+                    className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg p-4 transition-all shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-xs text-[#7170ff] font-mono uppercase">
+                      <span className="text-xs text-[#5e6ad2] dark:text-[#7170ff] font-mono uppercase">
                         {rInfo.icon} {r.section}
                       </span>
-                      <time className="text-[11px] text-[#62666d] font-mono">
+                      <time className="text-[11px] text-[var(--text-dim)] font-mono">
                         {new Date(r.updatedAt).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
                         })}
                       </time>
                     </div>
-                    <h3 className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-1">
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-1">
                       {r.title}
                     </h3>
                   </Link>
@@ -494,9 +494,9 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
         {/* Revision History */}
         {revisions.length > 0 && (
-          <aside className="mt-10 pt-8 border-t border-[#1f2022]">
+          <aside className="mt-10 pt-8 border-t border-[var(--border-color)]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
+              <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 Revision History ({revisions.length})
               </h2>
             </div>
@@ -504,16 +504,16 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
               {revisions.map((rev) => (
                 <div
                   key={rev.id}
-                  className="flex items-center justify-between gap-3 p-3 bg-[#0f1011] border border-[#1f2022] rounded-lg text-xs"
+                  className="flex items-center justify-between gap-3 p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg text-xs shadow-sm"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-mono text-[#7170ff] bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded border border-[#5e6ad2]/30">
+                    <span className="font-mono text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded border border-[#5e6ad2]/30 font-semibold">
                       v{rev.revisionNo}
                     </span>
-                    <span className="text-[#d0d6e0] truncate">
+                    <span className="text-[var(--text-primary)] truncate">
                       {rev.reason || "Updated document"}
                     </span>
-                    <span className="text-[#62666d] hidden sm:inline">
+                    <span className="text-[var(--text-dim)] hidden sm:inline">
                       · {new Date(rev.createdAt).toLocaleString()}
                     </span>
                   </div>
@@ -522,7 +522,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                       <input type="hidden" name="id" value={rev.id} />
                       <button
                         type="submit"
-                        className="text-xs text-[#d0d6e0] hover:text-white bg-[#141517] hover:bg-[#23252a] px-2.5 py-1 rounded border border-[#23252a] hover:border-[#5e6ad2] transition-colors"
+                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] px-2.5 py-1 rounded border border-[var(--border-color)] hover:border-[var(--brand)] transition-colors font-medium shadow-sm"
                       >
                         Restore
                       </button>
@@ -536,7 +536,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       </article>
 
       {/* Desktop Sticky Table of Contents Column */}
-      <aside className="hidden xl:block w-64 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pl-6 border-l border-[#1f2022]">
+      <aside className="hidden xl:block w-64 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pl-6 border-l border-[var(--border-color)]">
         <TOC source={doc.body} />
       </aside>
     </div>

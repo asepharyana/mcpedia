@@ -15,8 +15,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full scroll-smooth">
-      <body className="min-h-screen bg-[#08090a] text-[#e2e4e7] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white flex flex-col">
+    <html lang="en" className="h-full scroll-smooth" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('mcpedia-theme');
+                  var isDark = stored === 'dark' || (stored === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-[var(--bg-app)] text-[var(--text-secondary)] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white flex flex-col transition-colors duration-150">
         <div hidden>
           <div id="a11y-live-region" aria-live="polite" aria-atomic="true" />
         </div>
@@ -25,7 +44,7 @@ export default function RootLayout({
 
         <div className="mx-auto max-w-7xl w-full flex-1 flex flex-col">
           <div className="flex flex-1">
-            <aside className="hidden lg:block w-72 shrink-0 border-r border-[#1f2022] sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+            <aside className="hidden lg:block w-72 shrink-0 border-r border-[var(--border-color)] sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto bg-[var(--bg-app)]">
               <Sidebar />
             </aside>
             <main className="flex-1 min-w-0">
