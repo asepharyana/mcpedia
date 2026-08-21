@@ -10,9 +10,16 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+  VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+
+permissions:
+  contents: read
+
 jobs:
-  build:
-    name: typecheck + build
+  test:
+    name: typecheck + tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,84 +36,80 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Build web
-        working-directory: apps/web
-        run: bun run build
-
-      # Upload the built .next directory (hidden dir → include-hidden-files).
-      - name: Upload web build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mcpedia-web-build
-          path: apps/web/.next
-          include-hidden-files: true
-          if-no-files-found: error
-
-      # Smoke: requires Postgres + Redis — skipped in CI without secrets.
-      - name: MCP smoke test
-        if: env.DATABASE_URL != ''
-        working-directory: apps/mcp
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
-        run: bun run smoke
-
-      # Unit tests — bun:test mocks, no external services.
       - name: Test
         run: bun run test
 
-  deploy:
-    name: deploy to VPS
-    needs: build
+  build-and-deploy:
+    name: build + deploy (Nix)
+    needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [web, api, mcp, worker]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
         with:
-          name: mcpedia-web-build
-          path: apps/web/.next
+          fetch-depth: 0
 
-      # Tar .next, then SCP the tarball to VPS (single file = reliable transfer).
-      - name: Tar .next
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+        with:
+          determinate: false
+          extra-conf: |
+            sandbox = false
+            accept-flake-config = true
+
+      - name: Cache Nix
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+        with:
+          use-flakehub: false
+
+      - name: Build ${{ matrix.service }}
+        id: build
         run: |
-          # Exclude cache to reduce tarball size (cache is ephemeral)
-          tar -C apps/web --exclude='.next/cache' -czf mcpedia-web-next.tar.gz .next
-          ls -lh mcpedia-web-next.tar.gz
+          nix build .#${{ matrix.service }} --impure --option sandbox false --print-build-logs
+          STORE_PATH=$(readlink result)
+          echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
+          echo "Build OK ${{ matrix.service }}: $STORE_PATH"
 
-      - name: Copy tarball to VPS
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.SSH_DEPLOY_HOST }}
-          port: ${{ secrets.SSH_DEPLOY_PORT }}
-          username: ${{ secrets.SSH_DEPLOY_USER }}
-          key: ${{ secrets.SSH_DEPLOY_KEY }}
-          source: "mcpedia-web-next.tar.gz"
-          target: "/tmp/"
+      - name: Setup SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          sed -i 's/\r$//' ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Unpack and restart on VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_DEPLOY_HOST }}
-          port: ${{ secrets.SSH_DEPLOY_PORT }}
-          username: ${{ secrets.SSH_DEPLOY_USER }}
-          key: ${{ secrets.SSH_DEPLOY_KEY }}
-          envs: SSH_DEPLOY_HOST
-          script: |
-            set -e
-            cd /home/code/mcpedia
+      - name: Copy to VPS & deploy
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          STORE_PATH="${{ steps.build.outputs.store-path }}"
+          SERVICE="${{ matrix.service }}"
+          PROFILE="mcpedia-${SERVICE}"
 
-            git pull origin main
-            /home/code/.bun/bin/bun install --frozen-lockfile
-            /home/code/.bun/bin/bun run scripts/indexer.ts
+          # Copy Nix closure to VPS
+          nix copy --to "ssh://***@$VPS_HOST" "$STORE_PATH"
 
-            rm -rf apps/web/.next
-            tar -xzf /tmp/mcpedia-web-next.tar.gz -C apps/web/
-            rm -f /tmp/mcpedia-web-next.tar.gz
+          # Deploy: set profile + restart
+          ssh "$VPS_USER@$VPS_HOST" \
+            "sudo /nix/var/nix/profiles/default/bin/nix-env \
+              --profile /nix/var/nix/profiles/$PROFILE \
+              --set '$STORE_PATH' && \
+            sudo systemctl restart $PROFILE && \
+            sleep 3 && \
+            sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
 
-            sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
-            sleep 3
-            systemctl --no-pager status mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker --no-legend
+      - name: Verify service
+        run: |
+          SERVICE="${{ matrix.service }}"
+          PORT_MAP="web:4016 api:4017 mcp:4021 worker:4018"
+          PORT=$(echo "$PORT_MAP" | grep "$SERVICE" | awk -F: '{print $2}')
+          ssh "$VPS_USER@$VPS_HOST" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/health 2>/dev/null || systemctl is-active $PROFILE"

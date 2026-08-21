@@ -10,12 +10,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # MCPedia Agent Instructions
 
-MCPedia is a content-first knowledge base where Markdown files under `content/` serve as the Git-tracked source of truth, indexed into PostgreSQL and accessed via Web UI, tRPC API, and Model Context Protocol (MCP).
+MCPedia is a content-first knowledge base where documents are stored in **PostgreSQL** as the source of truth (with auto-generated .md backups on disk), indexed into embeddings + search vectors, and accessed via Web UI, tRPC API, and Model Context Protocol (MCP).
+
+- **DB-first**: Documents are created/updated/deleted via the MCP `create_document`/`update_document`/`delete_document` tools (require `x-webhook-secret`). Filesystem `.md` files in `content/` are auto-generated backups (gitignored).
+- **Git-sync deploy**: CI builds `.next` on GitHub Actions → tarball → SCP to VPS → unpack. VPS never builds. Content changes flow via MCP API to the DB directly.
 
 ## Architecture Principles
 
 1. **Single Core Layer (`@mcpedia/core`)**: All business logic (document CRUD, indexing, search, revisions, path classification) resides in `packages/core`. Never access the database directly from `apps/web`, `apps/mcp`, or `apps/api`.
-2. **Content as Source of Truth**: Markdown files in `content/` with YAML frontmatter are the primary data store. The database stores metadata, search vectors, embeddings, and revision history.
+2. **DB as Source of Truth**: PostgreSQL stores document body + metadata. Filesystem `.md` files in `content/` are auto-generated backups (gitignored). Use the MCP `create_document`/`update_document` tools to write content.
 3. **Multi-Modal Search**: Keyword search (Postgres FTS `tsvector` + GIN), Semantic search (cosine similarity over chunked embeddings), and Hybrid search (Reciprocal Rank Fusion / RRF) are unified in `@mcpedia/search`.
 4. **Mutations & Security**: State-changing operations (document creation/updates/deletions, reindexing, revision restoration) require authentication (`x-webhook-secret` header or session cookie).
 

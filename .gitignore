@@ -43,3 +43,9 @@ next-env.d.ts
 # monorepo / turbo
 .turbo/
 dist/
+
+# MCPedia content — DB is source of truth via MCP API (create_document/update_document)
+# Filesystem .md files are auto-generated backups, not tracked in git.
+# To edit content: use the MCP create_document/update_document tools (requires x-webhook-secret)
+content/**/*.md
+!content/**/.gitkeep
