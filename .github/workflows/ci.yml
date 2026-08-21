@@ -15,8 +15,6 @@ jobs:
   build:
     name: typecheck + build
     runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.set-sha.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -34,13 +32,13 @@ jobs:
         run: bun run typecheck
 
       - name: Build web
-        run: bun --cwd apps/web run build
+        run: cd apps/web && bun run build
 
       # Smoke: verify the MCP server + resources load and the indexer/module
       # graph resolves. Requires no external services (Redis/Postgres) — pure
       # module load + in-memory smoke test.
       - name: MCP smoke test
-        run: bun --cwd apps/mcp run smoke
+        run: cd apps/mcp && bun run smoke
 
       # Unit tests across all packages + apps. CI has no Postgres/Redis, so
       # tests use bun:test module mocking to stub @mcpedia/db, @mcpedia/queue,
@@ -50,10 +48,6 @@ jobs:
 
       # Upload the built .next directory as a deploy artifact.
       # The deploy job copies this directly to the VPS — no build needed there.
-      - name: Set SHA output
-        id: set-sha
-        run: echo "sha=${GITHUB_SHA::12}" >> $GITHUB_OUTPUT
-
       - name: Upload web build artifact
         uses: actions/upload-artifact@v4
         with:
