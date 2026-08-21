@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel in-progress runs for the same ref so a fresh push supersedes them.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -27,7 +26,6 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Real build: typecheck + turbo across all workspace packages.
       - name: Typecheck
         run: bun run typecheck
 
@@ -35,12 +33,16 @@ jobs:
         working-directory: apps/web
         run: bun run build
 
-      - name: List .next contents
-        working-directory: apps/web
-        run: ls -la .next/ | head -10
+      # Upload the built .next directory (hidden dir → include-hidden-files).
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcpedia-web-build
+          path: apps/web/.next
+          include-hidden-files: true
+          if-no-files-found: error
 
-      # Smoke: verify the MCP server + resources load and the indexer/module
-      # graph resolves. Requires Postgres + Redis — only runs when available.
+      # Smoke: requires Postgres + Redis — skipped in CI without secrets.
       - name: MCP smoke test
         if: env.DATABASE_URL != ''
         working-directory: apps/mcp
@@ -49,20 +51,9 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
         run: bun run smoke
 
-      # Unit tests across all packages + apps. CI has no Postgres/Redis, so
-      # tests use bun:test module mocking to stub @mcpedia/db, @mcpedia/queue,
-      # and @mcpedia/embeddings — no live I/O.
+      # Unit tests — bun:test mocks, no external services.
       - name: Test
         run: bun run test
-
-      # Upload the built .next directory as a deploy artifact.
-      # The deploy job copies this directly to the VPS — no build needed there.
-      - name: Upload web build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mcpedia-web-build
-          path: ${{ github.workspace }}/apps/web/.next
-          retention-days: 1
 
   deploy:
     name: deploy to VPS
@@ -77,19 +68,26 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mcpedia-web-build
-          path: .next
+          path: apps/web/.next
 
-      - name: Copy pre-built .next to VPS
+      # Tar .next, then SCP the tarball to VPS (single file = reliable transfer).
+      - name: Tar .next
+        run: |
+          # Exclude cache to reduce tarball size (cache is ephemeral)
+          tar -C apps/web --exclude='.next/cache' -czf mcpedia-web-next.tar.gz .next
+          ls -lh mcpedia-web-next.tar.gz
+
+      - name: Copy tarball to VPS
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_DEPLOY_HOST }}
           port: ${{ secrets.SSH_DEPLOY_PORT }}
           username: ${{ secrets.SSH_DEPLOY_USER }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
-          source: ".next/*"
-          target: "/home/code/mcpedia/apps/web/.next"
+          source: "mcpedia-web-next.tar.gz"
+          target: "/tmp/"
 
-      - name: Deploy to VPS over SSH
+      - name: Unpack and restart on VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_DEPLOY_HOST }}
@@ -101,13 +99,14 @@ jobs:
             set -e
             cd /home/code/mcpedia
 
-            # Pull latest code (for content, .env, and non-web changes)
             git pull origin main
             /home/code/.bun/bin/bun install --frozen-lockfile
             /home/code/.bun/bin/bun run scripts/indexer.ts
 
-            # The .next/ was just copied from CI (pre-built, no build on VPS)
-            # Restart services to pick up the new build
+            rm -rf apps/web/.next
+            tar -xzf /tmp/mcpedia-web-next.tar.gz -C apps/web/
+            rm -f /tmp/mcpedia-web-next.tar.gz
+
             sudo systemctl restart mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker
             sleep 3
             systemctl --no-pager status mcpedia-web mcpedia-api mcpedia-mcp mcpedia-worker --no-legend
