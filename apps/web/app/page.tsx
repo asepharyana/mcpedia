@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
-import { cookies } from "next/headers";
 import type { DocSection } from "@mcpedia/core";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +16,140 @@ const SECTIONS: { id: DocSection; label: string; icon: string; desc: string }[] 
   { id: "notes", label: "Notes", icon: "📌", desc: "Quick references, patterns, and gotchas." },
 ];
 
+/**
+ * Build a hierarchical folder tree from a flat list of document paths.
+ * Each tree node is either a folder (has children) or a leaf doc.
+ */
+interface TreeNode {
+  name: string;
+  slug: string;
+  title: string;
+  children: TreeNode[];
+  isLeaf: boolean;
+}
+
+function buildFolderTree(paths: string[], section: string): TreeNode[] {
+  const tree: TreeNode[] = [];
+  const base = `${section}/`;
+
+  // Build a map of path → title (leaf docs only)
+  // We don't have titles here, so we use the last path segment as display name
+  const pathToTitle = new Map<string, string>();
+  for (const p of paths) {
+    const rel = p.startsWith(base) ? p.slice(base.length) : p;
+    const cleanPath = rel.replace(/\.md$/, "");
+    const parts = cleanPath.split("/");
+    const leafName = parts[parts.length - 1];
+    const title = leafName
+      .split(/[-_]/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    pathToTitle.set(cleanPath, title);
+  }
+
+  const addPath = (cleanPath: string) => {
+    const parts = cleanPath.split("/");
+    let current = tree;
+    let currentPath = section;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isLeaf = i === parts.length - 1;
+      currentPath = `${currentPath}/${part}`;
+
+      let node = current.find((n) => n.name === part);
+      if (!node) {
+        node = {
+          name: part,
+          slug: currentPath,
+          title: "",
+          children: [],
+          isLeaf: false,
+        };
+        current.push(node);
+      }
+
+      if (isLeaf) {
+        node.isLeaf = true;
+        node.title = pathToTitle.get(cleanPath) ?? part;
+      } else if (!node.title) {
+        // Folder title: capitalize the folder name
+        node.title = part
+          .split(/[-_]/)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+      }
+      current = node.children;
+    }
+  };
+
+  for (const docPath of paths) {
+    const rel = docPath.startsWith(base) ? docPath.slice(base.length) : docPath;
+    const cleanPath = rel.replace(/\.md$/, "");
+    addPath(cleanPath);
+  }
+
+  return tree;
+}
+
+function renderTree(nodes: TreeNode[], pathname: string) {
+  return (
+    <ul className="space-y-0.5">
+      {nodes.map((node) => (
+        <li key={node.slug}>
+          <Link
+            href={`/${node.slug}`}
+            className={`flex items-center gap-1.5 text-xs py-0.5 rounded transition-all ${
+              pathname === `/${node.slug}`
+                ? "text-[#7170ff] bg-[#191a1b]"
+                : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#191a1b]"
+            }`}
+            title={node.title}
+          >
+            <span>{node.isLeaf && node.children.length === 0 ? "📄" : "📁"}</span>
+            {node.title || node.name}
+          </Link>
+          {node.children.length > 0 && (
+            <div className="ml-3 mt-0.5">
+              {renderTree(node.children, pathname)}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+interface SectionTreeProps {
+  section: string;
+  docPaths: string[];
+  pathname: string;
+}
+
+async function SectionTree({ section, docPaths, pathname }: SectionTreeProps) {
+  const tree = buildFolderTree(docPaths.filter((p) => p.startsWith(`${section}/`)), section);
+  const sectionInfo = SECTIONS.find((s) => s.id === section)!;
+
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="text-xl">{sectionInfo.icon}</span>
+        <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors">
+          {sectionInfo.label}
+        </h3>
+      </div>
+      {tree.length > 0 ? (
+        renderTree(tree, pathname)
+      ) : (
+        <p className="text-xs text-[#62666d] pl-1">No documents</p>
+      )}
+    </div>
+  );
+}
+
 export default async function HomePage() {
   const all = await listDocuments();
-  const cookieStore = await cookies();
-  const canEdit = cookieStore.get("mcpedia_admin")?.value != null;
+  const docPaths = all.map((d) => d.path);
 
   const recent = [...all]
     .sort(
@@ -29,23 +158,18 @@ export default async function HomePage() {
     )
     .slice(0, 6);
 
-  const bySection = SECTIONS.map((s) => ({
-    ...s,
-    docs: all.filter((d) => d.section === s.id).slice(0, 4),
-    total: all.filter((d) => d.section === s.id).length,
-  }));
-
   return (
     <>
-      {/* ── Hero ── */}
+      {/* Hero */}
       <section className="mb-16">
         <div className="max-w-3xl">
           <h1 className="text-5xl font-medium text-[#f7f8f8] mb-4 leading-tight">
             MCPedia
           </h1>
           <p className="text-xl text-[#8a8f98] mb-8 leading-relaxed max-w-2xl">
-            A content-first knowledge base for humans and AI agents. Read the
-            web docs, call the MCP server, or browse the full document archive.
+            A content-first knowledge base for humans and AI agents. Browse the
+            hierarchical folder structure below, search all documents, or connect
+            via the MCP server.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -57,65 +181,55 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/search"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#191a1b] border border-[#1f2022] text-[#d0d6e0] rounded-lg font-medium hover:border-[#5e6ad2]/40 hover:text-[#f7f8f8] transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#191a1b] border border-[#222] text-[#d0d6e0] rounded-lg font-medium hover:border-[#5e6ad2]/40 hover:text-[#f7f8f8] transition-colors"
             >
               Search
             </Link>
           </div>
-
-          {/* Search box */}
-          <Link
-            href="/search"
-            className="relative flex items-center max-w-2xl group mb-12"
-          >
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#62666d] group-focus-within:text-[#5e6ad2] transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <span className="w-full pl-10 pr-4 py-3 bg-[#191a1b] border border-[#1f2022] rounded-lg text-[#62666d] group-hover:border-[#5e6ad2]/40 transition-colors">
-              Search documents, tags, authors...
-            </span>
-          </Link>
         </div>
       </section>
 
-      {/* ── Section Overview ── */}
+      {/* Hierarchical Folder Tree */}
       <section className="mb-16">
         <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-6">
           Browse by section
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {bySection.map((s) => (
-            <Link
-              key={s.id}
-              href={`/${s.id}`}
-              className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-5 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
-            >
-              <div className="text-3xl mb-3">{s.icon}</div>
-              <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors mb-1">
-                {s.label}
-              </h3>
-              <p className="text-xs text-[#62666d] mb-2 line-clamp-2">
-                {s.desc}
-              </p>
-              <span className="text-xs text-[#8a8f98]">
-                {s.total} document{s.total !== 1 ? "s" : ""}
-              </span>
-            </Link>
-          ))}
+          {SECTIONS.map((s) => {
+            const sectionDocs = all.filter((d) => d.section === s.id);
+            return (
+              <div
+                key={s.id}
+                className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-5 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <span className="text-2xl">{s.icon}</span>
+                  <Link
+                    href={`/${s.id}`}
+                    className="text-xs text-[#62666d] hover:text-[#7170ff] transition-colors"
+                  >
+                    View all ({sectionDocs.length})
+                  </Link>
+                </div>
+                <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors mb-3">
+                  {s.label}
+                </h3>
+                <p className="text-xs text-[#8a8f98] mb-3 line-clamp-2">
+                  {s.desc}
+                </p>
+                {/* Inline folder tree */}
+                <SectionTree
+                  section={s.id}
+                  docPaths={docPaths}
+                  pathname="/"
+                />
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* ── Recent Documents ── */}
+      {/* Recent Documents */}
       {recent.length > 0 && (
         <section className="mb-16">
           <div className="flex items-baseline justify-between mb-6">
@@ -147,10 +261,10 @@ export default async function HomePage() {
                     })}
                   </time>
                 </div>
-                <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-2">
+                <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1">
                   {d.title}
                 </h3>
-                <div className="flex flex-wrap gap-1">
+                <div className="mt-2 flex flex-wrap gap-1">
                   {d.tags.slice(0, 3).map((t) => (
                     <span
                       key={t}
@@ -166,7 +280,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── MCP info ── */}
+      {/* MCP info */}
       <section className="border-t border-[#1f2022] pt-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

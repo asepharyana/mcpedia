@@ -12,10 +12,10 @@ export default async function CreatePage() {
   if (!canEdit) redirect("/login");
 
   const allDocs = await listDocuments();
-
-  // Build folder suggestions per section using the shared helper from core
-  const sections = ["docs", "writeups", "research", "notes"];
   const docPaths = allDocs.map((d) => d.path);
+
+  // Build folder suggestions per section using the shared core helper
+  const sections = ["docs", "writeups", "research", "notes"];
   const foldersBySection: Record<string, string[]> = {};
   for (const sec of sections) {
     foldersBySection[sec] = extractFoldersForSection(docPaths, sec);

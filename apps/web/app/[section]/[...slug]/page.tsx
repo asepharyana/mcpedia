@@ -325,7 +325,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
   return (
     <article>
-      {/* Breadcrumb */}
+      {/* Breadcrumb — dynamic based on the doc's actual path */}
       <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6">
         <Link
           href="/"
@@ -333,15 +333,32 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
         >
           MCPedia
         </Link>
-        <span>/</span>
-        <Link
-          href="/docs"
-          className="hover:text-[#d0d6e0] transition-colors"
-        >
-          Docs
-        </Link>
-        <span>/</span>
-        <span className="text-[#8a8f98]">{doc.title}</span>
+        {doc.slug.split("/").map((part, i) => {
+          const crumbPath = doc.slug.split("/").slice(0, i + 1).join("/");
+          const isLast = i === doc.slug.split("/").length - 1;
+          const label = i === 0
+            ? SECTION_LABEL[part] || part
+            : part
+                .split(/[-_]/)
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ");
+          return (
+            <>
+              <span>/</span>
+              <Link
+                key={crumbPath}
+                href={`/${crumbPath}`}
+                className={
+                  isLast
+                    ? "text-[#8a8f98]"
+                    : "hover:text-[#d0d6e0] transition-colors"
+                }
+              >
+                {label}
+              </Link>
+            </>
+          );
+        })}
       </nav>
 
       {/* Header */}

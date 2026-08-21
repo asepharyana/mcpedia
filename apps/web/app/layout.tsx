@@ -10,6 +10,13 @@ export const metadata: Metadata = {
     "A content-first knowledge base. Humans read the Web UI; AI agents use the MCP server. Both share one Core.",
 };
 
+const SECTIONS = [
+  { id: "docs", label: "Documentation", icon: "📄" },
+  { id: "writeups", label: "Writeups", icon: "📝" },
+  { id: "research", label: "Research", icon: "🔬" },
+  { id: "notes", label: "Notes", icon: "📌" },
+] as const;
+
 export default function RootLayout({
   children,
 }: {
@@ -29,6 +36,24 @@ export default function RootLayout({
                 className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
               >
                 Docs
+              </Link>
+              <Link
+                href="/writeups"
+                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+              >
+                Writeups
+              </Link>
+              <Link
+                href="/research"
+                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+              >
+                Research
+              </Link>
+              <Link
+                href="/notes"
+                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
+              >
+                Notes
               </Link>
               <Link
                 href="/search"
