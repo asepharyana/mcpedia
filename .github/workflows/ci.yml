@@ -39,9 +39,9 @@ jobs:
       - name: Test
         run: bun run test
 
-      # Build .next for web — done here because Next.js/Turbopack has a
-      # Bun incompatibility in the Nix sandbox. The web derivation packages
-      # this pre-built .next (see deploy-web job below).
+      # Build .next for web — Next.js/Turbopack has a Bun incompatibility
+      # in the Nix sandbox. The web derivation (web.nix) packages this
+      # pre-built .next into a Nix store path.
       - name: Build Next.js .next
         working-directory: apps/web
         run: bun run build
@@ -79,25 +79,15 @@ jobs:
           extra-conf: |
             sandbox = false
             accept-flake-config = true
+            # Attic caches as substituters: lets CI pull the prebuilt attic
+            # client (and any cached deps/builds) over HTTPS.
+            extra-substituters = https://attic.asepharyana.my.id/gmw https://attic.asepharyana.my.id/mcpedia
+            extra-trusted-public-keys = gmw:Fq2Anzuhkb+T/hftWnPcveHSi21/RzIgIOeG8pCJa88= mcpedia:MNAtF2xaeKSFFVu7r3zOp2Jktu1jKHIQmcT+ePEfv9o=
 
       - name: Cache Nix
         uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
-
-      - name: Setup SSH key
-        env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          sed -i 's/\r$//' ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          # nix copy uses NIX_SSHOPTS for SSH
-          echo "NIX_SSHOPTS=-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
 
       - name: Build ${{ matrix.service }}
         id: build
@@ -107,21 +97,83 @@ jobs:
           echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
           echo "Build OK ${{ matrix.service }}: $STORE_PATH"
 
-      - name: Copy to VPS & deploy
+      - name: Setup SSH key
         env:
-          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
-          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          sed -i 's/\r$//' ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
+
+      # ── Push build to Attic binary cache ───────────────────────────────
+      # Bootstrap the attic client from the gmw cache (pre-built closure,
+      # pulled over HTTPS via the configured extra-substituters), then
+      # push to the mcpedia cache. This is FASTER than nix copy --to ssh://
+      # because the VPS substitutes (downloads) from the cache over HTTPS
+      # instead of a single-stream SSH copy.
+      - name: Push to Attic cache
+        id: push-attic
+        env:
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+          STORE_PATH: ${{ steps.build.outputs.store-path }}
+        run: |
+          ATTIC_DIR="/nix/store/fygyy3yk4rqdknxkiwkqambpnhyax0k4-attic-0.1.0"
+          mkdir -p "$HOME/.config/attic"
+          cat > "$HOME/.config/attic/config.toml" <<EOF
+          default-server = "pub"
+          [servers.pub]
+          endpoint = "https://attic.asepharyana.my.id"
+          token = "$ATTIC_TOKEN"
+          EOF
+
+          ATTIC_BIN=""
+          # Fast path: pull attic client from gmw cache
+          if nix-store --realise "$ATTIC_DIR" 2>/dev/null; then
+            ATTIC_BIN="$ATTIC_DIR/bin/attic"
+          fi
+
+          push_ok=""
+          if [ -n "$ATTIC_BIN" ] && [ -x "$ATTIC_BIN" ]; then
+            for attempt in 1 2 3; do
+              if "$ATTIC_BIN" push pub:mcpedia "$STORE_PATH" --jobs 4 --ignore-upstream-cache-filter; then
+                echo "✅ Pushed $STORE_PATH to Attic"
+                push_ok=1
+                break
+              fi
+              echo "⚠️ Attic push attempt $attempt/3 failed; retrying in 10s..."
+              sleep 10
+            done
+          fi
+
+          if [ -z "$push_ok" ]; then
+            echo "Attic push failed; copying store path directly to VPS"
+            nix copy --to "ssh://${VPS_USER}@${VPS_HOST}" "$STORE_PATH"
+            echo "push-fallback=ssh" >> "$GITHUB_OUTPUT"
+          else
+            echo "push-method=attic" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy on VPS
+        env:
           STORE_PATH: ${{ steps.build.outputs.store-path }}
           SERVICE: ${{ matrix.service }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
         run: |
           PROFILE="mcpedia-${SERVICE}"
-          export NIX_SSHOPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
-          nix copy --to "ssh://${VPS_USER}@${VPS_HOST}" "${STORE_PATH}"
-
+          # Substitute from Attic cache (fast — downloads over HTTPS)
+          # Falls back to SSH copy if substitution fails
+          ssh "$VPS_USER@$VPS_HOST" \
+            "curl -s -o /dev/null -w '%{http_code}' https://attic.asepharyana.my.id/mcpedia/$(echo '$STORE_PATH' | cut -d'-' -f2).narinfo 2>/dev/null; sudo /nix/var/nix/profiles/default/bin/nix-store --realise '$STORE_PATH'"
+          # Update profile + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
               --profile /nix/var/nix/profiles/\$PROFILE \
-              --set '${STORE_PATH}' && \
+              --set '$STORE_PATH' && \
             sudo systemctl restart \$PROFILE && \
             sleep 3 && \
             sudo systemctl status \$PROFILE --no-pager --no-legend | head -5"
@@ -161,24 +213,13 @@ jobs:
           extra-conf: |
             sandbox = false
             accept-flake-config = true
+            extra-substituters = https://attic.asepharyana.my.id/gmw https://attic.asepharyana.my.id/mcpedia
+            extra-trusted-public-keys = gmw:Fq2Anzuhkb+T/hftWnPcveHSi21/RzIgIOeG8pCJa88= mcpedia:MNAtF2xaeKSFFVu7r3zOp2Jktu1jKHIQmcT+ePEfv9o=
 
       - name: Cache Nix
         uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
-
-      - name: Setup SSH key
-        env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          sed -i 's/\r$//' ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          echo "NIX_SSHOPTS=-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
 
       - name: Download web .next artifact
         uses: actions/download-artifact@v4
@@ -187,8 +228,7 @@ jobs:
           path: /tmp/web-next
 
       - name: Unpack .next
-        run: |
-          tar -xzf /tmp/web-next/web-next.tar.gz -C apps/web/
+        run: tar -xzf /tmp/web-next/web-next.tar.gz -C apps/web/
 
       - name: Install deps (for node_modules in web.nix)
         run: bun install --frozen-lockfile
@@ -197,7 +237,7 @@ jobs:
         id: build
         run: |
           nix-build -E \
-            "with import <nixpkgs> {}; callPackage ./web.nix {
+            "let pkgs = import <nixpkgs> {}; in pkgs.callPackage ./web.nix {
               webNextDir = ./apps/web/.next;
               webPkgDir = ./apps/web;
               nodeModulesPath = .;
@@ -205,21 +245,71 @@ jobs:
             --impure --option sandbox false
           STORE_PATH=$(readlink result)
           echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
-          echo "Build OK web: $STORE_PATH"
 
-      - name: Copy to VPS & deploy
+      - name: Setup SSH key
         env:
-          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
-          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          sed -i 's/\r$//' ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Push to Attic cache
+        id: push-attic
+        env:
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
           STORE_PATH: ${{ steps.build.outputs.store-path }}
         run: |
-          export NIX_SSHOPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
-          nix copy --to "ssh://${VPS_USER}@${VPS_HOST}" "${STORE_PATH}"
+          ATTIC_DIR="/nix/store/fygyy3yk4rqdknxkiwkqambpnhyax0k4-attic-0.1.0"
+          mkdir -p "$HOME/.config/attic"
+          cat > "$HOME/.config/attic/config.toml" <<EOF
+          default-server = "pub"
+          [servers.pub]
+          endpoint = "https://attic.asepharyana.my.id"
+          token = "$ATTIC_TOKEN"
+          EOF
 
+          ATTIC_BIN=""
+          if nix-store --realise "$ATTIC_DIR" 2>/dev/null; then
+            ATTIC_BIN="$ATTIC_DIR/bin/attic"
+          fi
+
+          push_ok=""
+          if [ -n "$ATTIC_BIN" ] && [ -x "$ATTIC_BIN" ]; then
+            for attempt in 1 2 3; do
+              if "$ATTIC_BIN" push pub:mcpedia "$STORE_PATH" --jobs 4 --ignore-upstream-cache-filter; then
+                echo "✅ Pushed $STORE_PATH to Attic"
+                push_ok=1
+                break
+              fi
+              echo "⚠️ Attic push attempt $attempt/3 failed; retrying in 10s..."
+              sleep 10
+            done
+          fi
+
+          if [ -z "$push_ok" ]; then
+            echo "Attic push failed; copying store path directly to VPS"
+            nix copy --to "ssh://${VPS_USER}@${VPS_HOST}" "$STORE_PATH"
+          fi
+
+      - name: Deploy on VPS
+        env:
+          STORE_PATH: ${{ steps.build.outputs.store-path }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+        run: |
+          # Substitute from Attic cache (fast)
+          ssh "$VPS_USER@$VPS_HOST" \
+            "sudo /nix/var/nix/profiles/default/bin/nix-store --realise '$STORE_PATH'"
+          # Update profile + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
               --profile /nix/var/nix/profiles/mcpedia-web \
-              --set '${STORE_PATH}' && \
+              --set '$STORE_PATH' && \
             sudo systemctl restart mcpedia-web && \
             sleep 3 && \
             sudo systemctl status mcpedia-web --no-pager --no-legend | head -5"
