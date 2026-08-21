@@ -1,20 +1,8 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
-import type { DocSection } from "@mcpedia/core";
+import { SECTIONS } from "@mcpedia/config/sections";
 
 export const dynamic = "force-dynamic";
-
-const SECTIONS: { id: DocSection; label: string; icon: string; desc: string }[] = [
-  {
-    id: "docs",
-    label: "Documentation",
-    icon: "📄",
-    desc: "Setup guides, API references, and protocol specs.",
-  },
-  { id: "writeups", label: "Writeups", icon: "📝", desc: "Post-mortems, debugging stories, and case studies." },
-  { id: "research", label: "Research", icon: "🔬", desc: "Deep-dive analysis, architecture notes, and experiments." },
-  { id: "notes", label: "Notes", icon: "📌", desc: "Quick references, patterns, and gotchas." },
-];
 
 /**
  * Build a hierarchical folder tree from a flat list of document paths.
@@ -31,21 +19,6 @@ interface TreeNode {
 function buildFolderTree(paths: string[], section: string): TreeNode[] {
   const tree: TreeNode[] = [];
   const base = `${section}/`;
-
-  // Build a map of path → title (leaf docs only)
-  // We don't have titles here, so we use the last path segment as display name
-  const pathToTitle = new Map<string, string>();
-  for (const p of paths) {
-    const rel = p.startsWith(base) ? p.slice(base.length) : p;
-    const cleanPath = rel.replace(/\.md$/, "");
-    const parts = cleanPath.split("/");
-    const leafName = parts[parts.length - 1];
-    const title = leafName
-      .split(/[-_]/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-    pathToTitle.set(cleanPath, title);
-  }
 
   const addPath = (cleanPath: string) => {
     const parts = cleanPath.split("/");
@@ -71,9 +44,11 @@ function buildFolderTree(paths: string[], section: string): TreeNode[] {
 
       if (isLeaf) {
         node.isLeaf = true;
-        node.title = pathToTitle.get(cleanPath) ?? part;
+        node.title = part
+          .split(/[-_]/)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
       } else if (!node.title) {
-        // Folder title: capitalize the folder name
         node.title = part
           .split(/[-_]/)
           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -126,17 +101,16 @@ interface SectionTreeProps {
   pathname: string;
 }
 
-async function SectionTree({ section, docPaths, pathname }: SectionTreeProps) {
+function SectionTree({ section, docPaths, pathname }: SectionTreeProps) {
   const tree = buildFolderTree(docPaths.filter((p) => p.startsWith(`${section}/`)), section);
-  const sectionInfo = SECTIONS.find((s) => s.id === section)!;
+  const sectionInfo = SECTIONS.find((s) => s.id === section);
+  if (!sectionInfo) return null;
 
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-2">
         <span className="text-xl">{sectionInfo.icon}</span>
-        <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors">
-          {sectionInfo.label}
-        </h3>
+        <h3 className="font-medium text-[#f7f8f8]">{sectionInfo.label}</h3>
       </div>
       {tree.length > 0 ? (
         renderTree(tree, pathname)
@@ -244,38 +218,41 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recent.map((d) => (
-              <Link
-                key={d.slug}
-                href={`/${d.slug}`}
-                className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-4 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-xl">
-                    {SECTIONS.find((s) => s.id === d.section)?.icon || "📄"}
-                  </span>
-                  <time className="text-xs text-[#62666d]">
-                    {new Date(d.updatedAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </time>
-                </div>
-                <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1">
-                  {d.title}
-                </h3>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {d.tags.slice(0, 3).map((t) => (
-                    <span
-                      key={t}
-                      className="text-xs px-1.5 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
-                    >
-                      #{t}
+            {recent.map((d) => {
+              const sInfo = SECTIONS.find((s) => s.id === d.section);
+              return (
+                <Link
+                  key={d.slug}
+                  href={`/${d.slug}`}
+                  className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-4 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-xl">
+                      {sInfo?.icon || "📄"}
                     </span>
-                  ))}
-                </div>
-              </Link>
-            ))}
+                    <time className="text-xs text-[#62666d]">
+                      {new Date(d.updatedAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </time>
+                  </div>
+                  <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1">
+                    {d.title}
+                  </h3>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {d.tags.slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        className="text-xs px-1.5 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
+                      >
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

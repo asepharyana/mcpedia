@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
+import { SECTIONS } from "@mcpedia/config/sections";
 
 export const dynamic = "force-dynamic";
 
@@ -11,18 +12,6 @@ interface DocMeta {
   updatedAt: string;
   path: string;
 }
-
-const SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
-  {
-    id: "docs",
-    label: "Documentation",
-    icon: "📄",
-    desc: "Setup guides, API references, and protocol specs.",
-  },
-  { id: "writeups", label: "Writeups", icon: "📝", desc: "Post-mortems, debugging stories, and case studies." },
-  { id: "research", label: "Research", icon: "🔬", desc: "Deep-dive analysis, architecture notes, and experiments." },
-  { id: "notes", label: "Notes", icon: "📌", desc: "Quick references, patterns, and gotchas." },
-];
 
 /**
  * Build a hierarchical folder tree from a flat list of documents.
@@ -68,8 +57,6 @@ function buildFolderTree(docs: DocMeta[], section: string): TreeNode[] {
       if (isLeaf) {
         node.doc = doc;
         node.docCount = 1;
-      } else {
-        // This is a folder — count will be accumulated below
       }
       current = node.children;
     }

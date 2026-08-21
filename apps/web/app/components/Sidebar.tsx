@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SECTIONS } from "@mcpedia/config/sections";
 
 interface Doc {
   slug: string;
@@ -10,13 +11,6 @@ interface Doc {
   section: string;
   tags: string[];
 }
-
-const SECTIONS = [
-  { id: "docs", label: "Documentation", icon: "📄" },
-  { id: "writeups", label: "Writeups", icon: "📝" },
-  { id: "research", label: "Research", icon: "🔬" },
-  { id: "notes", label: "Notes", icon: "📌" },
-] as const;
 
 /**
  * Build a hierarchical folder tree from flat document slugs.
@@ -132,7 +126,7 @@ function renderTreeNode(
       </Link>
       {node.children.length > 0 && (
         <ul className="mt-0.5">
-          {node.children.map((child) => renderTreeNode(child, 0, pathname))}
+          {node.children.map((child) => renderTreeNode(child, depth + 1, pathname))}
         </ul>
       )}
     </li>

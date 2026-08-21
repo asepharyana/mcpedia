@@ -72,3 +72,17 @@ body {
 .prose tbody tr:nth-child(even) {
   background: rgba(15, 16, 17, 0.5);
 }
+
+/* Inline code in prose */
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+/* Blockquote styling */
+.prose blockquote {
+  border-left: 2px solid var(--color-border);
+  margin: 1.5em 0;
+  padding: 0.25em 1em;
+  font-style: italic;
+}
