@@ -304,3 +304,64 @@ export async function deleteDocument(slug: string): Promise<{ deleted: boolean }
   return { deleted: true };
 }
 
+// ---------------------------------------------------------------------------
+// Phase 14: Hierarchical folder structure helpers.
+// These enable GitHub-style nested folder browsing — the content creator
+// decides folder structure via where they place files; no config needed.
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the folder structure for a given section from a list of document paths.
+ * Returns all distinct folder prefixes (relative to the section), sorted.
+ *
+ * Example: for section "docs" with paths ["docs/a/b/c.md", "docs/a/b/d.md"],
+ * returns ["a", "a/b"].
+ */
+export function extractFoldersForSection(
+  docPaths: string[],
+  section: string,
+): string[] {
+  const folders = new Set<string>();
+  const base = `${section}/`;
+
+  for (const path of docPaths) {
+    const rel = path.startsWith(base) ? path.slice(base.length) : path;
+    const cleanPath = rel.replace(/\.md$/, "");
+    const parts = cleanPath.split("/");
+
+    let acc = "";
+    for (let i = 0; i < parts.length - 1; i++) {
+      acc = acc ? `${acc}/${parts[i]}` : parts[i];
+      folders.add(acc);
+    }
+  }
+
+  return [...folders].sort();
+}
+
+/**
+ * Given a full URL slug path (e.g. "writeups/ctf/defcon-quals-2024"), determine
+ * if it represents a folder (i.e., there are other docs whose paths start with
+ * this prefix) or a leaf document.
+ *
+ * Returns:
+ *  - "doc" if the path is a leaf document (path + ".md" matches a doc)
+ *  - "folder" if the path is a parent of other doc paths
+ *  - "none" if neither
+ */
+export function classifyPath(
+  docPaths: string[],
+  path: string,
+): "doc" | "folder" | "none" {
+  const dotMd = `${path}.md`;
+
+  // Check if it's a leaf document
+  if (docPaths.includes(dotMd)) return "doc";
+
+  // Check if it's a folder (parent of other paths)
+  const prefix = `${path}/`;
+  const hasChildren = docPaths.some((p) => p.startsWith(prefix));
+  if (hasChildren) return "folder";
+
+  return "none";
+}

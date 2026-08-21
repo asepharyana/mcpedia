@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { getDocument, getRelated, listRevisions } from "@mcpedia/core";
+import { getDocument, getRelated, listRevisions, listDocuments } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
+import { classifyPath, extractFoldersForSection } from "@mcpedia/core";
 
 // Render at request time (content in Postgres, not available at build time).
 export const dynamic = "force-dynamic";
@@ -78,7 +79,7 @@ function CustomFieldBadges({
           displayValue = value.join(", ");
         } else if (typeof value === "object" && value !== null) {
           // Objects → neutral badge, truncated JSON
-          displayValue = JSON.stringify(value).slice(0, 40) + 
+          displayValue = JSON.stringify(value).slice(0, 40) +
             (JSON.stringify(value).length > 40 ? "…" : "");
         } else {
           // String values — auto-detect content type for styling
@@ -140,10 +141,135 @@ function CustomFieldBadges({
   );
 }
 
+/**
+ * Folder index page — lists all docs (and subfolders) whose path starts with
+ * the given prefix. This enables GitHub-style nested folder browsing.
+ */
+function FolderIndexPage({
+  section,
+  slug,
+  docPaths,
+}: {
+  section: string;
+  slug: string;
+  docPaths: string[];
+}) {
+  const prefix = `${section}/${slug}/`;
+  const folderDocs = docPaths
+    .filter((p) => p.startsWith(prefix))
+    .map((p) => p.slice(prefix.length).replace(/\.md$/, ""))
+    .sort();
+
+  // Group into immediate children: folders vs leaf docs
+  const immediateFolders = new Set<string>();
+  const immediateDocs: { name: string; slug: string }[] = [];
+
+  for (const relPath of folderDocs) {
+    const parts = relPath.split("/");
+    if (parts.length === 1) {
+      // Leaf doc directly in this folder
+      immediateDocs.push({ name: parts[0], slug: `${section}/${slug}/${parts[0]}`.replace(/\/+/g, "/") });
+    } else {
+      // Deeper — register the immediate folder
+      immediateFolders.add(parts[0]);
+    }
+  }
+
+  const folders = [...immediateFolders].sort();
+
+  return (
+    <div>
+      <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6">
+        <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
+          MCPedia
+        </Link>
+        <span>/</span>
+        {slug.split("/").map((part, i) => {
+          const path = `${section}/${slug.split("/").slice(0, i + 1).join("/")}`;
+          const isLast = i === slug.split("/").length - 1;
+          return (
+            <>
+              <Link
+                key={path}
+                href={`/${path}`}
+                className={isLast ? "text-[#8a8f98]" : "hover:text-[#d0d6e0] transition-colors"}
+              >
+                {part}
+              </Link>
+              {!isLast && <span>/</span>}
+            </>
+          );
+        })}
+      </nav>
+
+      <div className="flex items-center gap-2 mb-6">
+        <span className="text-xl">📁</span>
+        <h1 className="text-3xl font-medium text-[#f7f8f8]">{slug.split("/").pop()}</h1>
+      </div>
+
+      {(folders.length > 0 || immediateDocs.length > 0) ? (
+        <div>
+          {folders.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-3">
+                Subfolders
+              </h2>
+              <div className="space-y-2">
+                {folders.map((folder) => (
+                  <Link
+                    key={folder}
+                    href={`/${section}/${slug}/${folder}`.replace(/\/+/g, "/")}
+                    className="flex items-center gap-2 text-sm text-[#d0d6e0] hover:text-[#7170ff] transition-colors"
+                  >
+                    <span>📁</span> {folder}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {immediateDocs.length > 0 && (
+            <div>
+              <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-3">
+                Documents
+              </h2>
+              <div className="space-y-2">
+                {immediateDocs.map((doc) => (
+                  <Link
+                    key={doc.slug}
+                    href={`/${doc.slug}`}
+                    className="flex items-center gap-2 text-sm text-[#d0d6e0] hover:text-[#7170ff] transition-colors line-clamp-1"
+                  >
+                    <span>📄</span> {doc.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-[#62666d]">No documents found in this folder.</p>
+      )}
+    </div>
+  );
+}
+
 export default async function DocPage({ params, searchParams }: DocPageProps) {
   const { section, slug } = await params;
   const { edit } = await searchParams;
   const fullSlug = `${section}/${slug.join("/")}`;
+
+  // Fetch all docs to classify the path as "doc" or "folder"
+  const allDocs = await listDocuments();
+  const docPaths = allDocs.map((d) => d.path);
+
+  const classification = classifyPath(docPaths, fullSlug);
+
+  // If the slug path is a folder (not a leaf doc), render the folder index
+  if (classification === "folder") {
+    return <FolderIndexPage section={section} slug={slug.join("/")} docPaths={docPaths} />;
+  }
+
+  // Otherwise, treat as a document (existing behavior)
   const doc = await getDocument(fullSlug);
   if (!doc) notFound();
 
@@ -154,11 +280,13 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   // Any other key in the document metadata becomes a dynamic badge.
   const STANDARD_KEYS = new Set([
     "id", "slug", "title", "type", "section", "status",
-    "author", "tags", "path", "createdAt", "updatedAt",
+    "author", "tags", "path", "createdAt", "updatedAt", "extraFields",
   ]);
 
   // Edit mode: inline form
   if (edit === "1" && canEdit) {
+    // Load existing folders for the folder picker in edit mode
+    const existingFolders = extractFoldersForSection(docPaths, doc.section);
     return (
       <div>
         <Link
@@ -174,6 +302,9 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           mode="edit"
           slug={fullSlug}
           secret={WEBHOOK_SECRET}
+          existingFolders={{
+            [doc.section]: existingFolders,
+          }}
           initial={{
             title: doc.title,
             body: doc.body,
@@ -182,6 +313,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
             status: doc.status,
             tags: doc.tags,
             author: doc.author,
+            extraFields: doc.extraFields,
           }}
         />
       </div>
@@ -215,7 +347,9 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">{SECTION_ICON[doc.section] || "📄"}</span>
+          <span className="text-xl">
+            {SECTION_ICON[doc.section] || "📄"}
+          </span>
           <span className="text-xs font-medium text-[#7170ff] uppercase">
             {SECTION_LABEL[doc.section] || doc.section}
           </span>

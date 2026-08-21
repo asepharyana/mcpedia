@@ -7,6 +7,7 @@ interface DocFormProps {
   mode: "create" | "edit";
   slug?: string;
   secret: string;
+  existingFolders?: Record<string, string[]>;
   initial?: {
     title?: string;
     body?: string;
@@ -15,18 +16,26 @@ interface DocFormProps {
     status?: "published" | "draft";
     tags?: string[];
     author?: string;
+    extraFields?: Record<string, unknown>;
   };
 }
 
 const SECTION_OPTIONS = ["docs", "writeups", "research", "notes"] as const;
 const TYPE_OPTIONS = ["documentation", "writeup", "research", "note"] as const;
 
-export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
+export default function DocForm({
+  mode,
+  slug,
+  secret,
+  existingFolders,
+  initial,
+}: DocFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [slugInput, setSlugInput] = useState("");
   const [body, setBody] = useState(initial?.body ?? "");
   const [section, setSection] = useState(initial?.section ?? "docs");
   const [type, setType] = useState(initial?.type ?? "documentation");
@@ -35,15 +44,25 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
   const [author, setAuthor] = useState(initial?.author ?? "");
 
   // Dynamic custom fields — content creators can add any metadata they want
-  // (e.g. CTF: event, challenge, category, difficulty, points, team_name, ...)
   const [customFields, setCustomFields] = useState<
     Array<{ key: string; value: string }>
   >([]);
+
+  // Parent folder selection (hierarchical structure like GitHub folders)
+  const [parentFolder, setParentFolder] = useState("");
 
   const tagList = tags
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+
+  // For edit mode, slug is fixed (full path). For create mode, build from folder + slugInput.
+  const isEdit = mode === "edit";
+  const effectiveSlug = isEdit ? (slug ?? "") : parentFolder
+    ? `${parentFolder}/${slugInput}`.replace(/^\/+/, "").replace(/\/+/g, "/")
+    : slugInput;
+
+  const availableFolders = existingFolders?.[section] ?? [];
 
   const baseInputCls =
     "w-full px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]";
@@ -67,10 +86,17 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
     setLoading(true);
     setError(null);
 
+    if (!effectiveSlug || !title || !body) {
+      setError("Slug, title, and body are required.");
+      setLoading(false);
+      return;
+    }
+
     // Build payload with custom fields flattened at top level
     const payload: Record<string, unknown> = {
       title,
       body,
+      slug: effectiveSlug,
       section,
       type,
       status,
@@ -88,19 +114,13 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
     try {
       let res: Response;
       if (mode === "create") {
-        const slugVal =
-          slug ??
-          title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
         res = await fetch("/api/docs", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-webhook-secret": secret,
           },
-          body: JSON.stringify({ slug: slugVal, ...payload }),
+          body: JSON.stringify(payload),
         });
       } else {
         const editSlug = slug ?? "";
@@ -149,22 +169,6 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
         />
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-          Slug
-        </label>
-        <input
-          type="text"
-          value={slug ?? ""}
-          readOnly
-          className="w-full px-3 py-2 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
-          placeholder={section}
-        />
-        <p className="text-xs text-[#62666d] mt-1">
-          URL-safe path under the section.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
@@ -174,6 +178,7 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
             value={section}
             onChange={(e) => setSection(e.target.value as typeof section)}
             className={baseInputCls}
+            disabled={isEdit}
           >
             {SECTION_OPTIONS.map((s) => (
               <option key={s} value={s}>
@@ -215,6 +220,56 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
 
       <div>
         <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          Parent folder (optional)
+        </label>
+        <select
+          value={parentFolder}
+          onChange={(e) => setParentFolder(e.target.value)}
+          className={baseInputCls}
+          disabled={isEdit}
+        >
+          <option value="">(root of section)</option>
+          {availableFolders.map((folder) => (
+            <option key={folder} value={folder}>
+              {folder}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-[#62666d] mt-1">
+          Place this document inside an existing folder. The slug will be
+          prepended with the folder path (e.g. selecting "ctf/defcon-quals-2024"
+          + slug "pwn-100" → "ctf/defcon-quals-2024/pwn-100").
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+          {isEdit ? "Full slug (read-only)" : "Slug (file name)"}
+        </label>
+        {isEdit ? (
+          <input
+            type="text"
+            value={slug ?? ""}
+            readOnly
+            className="w-full px-3 py-2 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
+          />
+        ) : (
+          <input
+            type="text"
+            value={slugInput}
+            onChange={(e) => setSlugInput(e.target.value)}
+            className={baseInputCls}
+            placeholder="my-document-slug"
+            required
+          />
+        )}
+        <p className="text-xs text-[#62666d] mt-1">
+          Resolved path: <code>{effectiveSlug || section}</code>
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
           Tags
         </label>
         <input
@@ -246,8 +301,8 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
         <p className="text-xs text-[#62666d] mb-3">
           Add extra frontmatter fields. Content creators name and define their own
           metadata here — the system auto-renders any field as a badge on the doc
-          page based on its value (e.g. numbers → points style, "easy" → green
-          difficulty badge, etc.).{" "}</p>
+          page based on its value.
+        </p>
         {customFields.length > 0 && (
           <div className="space-y-3 mb-3">
             {customFields.map((field, i) => (
@@ -263,9 +318,7 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
                   type="text"
                   placeholder="value"
                   value={field.value}
-                  onChange={(e) =>
-                    updateCustomField(i, "value", e.target.value)
-                  }
+                  onChange={(e) => updateCustomField(i, "value", e.target.value)}
                   className="flex-1 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
                 />
                 <button
@@ -295,7 +348,7 @@ export default function DocForm({ mode, slug, secret, initial }: DocFormProps) {
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          className="w-full h-96 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#d0d6e0] placeholder-[#62666d] font-mono text-sm focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
+          className="w-full h-96 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] font-mono text-sm focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
           placeholder="# Heading&#10;&#10;Content here..."
         />
       </div>
