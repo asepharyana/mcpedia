@@ -630,3 +630,98 @@ mod:    .github/workflows/deploy.yml                       # explicit indexer pa
 new:    content/writeups/ctf/template/writeup-template.md # template
 new:    content/writeups/ctf/defcon-quals-2024/pwn-100-ret2win-alignment.md # sample
 ```
+
+## Phase 14 — Hierarchical Folder Structure ✅ DONE
+
+> User: "gk ada bedanya, maksud saya inginnya itu bisa yg bertingkat seperti github
+> yg memiliki folder dalam folder"
+> (I want it to be hierarchical like GitHub, with folders inside folders)
+
+### Problem
+URLs were flat: `/<section>/<slug>` where slug could contain `/` but there were
+**no folder index pages** — navigating to a folder path (e.g. `/writeups/ctf`)
+returned 404. The sidebar showed a flat list with indentation based on slug depth,
+but no actual folder-node entries or folder navigation.
+
+### Solution
+
+1. **Section index pages** (`apps/web/app/[section]/page.tsx`) — new generic
+   route for every section. Shows a folder tree (built from doc paths) + a flat
+   list of all docs in that section with "View all (N)" links. Previously only
+   `/docs/page.tsx` existed; now `/writeups`, `/research`, `/notes` all have
+   index pages.
+
+2. **Folder index pages** (`apps/web/app/[section]/[...slug]/page.tsx`) — the
+   doc page now **classifies** the incoming slug path using
+   `classifyPath(docPaths, path)`:
+   - `"doc"` → leaf document (existing doc page behavior)
+   - `"folder"` → renders `FolderIndexPage` component listing subfolders 📁 +
+     immediate docs 📄
+   - `"none"` → 404
+   
+   This is fully **content-driven** — no config maps. If a path has child docs,
+   it's a folder. If it matches a doc exactly, it's a leaf.
+
+3. **Hierarchical sidebar** (`apps/web/app/components/Sidebar.tsx`) — rebuilds
+   the tree from flat doc slugs. Folder nodes (📁) have collapsible children;
+   leaf docs (📄) link directly. Indentation scales with depth.
+
+4. **DocForm v2** (`apps/web/app/components/DocForm.tsx`) — now has a **parent
+   folder dropdown** populated from existing folders in the selected section.
+   The slug input is for the leaf name only; the resolved slug (with folder
+   prefix) is displayed below. Create/edit modes handled separately (edit keeps
+   slug read-only).
+
+5. **Core helpers** (`packages/core/src/document.service.ts`) — exported
+   `extractFoldersForSection(docPaths, section)` and `classifyPath(docPaths, path)`
+   from `@mcpedia/core` so both web app and future MCP tools can use them.
+
+6. **Example hierarchy** — reorganized the CTF writeup into proper nested folders:
+```
+writeups/
+  ctf/
+    _index.md              ← folder intro
+    defcon-quals-2024/
+      _index.md            ← event intro
+      pwn/
+        pwn-100-ret2win-alignment.md  ← the actual writeup
+    template/
+      writeup-template.md
+```
+
+### Verification done (real, against live services)
+
+| Path | Status | Type |
+|------|--------|------|
+| `/` | ✅ 200 | home |
+| `/docs` | ✅ 200 | section index |
+| `/docs/caddy/reverse-proxy` | ✅ 200 | doc page (nested slug) |
+| `/writeups` | ✅ 200 | section index (tree) |
+| `/writeups/ctf` | ✅ 200 | **folder index** (subfolder: defcon-quals-2024) |
+| `/writeups/ctf/defcon-quals-2024` | ✅ 200 | **folder index** (subfolder: pwn) |
+| `/writeups/ctf/defcon-quals-2024/pwn` | ✅ 200 | **folder index** (docs: pwn-100) |
+| `/writeups/ctf/defcon-quals-2024/pwn/pwn-100-ret2win-alignment` | ✅ 200 | doc page + dynamic badges |
+| `/writeups/ctf/template/writeup-template` | ✅ 200 | doc page |
+| `/writeups/infra/cloudflare-525` | ✅ 200 | flat doc (still works) |
+| `/notes/postgres/full-text-search` | ✅ 200 | nested doc (still works) |
+
+- `bun run test` → 7 task groups, all pass
+- `turbo run typecheck` → green across all packages
+- `next build` → success (17 routes registered)
+- Folder index pages render 📁 subfolders + 📄 docs with correct hrefs
+- Section index pages render 📁 folder tree with indentation
+- DocForm parent folder dropdown populated from real folder structure
+
+### Files changed
+```
+new:    apps/web/app/[section]/page.tsx          # generic section index with tree
+mod:    apps/web/app/[section]/[...slug]/page.tsx # folder index detection
+mod:    apps/web/app/components/Sidebar.tsx       # hierarchical tree
+mod:    apps/web/app/components/DocForm.tsx       # parent folder dropdown
+mod:    apps/web/app/create/page.tsx              # pass existingFolders
+mod:    packages/core/src/document.service.ts     # extractFoldersForSection + classifyPath
+new:    content/writeups/ctf/_index.md            # folder intro
+new:    content/writeups/ctf/defcon-quals-2024/_index.md  # event intro
+moved:  content/writeups/ctf/defcon-quals-2024/pwn-100-ret2win-alignment.md
+     → content/writeups/ctf/defcon-quals-2024/pwn/pwn-100-ret2win-alignment.md
+```
