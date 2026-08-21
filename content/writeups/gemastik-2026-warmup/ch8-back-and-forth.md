@@ -1,13 +1,20 @@
 ---
 title: "Back and Forth — XOR"
+type: "writeup"
+section: "writeups"
+status: "published"
+author: "asep"
+tags: ["gemastik", "ctf", "warmup", "reverse"]
+path: "writeups/gemastik-2026-warmup/ch8-back-and-forth.md"
+created_at: "2026-08-21T07:25:37.394Z"
+updated_at: "2026-08-21T07:25:37.394Z"
 event: "GEMASTIK 2026 Warmup"
-challenge: "Back and Forth"
+challenge: "Back and Forth — XOR"
 category: "reverse"
 points: 500
 difficulty: "easy"
 flag: "GEMASTIK19{x0r_it_back_4gain}"
 ---
-
 # Back and Forth (500 pts) — Reversing / XOR
 
 **File:** `chall.c`

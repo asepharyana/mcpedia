@@ -1,13 +1,20 @@
 ---
 title: "Nothing Here — Web Comment"
+type: "writeup"
+section: "writeups"
+status: "published"
+author: "asep"
+tags: ["gemastik", "ctf", "warmup", "web"]
+path: "writeups/gemastik-2026-warmup/ch5-nothing-here.md"
+created_at: "2026-08-21T07:25:28.880Z"
+updated_at: "2026-08-21T07:25:28.880Z"
 event: "GEMASTIK 2026 Warmup"
-challenge: "Nothing Here"
+challenge: "Nothing Here — Web Comment"
 category: "web"
 points: 500
 difficulty: "easy"
 flag: "GEMASTIK19{v13w_s0urc3_pahlawan}"
 ---
-
 # Nothing Here (500 pts) — Web
 
 **URL:** `http://15.232.89.109:8001/`

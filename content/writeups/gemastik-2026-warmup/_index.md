@@ -1,5 +1,16 @@
 ---
 title: "GEMASTIK 2026 Warmup — All Chapters"
+type: "writeup"
+section: "writeups"
+status: "published"
+author: "asep"
+tags: ["gemastik", "ctf", "warmup", "writeup-index"]
+path: "writeups/gemastik-2026-warmup/_index.md"
+created_at: "2026-08-21T07:17:48.670Z"
+updated_at: "2026-08-21T07:17:48.670Z"
+---
+---
+title: "GEMASTIK 2026 Warmup — All Chapters"
 event: "GEMASTIK 2026 Warmup"
 category: "index"
 points: 0
@@ -28,21 +39,20 @@ difficulty: "index"
 | 13 | Slopped | RSA small factors | medium | `GEMASTIK19{qu4ntum_c0mput3r_br0k3_rs4_y0u_sh0uld_us3_p4p3r_s34rch_mcp_sk1ll}` |
 | 14 | Slopped wave-2 | RSA paper search | hard | `GEMASTIK19{test_vector_of_listP_on_quant}` |
 
-## Ringkasan Metode
-
+### Ringkasan Metode
 | Ch | Metode | Tool |
 |----|--------|------|
-| 1 | Double Base64 | `base64 -d` ×2 |
-| 2 | ROT13 Caesar | `codecs.encode(s, "rot_13")` |
-| 3 | strings | `strings secret.bin` |
-| 4 | EXIF metadata | `strings photo.jpg` |
-| 5 | HTML comment | `curl \| grep '<!--'` |
-| 6 | Base64 cookie | `base64 -d` |
+| 1 | Double Base64 | base64 -d ×2 |
+| 2 | ROT13 Caesar | codecs.encode(s, "rot_13") |
+| 3 | strings | strings secret.bin |
+| 4 | EXIF metadata | strings photo.jpg |
+| 5 | HTML comment | curl \| grep '<!--' |
+| 6 | Base64 cookie | base64 -d |
 | 7 | ASCII codes | chr() decoding |
 | 8 | Single-byte XOR | XOR 0x42 |
 | 9 | Stack overflow | buffer > admin |
 | 10 | ret2win + align | ROP chain |
-| 11 | PNG strings | `strings kucing.png` |
-| 12 | Hex→Base64 | `bytes.fromhex` + `b64decode` |
+| 11 | PNG strings | strings kucing.png |
+| 12 | Hex→Base64 | bytes.fromhex + b64decode |
 | 13 | RSA small factors | trial division / sympy factorint |
 | 14 | RSA special integers | GCD with paper appendix primes |

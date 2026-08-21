@@ -1,13 +1,20 @@
 ---
 title: "Are You Admin? — Buffer Overflow"
+type: "writeup"
+section: "writeups"
+status: "published"
+author: "asep"
+tags: ["gemastik", "ctf", "warmup", "pwn"]
+path: "writeups/gemastik-2026-warmup/ch9-are-you-admin.md"
+created_at: "2026-08-21T07:25:39.978Z"
+updated_at: "2026-08-21T07:25:39.978Z"
 event: "GEMASTIK 2026 Warmup"
-challenge: "Are You Admin?"
+challenge: "Are You Admin? — Buffer Overflow"
 category: "pwn"
 points: 500
 difficulty: "easy"
 flag: "GEMASTIK19{0v3rfl0w_ubah_var}"
 ---
-
 # Are You Admin? (500 pts) — Pwn / Buffer Overflow
 
 **Server:** `nc 15.232.89.109 9001`

@@ -1,13 +1,20 @@
 ---
 title: "Open Book — Python Source"
+type: "writeup"
+section: "writeups"
+status: "published"
+author: "asep"
+tags: ["gemastik", "ctf", "warmup", "misc"]
+path: "writeups/gemastik-2026-warmup/ch7-open-book.md"
+created_at: "2026-08-21T07:25:34.522Z"
+updated_at: "2026-08-21T07:25:34.522Z"
 event: "GEMASTIK 2026 Warmup"
-challenge: "Open Book"
+challenge: "Open Book — Python Source"
 category: "misc"
 points: 500
 difficulty: "easy"
 flag: "GEMASTIK19{pyth0n_s0urc3_t3rbuka}"
 ---
-
 # Open Book (500 pts) — Misc / Source
 
 **File:** `chall.py`

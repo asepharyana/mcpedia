@@ -1,13 +1,20 @@
 ---
 title: "Call Me — ret2win"
+type: "writeup"
+section: "writeups"
+status: "published"
+author: "asep"
+tags: ["gemastik", "ctf", "warmup", "pwn"]
+path: "writeups/gemastik-2026-warmup/ch10-call-me.md"
+created_at: "2026-08-21T07:25:43.282Z"
+updated_at: "2026-08-21T07:25:43.282Z"
 event: "GEMASTIK 2026 Warmup"
-challenge: "Call Me"
+challenge: "Call Me — ret2win"
 category: "pwn"
 points: 500
 difficulty: "easy"
 flag: "GEMASTIK19{r3t2w1n_l0mpat_k3_win}"
 ---
-
 # Call Me (500 pts) — Pwn / ret2win
 
 **Server:** `nc 15.232.89.109 9002`
