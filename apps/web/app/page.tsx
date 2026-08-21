@@ -5,8 +5,8 @@ import { SECTIONS } from "@mcpedia/config/sections";
 export const dynamic = "force-dynamic";
 
 /**
- * Build a hierarchical folder tree from a flat list of document paths.
- * Each tree node is either a folder (has children) or a leaf doc.
+ * Build a hierarchical folder tree from document list.
+ * Each node is either a folder (has children) or a leaf doc.
  */
 interface TreeNode {
   name: string;
@@ -16,16 +16,25 @@ interface TreeNode {
   isLeaf: boolean;
 }
 
-function buildFolderTree(paths: string[], section: string): TreeNode[] {
-  const tree: TreeNode[] = [];
-  const base = `${section}/`;
+// Helper: turn a slug segment into a display title
+function slugToTitle(segment: string): string {
+  return segment
+    .split(/[-_]/)
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ""))
+    .join(" ");
+}
 
-  const addPath = (cleanPath: string) => {
-    const parts = cleanPath.split("/");
+function buildFolderTree(docs: { slug: string; title: string }[], section: string): TreeNode[] {
+  const tree: TreeNode[] = [];
+  const treeIndex = new Map<string, TreeNode>();
+
+  for (const doc of docs) {
+    const parts = doc.slug.split("/");
+    // parts[0] should be the section
     let current = tree;
     let currentPath = section;
 
-    for (let i = 0; i < parts.length; i++) {
+    for (let i = 1; i < parts.length; i++) {
       const part = parts[i];
       const isLeaf = i === parts.length - 1;
       currentPath = `${currentPath}/${part}`;
@@ -35,36 +44,43 @@ function buildFolderTree(paths: string[], section: string): TreeNode[] {
         node = {
           name: part,
           slug: currentPath,
-          title: "",
+          title: isLeaf ? doc.title : slugToTitle(part),
           children: [],
           isLeaf: false,
         };
         current.push(node);
+        treeIndex.set(currentPath, node);
       }
 
       if (isLeaf) {
         node.isLeaf = true;
-        node.title = part
-          .split(/[-_]/)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
+        node.title = doc.title;
       } else if (!node.title) {
-        node.title = part
-          .split(/[-_]/)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
+        node.title = slugToTitle(part);
       }
       current = node.children;
     }
-  };
-
-  for (const docPath of paths) {
-    const rel = docPath.startsWith(base) ? docPath.slice(base.length) : docPath;
-    const cleanPath = rel.replace(/\.md$/, "");
-    addPath(cleanPath);
   }
 
-  return tree;
+  // Sort: folders first, then docs, alphabetically
+  function sortNodes(nodes: TreeNode[]): TreeNode[] {
+    return nodes.sort((a, b) => {
+      const aFolder = a.children.length > 0 ? 0 : 1;
+      const bFolder = b.children.length > 0 ? 0 : 1;
+      if (aFolder !== bFolder) return aFolder - bFolder;
+      return a.title.localeCompare(b.title);
+    });
+  }
+
+  function sortAll(nodes: TreeNode[]): TreeNode[] {
+    const sorted = sortNodes(nodes);
+    for (const node of sorted) {
+      if (node.children.length > 0) sortAll(node.children);
+    }
+    return sorted;
+  }
+
+  return sortAll(tree);
 }
 
 function renderTree(nodes: TreeNode[], pathname: string) {
@@ -82,10 +98,10 @@ function renderTree(nodes: TreeNode[], pathname: string) {
             title={node.title}
           >
             <span>{node.isLeaf && node.children.length === 0 ? "📄" : "📁"}</span>
-            {node.title || node.name}
+            <span className="truncate">{node.title || node.name}</span>
           </Link>
           {node.children.length > 0 && (
-            <div className="ml-3 mt-0.5">
+            <div className="ml-5 border-l border-[#1f2022] pl-2 mt-0.5">
               {renderTree(node.children, pathname)}
             </div>
           )}
@@ -97,12 +113,15 @@ function renderTree(nodes: TreeNode[], pathname: string) {
 
 interface SectionTreeProps {
   section: string;
-  docPaths: string[];
+  docs: { slug: string; title: string }[];
   pathname: string;
 }
 
-function SectionTree({ section, docPaths, pathname }: SectionTreeProps) {
-  const tree = buildFolderTree(docPaths.filter((p) => p.startsWith(`${section}/`)), section);
+function SectionTree({ section, docs, pathname }: SectionTreeProps) {
+  const tree = buildFolderTree(
+    docs.filter((d) => d.slug.startsWith(`${section}/`)),
+    section,
+  );
   const sectionInfo = SECTIONS.find((s) => s.id === section);
   if (!sectionInfo) return null;
 
@@ -123,7 +142,6 @@ function SectionTree({ section, docPaths, pathname }: SectionTreeProps) {
 
 export default async function HomePage() {
   const all = await listDocuments();
-  const docPaths = all.map((d) => d.path);
 
   const recent = [...all]
     .sort(
@@ -194,7 +212,7 @@ export default async function HomePage() {
                 {/* Inline folder tree */}
                 <SectionTree
                   section={s.id}
-                  docPaths={docPaths}
+                  docs={all.map((d) => ({ slug: d.slug, title: d.title }))}
                   pathname="/"
                 />
               </div>

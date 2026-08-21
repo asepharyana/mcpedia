@@ -325,7 +325,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   // Any other key in the document metadata becomes a dynamic badge.
   const STANDARD_KEYS = new Set([
     "id", "slug", "title", "type", "section", "status",
-    "author", "tags", "path", "createdAt", "updatedAt", "extraFields",
+    "author", "tags", "path", "createdAt", "updatedAt",
+    "extraFields", "body",
   ]);
 
   // Edit mode: inline form

@@ -30,7 +30,7 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
 
   for (const doc of docs.filter((d) => d.section === section)) {
     const parts = doc.slug.split("/");
-    // parts[0] should be the section
+    // parts[0] is the section; skip it
     let current = root;
 
     for (let i = 1; i < parts.length; i++) {
@@ -56,7 +56,7 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
       } else if (!node.title) {
         node.title = part
           .split(/[-_]/)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ""))
           .join(" ");
       }
       current = node.children;
@@ -91,6 +91,7 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
 
 /**
  * Recursively render the folder tree with proper depth styling.
+ * Each level gets a 20px left margin + subtle border for visual hierarchy.
  */
 function renderTreeNode(
   node: TreeNode,
@@ -100,24 +101,24 @@ function renderTreeNode(
   const isFolder = node.children.length > 0;
   const isActive = pathname === `/${node.slug}`;
   const hasActiveChild = pathname.startsWith(`/${node.slug}/`);
-  const indent = depth * 16; // 16px per level
 
   return (
-    <li key={node.slug}>
+    <li key={node.slug} className={depth > 0 ? "ml-5 border-l border-[#1f2022] pl-2" : ""}>
       <Link
         href={`/${node.slug}`}
-        className={`flex items-center gap-1.5 text-xs py-1 px-2 rounded transition-all ${
+        className={`flex items-center justify-between gap-1.5 text-xs py-1 px-2 rounded transition-all ${
           isActive
             ? "text-[#7170ff] bg-[#191a1b]"
             : hasActiveChild
               ? "text-[#d0d6e0]"
               : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#191a1b]"
         }`}
-        style={{ marginLeft: `${indent}px` }}
         title={node.title}
       >
-        <span>{isFolder ? "📁" : "📄"}</span>
-        <span className="truncate">{node.title || node.name}</span>
+        <span className="flex items-center gap-1.5 truncate">
+          <span>{isFolder ? "📁" : "📄"}</span>
+          {node.title || node.name}
+        </span>
         {isFolder && node.docCount > 0 && (
           <span className="ml-auto text-[#62666d] bg-[#191a1b] px-1 py-0 rounded">
             {node.docCount}
@@ -125,7 +126,7 @@ function renderTreeNode(
         )}
       </Link>
       {node.children.length > 0 && (
-        <ul className="mt-0.5">
+        <ul className="mt-0.5 space-y-0.5">
           {node.children.map((child) => renderTreeNode(child, depth + 1, pathname))}
         </ul>
       )}
@@ -156,7 +157,7 @@ export default function Sidebar() {
           {docs.length} documents
         </span>
       </div>
-      <ul className="space-y-2 px-3 text-sm">
+      <ul className="space-y-3 px-3 text-sm">
         {SECTIONS.map(({ id, label, icon }) => {
           const sectionDocs = docs.filter((d) => d.section === id);
           if (sectionDocs.length === 0) return null;
@@ -165,16 +166,18 @@ export default function Sidebar() {
           const isActive = pathname === `/${id}` || pathname.startsWith(`/${id}/`);
 
           return (
-            <li key={id}>
+            <li key={id} className="border-b border-[#141516] pb-2 last:border-0">
               <div
-                className={`flex items-center gap-1.5 mb-1 mt-4 first:mt-0 ${
+                className={`flex items-center gap-1.5 mb-1.5 ${
                   isActive ? "text-[#7170ff]" : "text-[#62666d]"
                 }`}
               >
-                <span>{icon}</span>
-                <span className="text-xs font-medium">{label}</span>
+                <span className="text-lg">{icon}</span>
+                <span className="font-medium text-xs uppercase tracking-wider">
+                  {label}
+                </span>
               </div>
-              <ul className="space-y-0.5 pl-0">
+              <ul className="space-y-0.5">
                 {tree.map((node) => renderTreeNode(node, 0, pathname))}
               </ul>
             </li>
