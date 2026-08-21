@@ -41,12 +41,11 @@ jobs:
 
       # Build .next for web — done here because Next.js/Turbopack has a
       # Bun incompatibility in the Nix sandbox. The web derivation packages
-      # this pre-built .next (see build-and-deploy matrix below).
+      # this pre-built .next (see deploy-web job below).
       - name: Build Next.js .next
         working-directory: apps/web
         run: bun run build
 
-      # Upload .next for the web Nix derivation
       - name: Tar .next
         run: tar -C apps/web --exclude='.next/cache' -czf web-next.tar.gz .next
 
@@ -58,7 +57,7 @@ jobs:
           if-no-files-found: error
 
   build-and-deploy:
-    name: build + deploy (Nix)
+    name: build + deploy (Nix) — ${{ matrix.service }}
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -86,17 +85,10 @@ jobs:
         with:
           use-flakehub: false
 
-      - name: Build ${{ matrix.service }}
-        id: build
-        run: |
-          nix build .#${{ matrix.service }} --impure --option sandbox false --print-build-logs
-          STORE_PATH=$(readlink result)
-          echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
-          echo "Build OK ${{ matrix.service }}: $STORE_PATH"
-
       - name: Setup SSH key
         env:
           SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
@@ -104,35 +96,47 @@ jobs:
           sed -i 's/\r$//' ~/.ssh/id_ed25519
           ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # nix copy uses NIX_SSHOPTS for SSH
+          echo "NIX_SSHOPTS=-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+
+      - name: Build ${{ matrix.service }}
+        id: build
+        run: |
+          nix build ".#${{ matrix.service }}" --impure --option sandbox false --print-build-logs
+          STORE_PATH=$(readlink result)
+          echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
+          echo "Build OK ${{ matrix.service }}: $STORE_PATH"
 
       - name: Copy to VPS & deploy
         env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+          STORE_PATH: ${{ steps.build.outputs.store-path }}
+          SERVICE: ${{ matrix.service }}
         run: |
-          STORE_PATH="${{ steps.build.outputs.store-path }}"
-          SERVICE="${{ matrix.service }}"
           PROFILE="mcpedia-${SERVICE}"
-
-          nix copy --to "ssh://***@$VPS_HOST" "$STORE_PATH"
+          export NIX_SSHOPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
+          nix copy --to "ssh://${VPS_USER}@${VPS_HOST}" "${STORE_PATH}"
 
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
-              --profile /nix/var/nix/profiles/$PROFILE \
-              --set '$STORE_PATH' && \
-            sudo systemctl restart $PROFILE && \
+              --profile /nix/var/nix/profiles/\$PROFILE \
+              --set '${STORE_PATH}' && \
+            sudo systemctl restart \$PROFILE && \
             sleep 3 && \
-            sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
+            sudo systemctl status \$PROFILE --no-pager --no-legend | head -5"
 
       - name: Verify service
         env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+          SERVICE: ${{ matrix.service }}
         run: |
-          SERVICE="${{ matrix.service }}"
           PORT_MAP="api:4017 mcp:4021 worker:4018"
           PORT=$(echo "$PORT_MAP" | grep "$SERVICE" | awk -F: '{print $2}')
           ssh "$VPS_USER@$VPS_HOST" \
             "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/health 2>/dev/null \
-             || systemctl is-active $PROFILE"
+             || systemctl is-active \"mcpedia-$SERVICE\""
 
   deploy-web:
     name: build + deploy (web)
@@ -144,6 +148,11 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v16
@@ -158,6 +167,19 @@ jobs:
         with:
           use-flakehub: false
 
+      - name: Setup SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          sed -i 's/\r$//' ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "NIX_SSHOPTS=-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+
       - name: Download web .next artifact
         uses: actions/download-artifact@v4
         with:
@@ -166,58 +188,46 @@ jobs:
 
       - name: Unpack .next
         run: |
-          mkdir -p apps/web/.next
           tar -xzf /tmp/web-next/web-next.tar.gz -C apps/web/
 
-      # Full monorepo install (needed for node_modules + workspace symlinks)
-      - name: Install deps
+      - name: Install deps (for node_modules in web.nix)
         run: bun install --frozen-lockfile
 
       - name: Build web Nix derivation
         id: build
         run: |
           nix-build -E \
-            "let pkgs = import <nixpkgs> {}; in pkgs.callPackage ./web.nix {
-              webNextDir = /home/runner/work/mcpedia/mcpedia/apps/web/.next;
-              webPkgDir = /home/runner/work/mcpedia/mcpedia/apps/web;
-              nodeModulesPath = /home/runner/work/mcpedia/mcpedia;
+            "with import <nixpkgs> {}; callPackage ./web.nix {
+              webNextDir = ./apps/web/.next;
+              webPkgDir = ./apps/web;
+              nodeModulesPath = .;
             }" \
             --impure --option sandbox false
           STORE_PATH=$(readlink result)
           echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
           echo "Build OK web: $STORE_PATH"
 
-      - name: Setup SSH key
-        env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          sed -i 's/\r$//' ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-
       - name: Copy to VPS & deploy
         env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
+          STORE_PATH: ${{ steps.build.outputs.store-path }}
         run: |
-          STORE_PATH="${{ steps.build.outputs.store-path }}"
-          PROFILE="mcpedia-web"
-
-          nix copy --to "ssh://***@$VPS_HOST" "$STORE_PATH"
+          export NIX_SSHOPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
+          nix copy --to "ssh://${VPS_USER}@${VPS_HOST}" "${STORE_PATH}"
 
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
-              --profile /nix/var/nix/profiles/$PROFILE \
-              --set '$STORE_PATH' && \
-            sudo systemctl restart $PROFILE && \
+              --profile /nix/var/nix/profiles/mcpedia-web \
+              --set '${STORE_PATH}' && \
+            sudo systemctl restart mcpedia-web && \
             sleep 3 && \
-            sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
+            sudo systemctl status mcpedia-web --no-pager --no-legend | head -5"
 
       - name: Verify public URL
         env:
-          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.SSH_DEPLOY_HOST }}
+          VPS_USER: ${{ secrets.SSH_DEPLOY_USER }}
         run: |
           ssh "$VPS_USER@$VPS_HOST" \
             "curl -sk -o /dev/null -w '%{http_code}' https://wiki.asepharyana.my.id/"
