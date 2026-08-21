@@ -174,11 +174,11 @@ jobs:
           # Update profile + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
-              --profile /nix/var/nix/profiles/\$PROFILE \
+              --profile /nix/var/nix/profiles/$PROFILE \
               --set '$STORE_PATH' && \
-            sudo systemctl restart \$PROFILE && \
+            sudo systemctl restart $PROFILE && \
             sleep 3 && \
-            sudo systemctl status \$PROFILE --no-pager --no-legend | head -5"
+            sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
 
       - name: Verify service
         env:
