@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
+import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
-import { SECTIONS } from "@mcpedia/config/sections";
 
 export const metadata: Metadata = {
   title: "MCPedia — Knowledge base for humans and AI agents",
@@ -18,51 +16,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full scroll-smooth">
-      <body className="min-h-screen bg-[#08090a] text-[#e2e4e7] font-inter">
+      <body className="min-h-screen bg-[#08090a] text-[#e2e4e7] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white flex flex-col">
         <div hidden>
-          {/* hidden aria-live container for screen readers */}
           <div id="a11y-live-region" aria-live="polite" aria-atomic="true" />
         </div>
 
-        <header className="sticky top-0 z-20 border-b border-[#1f2022]">
-          <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="font-medium text-[#f7f8f8] text-lg">
-              MCPedia
-            </Link>
-            <nav className="flex items-center gap-6 text-sm">
-              {SECTIONS.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/${s.id}`}
-                  className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
-                >
-                  {s.label}
-                </Link>
-              ))}
-              <Link
-                href="/search"
-                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
-              >
-                Search
-              </Link>
-              <Link
-                href="/login"
-                className="text-[#d0d6e0] hover:text-[#f7f8f8] transition-colors"
-              >
-                Login
-              </Link>
-              <ThemeToggle />
-            </nav>
-          </div>
-        </header>
+        <Header />
 
-        <div className="mx-auto max-w-7xl">
-          <div className="flex">
-            <aside className="hidden xl:block w-64 shrink-0 border-r border-[#1f2022]">
+        <div className="mx-auto max-w-7xl w-full flex-1 flex flex-col">
+          <div className="flex flex-1">
+            <aside className="hidden lg:block w-72 shrink-0 border-r border-[#1f2022] sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
               <Sidebar />
             </aside>
             <main className="flex-1 min-w-0">
-              <div className="px-8 py-10 max-w-4xl mx-auto lg:max-w-5xl xl:max-w-6xl">
+              <div className="px-4 sm:px-8 py-8 sm:py-10 max-w-4xl mx-auto xl:max-w-5xl">
                 {children}
               </div>
             </main>

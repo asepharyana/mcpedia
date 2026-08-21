@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
 import { SECTIONS } from "@mcpedia/config/sections";
+import McpConfigSnippet from "@/components/McpConfigSnippet";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Build a hierarchical folder tree from document list.
- * Each node is either a folder (has children) or a leaf doc.
- */
 interface TreeNode {
   name: string;
   slug: string;
@@ -16,7 +13,6 @@ interface TreeNode {
   isLeaf: boolean;
 }
 
-// Helper: turn a slug segment into a display title
 function slugToTitle(segment: string): string {
   return segment
     .split(/[-_]/)
@@ -30,7 +26,6 @@ function buildFolderTree(docs: { slug: string; title: string }[], section: strin
 
   for (const doc of docs) {
     const parts = doc.slug.split("/");
-    // parts[0] should be the section
     let current = tree;
     let currentPath = section;
 
@@ -62,7 +57,6 @@ function buildFolderTree(docs: { slug: string; title: string }[], section: strin
     }
   }
 
-  // Sort: folders first, then docs, alphabetically
   function sortNodes(nodes: TreeNode[]): TreeNode[] {
     return nodes.sort((a, b) => {
       const aFolder = a.children.length > 0 ? 0 : 1;
@@ -85,23 +79,23 @@ function buildFolderTree(docs: { slug: string; title: string }[], section: strin
 
 function renderTree(nodes: TreeNode[], pathname: string) {
   return (
-    <ul className="space-y-0.5">
+    <ul className="space-y-1">
       {nodes.map((node) => (
         <li key={node.slug}>
           <Link
             href={`/${node.slug}`}
-            className={`flex items-center gap-1.5 text-xs py-0.5 rounded transition-all ${
+            className={`flex items-center gap-1.5 text-xs py-1 px-1.5 rounded transition-all ${
               pathname === `/${node.slug}`
-                ? "text-[#7170ff] bg-[#191a1b]"
-                : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#191a1b]"
+                ? "text-[#7170ff] bg-[#5e6ad2]/15 font-medium"
+                : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#141517]"
             }`}
             title={node.title}
           >
-            <span>{node.isLeaf && node.children.length === 0 ? "📄" : "📁"}</span>
+            <span className="opacity-70">{node.isLeaf && node.children.length === 0 ? "📄" : "📁"}</span>
             <span className="truncate">{node.title || node.name}</span>
           </Link>
           {node.children.length > 0 && (
-            <div className="ml-5 border-l border-[#1f2022] pl-2 mt-0.5">
+            <div className="ml-3.5 border-l border-[#1f2022] pl-2 mt-0.5">
               {renderTree(node.children, pathname)}
             </div>
           )}
@@ -127,10 +121,6 @@ function SectionTree({ section, docs, pathname }: SectionTreeProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-xl">{sectionInfo.icon}</span>
-        <h3 className="font-medium text-[#f7f8f8]">{sectionInfo.label}</h3>
-      </div>
       {tree.length > 0 ? (
         renderTree(tree, pathname)
       ) : (
@@ -151,70 +141,114 @@ export default async function HomePage() {
     .slice(0, 6);
 
   return (
-    <>
-      {/* Hero */}
-      <section className="mb-16">
-        <div className="max-w-3xl">
-          <h1 className="text-5xl font-medium text-[#f7f8f8] mb-4 leading-tight">
-            MCPedia
-          </h1>
-          <p className="text-xl text-[#8a8f98] mb-8 leading-relaxed max-w-2xl">
-            A content-first knowledge base for humans and AI agents. Browse the
-            hierarchical folder structure below, search all documents, or connect
-            via the MCP server.
-          </p>
+    <div className="space-y-16">
+      {/* Hero Section */}
+      <section className="relative pt-4 pb-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 text-[#7170ff] text-xs font-medium mb-6">
+          <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
+          <span>Model Context Protocol + Unified Knowledge Base</span>
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <Link
-              href="/docs"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#5e6ad2] text-white rounded-lg font-medium hover:bg-[#6a75e0] transition-colors"
-            >
-              Browse Documents
-            </Link>
-            <Link
-              href="/search"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#191a1b] border border-[#222] text-[#d0d6e0] rounded-lg font-medium hover:border-[#5e6ad2]/40 hover:text-[#f7f8f8] transition-colors"
-            >
-              Search
-            </Link>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#f7f8f8] tracking-tight mb-5 leading-tight">
+          Knowledge Base for <br />
+          <span className="bg-gradient-to-r from-[#7170ff] via-[#828fff] to-white bg-clip-text text-transparent">
+            Humans and AI Agents
+          </span>
+        </h1>
+
+        <p className="text-base sm:text-lg text-[#8a8f98] max-w-2xl leading-relaxed mb-8">
+          A high-performance, content-first documentation system. Browse hierarchical notes and CTF writeups in your browser, or connect AI coding assistants directly via native MCP tools.
+        </p>
+
+        {/* Quick action buttons & stats */}
+        <div className="flex flex-wrap items-center gap-3 mb-10">
+          <Link
+            href="/docs"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6a75e0] text-white rounded-lg font-medium text-sm transition-all shadow-md shadow-[#5e6ad2]/20"
+          >
+            <span>Browse Documentation</span>
+            <span>→</span>
+          </Link>
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] hover:border-[#383b42] text-[#d0d6e0] hover:text-white rounded-lg font-medium text-sm transition-all"
+          >
+            <svg className="w-4 h-4 text-[#8a8f98]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span>Hybrid Search</span>
+          </Link>
+          <Link
+            href="/create"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] text-[#8a8f98] hover:text-[#d0d6e0] rounded-lg text-sm transition-colors"
+          >
+            <span>+ Create Document</span>
+          </Link>
+        </div>
+
+        {/* Stats bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[#0c0d0e] border border-[#1f2022] rounded-xl max-w-3xl">
+          <div>
+            <div className="text-xl font-semibold text-[#f7f8f8]">{all.length}</div>
+            <div className="text-xs text-[#62666d]">Documents indexed</div>
+          </div>
+          <div>
+            <div className="text-xl font-semibold text-[#f7f8f8]">{SECTIONS.length}</div>
+            <div className="text-xs text-[#62666d]">Core sections</div>
+          </div>
+          <div>
+            <div className="text-xl font-semibold text-[#7170ff]">RRF Hybrid</div>
+            <div className="text-xs text-[#62666d]">FTS + 2048-dim vectors</div>
+          </div>
+          <div>
+            <div className="text-xl font-semibold text-emerald-400">10 MCP Tools</div>
+            <div className="text-xs text-[#62666d]">Streamable HTTP :4021</div>
           </div>
         </div>
       </section>
 
-      {/* Hierarchical Folder Tree */}
-      <section className="mb-16">
-        <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-6">
-          Browse by section
-        </h2>
+      {/* Browse by Section */}
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
+            Browse by Section
+          </h2>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {SECTIONS.map((s) => {
             const sectionDocs = all.filter((d) => d.section === s.id);
             return (
               <div
                 key={s.id}
-                className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-5 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
+                className="group flex flex-col justify-between bg-[#0f1011] hover:bg-[#131415] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-xl p-5 transition-all shadow-sm"
               >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <span className="text-2xl">{s.icon}</span>
-                  <Link
-                    href={`/${s.id}`}
-                    className="text-xs text-[#62666d] hover:text-[#7170ff] transition-colors"
-                  >
-                    View all ({sectionDocs.length})
-                  </Link>
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-2xl">{s.icon}</span>
+                    <Link
+                      href={`/${s.id}`}
+                      className="text-xs font-mono text-[#7170ff] hover:underline"
+                    >
+                      {sectionDocs.length} docs →
+                    </Link>
+                  </div>
+                  <h3 className="font-semibold text-base text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors mb-1.5">
+                    {s.label}
+                  </h3>
+                  <p className="text-xs text-[#8a8f98] mb-4 line-clamp-2 leading-relaxed">
+                    {s.desc}
+                  </p>
                 </div>
-                <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors mb-3">
-                  {s.label}
-                </h3>
-                <p className="text-xs text-[#8a8f98] mb-3 line-clamp-2">
-                  {s.desc}
-                </p>
+
                 {/* Inline folder tree */}
-                <SectionTree
-                  section={s.id}
-                  docs={all.map((d) => ({ slug: d.slug, title: d.title }))}
-                  pathname="/"
-                />
+                <div className="pt-3 border-t border-[#1a1b1d]">
+                  <SectionTree
+                    section={s.id}
+                    docs={all.map((d) => ({ slug: d.slug, title: d.title }))}
+                    pathname="/"
+                  />
+                </div>
               </div>
             );
           })}
@@ -223,18 +257,19 @@ export default async function HomePage() {
 
       {/* Recent Documents */}
       {recent.length > 0 && (
-        <section className="mb-16">
-          <div className="flex items-baseline justify-between mb-6">
-            <h2 className="text-sm font-medium text-[#d0d6e0] uppercase">
-              Recently updated
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
+              Recently Updated Knowledge
             </h2>
             <Link
               href="/docs"
-              className="text-xs text-[#62666d] hover:text-[#7170ff] transition-colors"
+              className="text-xs text-[#7170ff] hover:underline"
             >
-              View all →
+              View all ({all.length}) →
             </Link>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recent.map((d) => {
               const sInfo = SECTIONS.find((s) => s.id === d.section);
@@ -242,32 +277,34 @@ export default async function HomePage() {
                 <Link
                   key={d.slug}
                   href={`/${d.slug}`}
-                  className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-4 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
+                  className="group block bg-[#0f1011] hover:bg-[#131415] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-xl p-4 transition-all shadow-sm"
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="text-xl">
-                      {sInfo?.icon || "📄"}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs font-mono text-[#7170ff] uppercase">
+                      {sInfo?.icon} {d.section}
                     </span>
-                    <time className="text-xs text-[#62666d]">
+                    <time className="text-[11px] text-[#62666d] font-mono">
                       {new Date(d.updatedAt).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
                     </time>
                   </div>
-                  <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1">
+                  <h3 className="font-medium text-sm text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-2">
                     {d.title}
                   </h3>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {d.tags.slice(0, 3).map((t) => (
-                      <span
-                        key={t}
-                        className="text-xs px-1.5 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
-                      >
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
+                  {d.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {d.tags.slice(0, 3).map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] px-1.5 py-0.25 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98]"
+                        >
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -275,29 +312,22 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* MCP info */}
-      <section className="border-t border-[#1f2022] pt-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h3 className="font-medium text-[#f7f8f8] mb-1">AI agents</h3>
-            <p className="text-sm text-[#8a8f98]">
-              MCP server at{" "}
-              <code className="text-[#d0d6e0] bg-[#191a1b] px-1.5 py-0.5 rounded">
-                mcp.asepharyana.my.id/mcp
-              </code>
-              . All tools available via Streamable HTTP transport.
-            </p>
+      {/* MCP Agent Integration Showcase */}
+      <section className="border-t border-[#1f2022] pt-12 pb-6">
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#141517] border border-[#23252a] text-[#8a8f98] text-xs font-mono mb-2">
+            <span>⚡ Native Model Context Protocol (MCP)</span>
           </div>
-          <Link
-            href="https://github.com/modelcontextprotocol"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-[#62666d] hover:text-[#7170ff] transition-colors"
-          >
-            MCP spec →
-          </Link>
+          <h2 className="text-2xl font-bold text-[#f7f8f8] tracking-tight mb-2">
+            Connect AI Coding Assistants
+          </h2>
+          <p className="text-sm text-[#8a8f98] max-w-xl">
+            Give Claude Desktop, Cursor, Antigravity, or Zed direct access to your knowledge base via semantic search, read resources, and document tools.
+          </p>
         </div>
+
+        <McpConfigSnippet />
       </section>
-    </>
+    </div>
   );
 }

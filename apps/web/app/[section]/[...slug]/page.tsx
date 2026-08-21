@@ -6,11 +6,11 @@ import { WEBHOOK_SECRET } from "@mcpedia/config";
 import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
+import DocActions from "@/components/DocActions";
 import { classifyPath, extractFoldersForSection } from "@mcpedia/core";
 import { SECTIONS_BY_ID } from "@mcpedia/config/sections";
 import type { DocumentMeta } from "@mcpedia/core";
 
-// Render at request time (content in Postgres, not available at build time).
 export const dynamic = "force-dynamic";
 
 interface DocPageProps {
@@ -18,9 +18,6 @@ interface DocPageProps {
   searchParams: Promise<{ edit?: string }>;
 }
 
-/**
- * Get section label and icon from the centralized config.
- */
 function getSectionInfo(section: string) {
   const info = SECTIONS_BY_ID.get(section);
   if (!info) {
@@ -35,12 +32,12 @@ function getSectionInfo(section: string) {
   };
 }
 
-/**
- * Render any extra/custom frontmatter fields as labeled badges.
- * This makes the system dynamic — the content creator decides what metadata
- * to include. Standard fields (title, author, tags, etc.) are handled
- * explicitly; any OTHER keys in frontmatter become badges here.
- */
+function calculateReadingTime(text: string): string {
+  const words = text.trim().split(/\s+/).length;
+  const minutes = Math.ceil(words / 200);
+  return `${minutes} min read`;
+}
+
 function CustomFieldBadges({
   doc,
   standardKeys,
@@ -57,61 +54,49 @@ function CustomFieldBadges({
   if (customEntries.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-[#1f2022]">
+    <div className="flex flex-wrap items-center gap-2 mt-4 pt-3.5 border-t border-[#1f2022]">
       {customEntries.map(([key, value]) => {
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
-        let colorClass = "bg-[#191a1b] border-[#23252a] text-[#d0d6e0]";
+        let colorClass = "bg-[#141517] border-[#23252a] text-[#d0d6e0]";
+        let icon = "🏷️";
         let displayValue: string;
-
-        // --- Auto-detect styling based on VALUE TYPE + VALUE CONTENTS ---
-        // (NOT key name — content creators determine appearance via values,
-        //  not by using specific key names)
 
         if (typeof value === "number") {
           colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
-          displayValue = `${value}`;
+          icon = "🎯";
+          displayValue = `${value} pts`;
         } else if (typeof value === "boolean") {
           colorClass = value
-            ? "bg-green-500/15 border-green-500/25 text-green-400"
-            : "bg-red-500/15 border-red-500/25 text-red-400";
-          displayValue = value ? "Yes" : "No";
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+            : "bg-rose-500/10 border-rose-500/30 text-rose-400";
+          icon = value ? "✓" : "✕";
+          displayValue = value ? "Solved" : "Pending";
         } else if (Array.isArray(value)) {
           colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+          icon = "🗂️";
           displayValue = value.join(", ");
-        } else if (typeof value === "object" && value !== null) {
-          displayValue = JSON.stringify(value).slice(0, 40) +
-            (JSON.stringify(value).length > 40 ? "…" : "");
         } else {
           const v = String(value).toLowerCase();
-
-          const diffMatch = v.match(
-            /^(easy|simple|beginner)\b|^(medium|intermediate)\b|^(hard|expert|advanced)\b/i,
-          );
-          if (diffMatch) {
-            if (/^easy|simple|beginner/i.test(v))
-              colorClass = "bg-green-500/10 border-green-500/30 text-green-400";
-            else if (/^medium|intermediate/i.test(v))
-              colorClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
-            else if (/^hard|expert|advanced/i.test(v))
-              colorClass = "bg-red-500/10 border-red-500/30 text-red-400";
-            displayValue = diffMatch[0];
-          } else if (/ctf|def.?con|hack|game|competition|tournament|qualifier/i.test(v)) {
+          if (/^(easy|simple|beginner)/i.test(v)) {
+            colorClass = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+            icon = "🟢";
+            displayValue = "Easy";
+          } else if (/^(medium|intermediate)/i.test(v)) {
+            colorClass = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+            icon = "🟡";
+            displayValue = "Medium";
+          } else if (/^(hard|expert|advanced)/i.test(v)) {
+            colorClass = "bg-rose-500/10 border-rose-500/30 text-rose-400";
+            icon = "🔴";
+            displayValue = "Hard";
+          } else if (/^(pwn|web|crypto|misc|forensic|reverse|binary)/i.test(v)) {
+            colorClass = "bg-indigo-500/10 border-indigo-500/30 text-indigo-300";
+            icon = "⚡";
+            displayValue = v.toUpperCase();
+          } else if (/ctf|def.?con|event/i.test(v)) {
             colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
+            icon = "🏆";
             displayValue = String(value);
-          } else if (/(\d+)\s*pts?$/i.test(v)) {
-            const match = v.match(/(\d+)\s*pts?$/i);
-            colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
-            displayValue = match ? `${match[1]} pts` : String(value);
-          } else if (/^(pwn|web|crypto|misc|forensic|reverse|pwnable|binary|webexploit)$/i.test(v)) {
-            colorClass = "bg-orange-500/15 border-orange-500/25 text-orange-400";
-            displayValue = v.charAt(0).toUpperCase() + v.slice(1);
-          } else if (/^(solved|pending|wip|in.?progress|completed|todo)$/i.test(v)) {
-            colorClass = v.includes("solved") || v.includes("completed")
-              ? "bg-green-500/10 border-green-500/30 text-green-400"
-              : v.includes("wip") || v.includes("progress")
-                ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
-                : "bg-red-500/10 border-red-500/30 text-red-400";
-            displayValue = v.charAt(0).toUpperCase() + v.slice(1);
           } else {
             displayValue = String(value);
           }
@@ -120,10 +105,11 @@ function CustomFieldBadges({
         return (
           <span
             key={key}
-            className={`px-2 py-0.5 border rounded text-xs ${colorClass}`}
-            title={label}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-md text-xs font-mono transition-colors ${colorClass}`}
           >
-            {displayValue}
+            <span className="text-[10px] opacity-70">{icon}</span>
+            <span className="text-[#8a8f98] font-sans">{label}:</span>
+            <span className="font-medium">{displayValue}</span>
           </span>
         );
       })}
@@ -131,10 +117,6 @@ function CustomFieldBadges({
   );
 }
 
-/**
- * Folder index page — lists all docs (and subfolders) whose path starts with
- * the given prefix. This enables GitHub-style nested folder browsing.
- */
 function FolderIndexPage({
   section,
   slug,
@@ -153,7 +135,6 @@ function FolderIndexPage({
     }))
     .sort((a, b) => a.rel.localeCompare(b.rel));
 
-  // Group into immediate children: folders vs leaf docs
   const immediateFolders = new Map<string, { docCount: number }>();
   const immediateDocs: DocumentMeta[] = [];
 
@@ -170,129 +151,136 @@ function FolderIndexPage({
   }
 
   const folders = [...immediateFolders.entries()].sort(([a], [b]) => a.localeCompare(b));
-
   const sectionInfo = getSectionInfo(section);
+  const folderName = slug.split("/").pop()!.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
   return (
     <div>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6">
+      <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6 flex-wrap">
         <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
           MCPedia
         </Link>
         <span>/</span>
-        <Link
-          href={`/${section}`}
-          className="hover:text-[#d0d6e0] transition-colors"
-        >
+        <Link href={`/${section}`} className="hover:text-[#d0d6e0] transition-colors">
           {sectionInfo.label}
         </Link>
         {slug.split("/").map((part, i) => {
           const path = `${section}/${slug.split("/").slice(0, i + 1).join("/")}`;
           const isLast = i === slug.split("/").length - 1;
-          const label = part
-            .split(/[-_]/)
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(" ");
+          const label = part.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
           return (
-            <>
+            <span key={path} className="flex items-center gap-2">
               <span>/</span>
-              <span
-                key={path}
-                className={isLast ? "text-[#8a8f98]" : "hover:text-[#d0d6e0]"}
-              >
+              <span className={isLast ? "text-[#8a8f98] font-medium" : "hover:text-[#d0d6e0]"}>
                 {label}
               </span>
-            </>
+            </span>
           );
         })}
       </nav>
 
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-8">
-        <span className="text-2xl">📁</span>
-        <h1 className="text-3xl font-medium text-[#f7f8f8]">
-          {slug.split("/").pop()!.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
-        </h1>
-        <span className="text-xs text-[#62666d] bg-[#191a1b] px-2 py-0.5 rounded">
-          {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
-        </span>
+      {/* Header card */}
+      <div className="bg-[#0f1011] border border-[#1f2022] rounded-xl p-6 mb-8">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#141517] border border-[#23252a] flex items-center justify-center text-xl">
+              📁
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-[#f7f8f8] tracking-tight">
+                {folderName}
+              </h1>
+              <p className="text-xs text-[#8a8f98] mt-0.5">
+                Directory path: <code className="text-[#7170ff] font-mono">{section}/{slug}</code>
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-mono text-[#8a8f98] bg-[#141517] border border-[#23252a] px-2.5 py-1 rounded-md">
+            {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
 
-      {(folders.length > 0 || immediateDocs.length > 0) ? (
-        <div>
-          {folders.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xs font-medium text-[#8a8f98] uppercase mb-3 tracking-wider">
-                Subfolders
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {folders.map(([folder, info]) => (
-                  <Link
-                    key={folder}
-                    href={`/${section}/${slug}/${folder}`.replace(/\/+/g, "/")}
-                    className="group flex items-center gap-3 p-3 bg-[#0f1011] border border-[#1f2022] rounded-lg hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all"
-                  >
-                    <span className="text-2xl">📁</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors">
-                        {folder.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
-                      </div>
-                      <div className="text-xs text-[#62666d] mt-0.5">
-                        {info.docCount} document{info.docCount !== 1 ? "s" : ""}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-          {immediateDocs.length > 0 && (
-            <div>
-              <h2 className="text-xs font-medium text-[#8a8f98] uppercase mb-3 tracking-wider">
-                Documents
-              </h2>
-              <div className="space-y-2">
-                {immediateDocs.map((doc) => (
-                  <Link
-                    key={doc.slug}
-                    href={`/${doc.slug}`}
-                    className="group flex items-center justify-between gap-3 p-3 bg-[#0f1011] border border-[#1f2022] rounded-lg hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-xl">📄</span>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1">
-                          {doc.title}
-                        </div>
-                        {doc.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {doc.tags.slice(0, 3).map((t) => (
-                              <span
-                                key={t}
-                                className="text-xs px-1.5 py-0.25 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
-                              >
-                                #{t}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <time className="text-xs text-[#62666d] flex-shrink-0">
-                      {new Date(doc.updatedAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </time>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* Subfolders */}
+      {folders.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase mb-3 tracking-wider flex items-center gap-2">
+            <span>Subfolders</span>
+            <span className="text-[10px] text-[#62666d]">({folders.length})</span>
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {folders.map(([folder, info]) => (
+              <Link
+                key={folder}
+                href={`/${section}/${slug}/${folder}`.replace(/\/+/g, "/")}
+                className="group flex items-center gap-3 p-3.5 bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-lg transition-all shadow-sm"
+              >
+                <span className="text-2xl group-hover:scale-110 transition-transform">📁</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors truncate">
+                    {folder.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
+                  </div>
+                  <div className="text-xs text-[#62666d] mt-0.5 font-mono">
+                    {info.docCount} document{info.docCount !== 1 ? "s" : ""}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-      ) : (
-        <p className="text-sm text-[#62666d]">No documents found in this folder.</p>
+      )}
+
+      {/* Documents */}
+      {immediateDocs.length > 0 && (
+        <div>
+          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase mb-3 tracking-wider flex items-center gap-2">
+            <span>Documents</span>
+            <span className="text-[10px] text-[#62666d]">({immediateDocs.length})</span>
+          </h2>
+          <div className="space-y-2">
+            {immediateDocs.map((doc) => (
+              <Link
+                key={doc.slug}
+                href={`/${doc.slug}`}
+                className="group flex items-center justify-between gap-4 p-4 bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-lg transition-all shadow-sm"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-xl opacity-70 group-hover:opacity-100">📄</span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors truncate">
+                      {doc.title}
+                    </div>
+                    {doc.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {doc.tags.slice(0, 4).map((t) => (
+                          <span
+                            key={t}
+                            className="text-[11px] px-1.5 py-0.25 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98]"
+                          >
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <time className="text-xs text-[#62666d] shrink-0 font-mono">
+                  {new Date(doc.updatedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </time>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {folders.length === 0 && immediateDocs.length === 0 && (
+        <div className="text-center py-12 border border-[#1f2022] rounded-xl bg-[#0f1011]">
+          <p className="text-sm text-[#8a8f98]">No documents found in this directory.</p>
+        </div>
       )}
     </div>
   );
@@ -303,44 +291,37 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   const { edit } = await searchParams;
   const fullSlug = `${section}/${slug.join("/")}`;
 
-  // Fetch all docs to classify the path as "doc" or "folder"
   const allDocs = await listDocuments();
   const docPaths = allDocs.map((d) => d.path);
-
   const classification = classifyPath(docPaths, fullSlug);
 
-  // If the slug path is a folder (not a leaf doc), render the folder index
   if (classification === "folder") {
     return <FolderIndexPage section={section} slug={slug.join("/")} allDocs={allDocs} />;
   }
 
-  // Otherwise, treat as a document (existing behavior)
   const doc = await getDocument(fullSlug);
   if (!doc) notFound();
 
   const cookieStore = await cookies();
   const canEdit = cookieStore.get("mcpedia_admin")?.value != null;
 
-  // Standard frontmatter keys that are rendered explicitly in the template.
-  // Any other key in the document metadata becomes a dynamic badge.
   const STANDARD_KEYS = new Set([
     "id", "slug", "title", "type", "section", "status",
     "author", "tags", "path", "createdAt", "updatedAt",
     "extraFields", "body",
   ]);
 
-  // Edit mode: inline form
   if (edit === "1" && canEdit) {
     const existingFolders = extractFoldersForSection(docPaths, doc.section);
     return (
       <div>
         <Link
           href={`/${doc.slug}`}
-          className="text-xs text-[#8a8f98] hover:text-[#d0d6e0] mb-4 inline-block"
+          className="inline-flex items-center gap-1 text-xs text-[#8a8f98] hover:text-[#d0d6e0] mb-4 transition-colors"
         >
-          ← Back to {doc.title}
+          <span>← Back to document</span>
         </Link>
-        <h1 className="text-2xl font-light text-[#f7f8f8] mb-6">
+        <h1 className="text-2xl font-semibold text-[#f7f8f8] mb-6">
           Edit: {doc.title}
         </h1>
         <DocForm
@@ -365,189 +346,199 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
     );
   }
 
-  const related = await getRelated(fullSlug, 5);
+  const related = await getRelated(fullSlug, 4);
   const revisions = await listRevisions(fullSlug, 10);
-
   const sectionInfo = getSectionInfo(doc.section);
+  const readingTime = calculateReadingTime(doc.body);
 
   return (
-    <article>
-      {/* Breadcrumb — dynamic based on the doc's actual path */}
-      <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6">
-        <Link
-          href="/"
-          className="hover:text-[#d0d6e0] transition-colors"
-        >
-          MCPedia
-        </Link>
-        {doc.slug.split("/").map((part, i) => {
-          const crumbPath = doc.slug.split("/").slice(0, i + 1).join("/");
-          const isLast = i === doc.slug.split("/").length - 1;
-          const label = i === 0
-            ? sectionInfo.label
-            : part
-                .split(/[-_]/)
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(" ");
-          return (
-            <>
-              <span>/</span>
-              <Link
-                key={crumbPath}
-                href={`/${crumbPath}`}
-                className={
-                  isLast
-                    ? "text-[#8a8f98]"
-                    : "hover:text-[#d0d6e0] transition-colors"
-                }
-              >
-                {label}
-              </Link>
-            </>
-          );
-        })}
-      </nav>
-
-      {/* Metadata Card */}
-      <div className="bg-[#0f1011] border border-[#1f2022] rounded-lg p-6 mb-8">
-        <div className="flex items-start gap-3 mb-4">
-          <span className="text-2xl">
-            {sectionInfo.icon}
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-medium text-[#7170ff] uppercase">
-                {sectionInfo.label}
-              </span>
-              <span className="text-xs text-[#62666d]">·</span>
-              <span className="text-xs text-[#62666d]">
-                {doc.type}
-              </span>
-            </div>
-            <h1 className="text-3xl font-medium text-[#f7f8f8] leading-tight">
-              {doc.title}
-            </h1>
-          </div>
-        </div>
-
-        {/* Author + date + tags */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-[#62666d] mb-3">
-          {doc.author && (
-            <>
-              <span className="text-[#d0d6e0]">by {doc.author}</span>
-              <span>·</span>
-            </>
-          )}
-          <span className="text-[#d0d6e0]">
-            updated {new Date(doc.updatedAt).toLocaleDateString(undefined, {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-          {doc.tags.length > 0 && (
-            <>
-              <span>·</span>
-              <div className="flex flex-wrap gap-1">
-                {doc.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="px-2 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
-                  >
-                    #{t}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Dynamic custom field badges — content creator controls what shows */}
-        <CustomFieldBadges doc={{ ...doc }} standardKeys={STANDARD_KEYS} />
-      </div>
-
-      {/* Content + TOC */}
-      <div className="mb-12">
-        <TOC source={doc.body} />
-        <Markdown source={doc.body} />
-      </div>
-
-      {/* Related docs (card-style) */}
-      {related.length > 0 && (
-        <aside className="mt-12 pt-8 border-t border-[#1f2022]">
-          <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-5">
-            Related Documents
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {related.map((r) => {
-              const rInfo = getSectionInfo(r.section);
-              return (
+    <div className="flex items-start gap-8">
+      {/* Main Content Column */}
+      <article className="flex-1 min-w-0">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-4 flex-wrap">
+          <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
+            MCPedia
+          </Link>
+          {doc.slug.split("/").map((part, i) => {
+            const crumbPath = doc.slug.split("/").slice(0, i + 1).join("/");
+            const isLast = i === doc.slug.split("/").length - 1;
+            const label = i === 0
+              ? sectionInfo.label
+              : part.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+            return (
+              <span key={crumbPath} className="flex items-center gap-2">
+                <span>/</span>
                 <Link
-                  key={r.slug}
-                  href={`/${r.slug}`}
-                  className="group block bg-[#0f1011] border border-[#1f2022] rounded-lg p-4 hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all duration-200"
+                  href={`/${crumbPath}`}
+                  className={isLast ? "text-[#8a8f98] font-medium" : "hover:text-[#d0d6e0] transition-colors"}
                 >
-                  <div className="flex items-start gap-2 mb-2">
-                    <span className="text-xl">
-                      {rInfo.icon}
-                    </span>
-                    <time className="text-xs text-[#62666d]">
-                      {new Date(r.updatedAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </time>
-                  </div>
-                  <h3 className="font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-1">
-                    {r.title}
-                  </h3>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {r.tags.slice(0, 3).map((t) => (
-                      <span
-                        key={t}
-                        className="text-xs px-1.5 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
-                      >
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
+                  {label}
                 </Link>
-              );
-            })}
-          </div>
-        </aside>
-      )}
+              </span>
+            );
+          })}
+        </nav>
 
-      {/* History */}
-      {revisions.length > 0 && (
-        <aside className="mt-12 pt-8 border-t border-[#1f2022]">
-          <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-4">
-            Revision History
-          </h2>
-          <ul className="space-y-2 text-sm">
-            {revisions.map((rev) => (
-              <li
-                key={rev.id}
-                className="flex items-center justify-between gap-3 py-2 border-b border-[#141516] last:border-0"
-              >
-                <span className="text-[#8a8f98]">
-                  #{rev.revisionNo} · {rev.reason} ·{" "}
-                  {new Date(rev.createdAt).toLocaleString()}
+        {/* Hero Metadata Card */}
+        <div className="bg-[#0f1011] border border-[#1f2022] rounded-xl p-6 mb-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-[#5e6ad2]/15 text-[#7170ff] border border-[#5e6ad2]/30">
+                  <span>{sectionInfo.icon}</span>
+                  <span className="uppercase">{sectionInfo.label}</span>
                 </span>
-                <form action="/api/revisions/restore" method="post">
-                  <input type="hidden" name="id" value={rev.id} />
-                  <button
-                    type="submit"
-                    className="text-xs text-[#d0d6e0] hover:text-[#7170ff] px-2 py-0.5 rounded border border-[#1f2022] hover:border-[#7170ff] transition-colors"
+                <span className="text-xs text-[#62666d]">·</span>
+                <span className="text-xs text-[#8a8f98] capitalize">
+                  {doc.type}
+                </span>
+                <span className="text-xs text-[#62666d]">·</span>
+                <span className="text-xs text-[#8a8f98] font-mono">
+                  {readingTime}
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-[#f7f8f8] tracking-tight leading-tight">
+                {doc.title}
+              </h1>
+            </div>
+
+            {/* Quick Actions */}
+            <DocActions slug={doc.slug} body={doc.body} canEdit={canEdit} />
+          </div>
+
+          {/* Author + Date + Tags */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-[#8a8f98] pt-3 border-t border-[#1a1b1d]">
+            {doc.author && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 rounded-full bg-[#5e6ad2] text-white flex items-center justify-center text-[10px] font-bold">
+                  {doc.author.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-[#d0d6e0]">{doc.author}</span>
+                <span className="text-[#62666d]">·</span>
+              </div>
+            )}
+            <span>
+              Updated {new Date(doc.updatedAt).toLocaleDateString(undefined, {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+            {doc.tags.length > 0 && (
+              <>
+                <span className="text-[#62666d]">·</span>
+                <div className="flex flex-wrap gap-1">
+                  {doc.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="px-2 py-0.5 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98] text-[11px]"
+                    >
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Dynamic Badges */}
+          <CustomFieldBadges doc={{ ...doc }} standardKeys={STANDARD_KEYS} />
+        </div>
+
+        {/* Mobile TOC (rendered inline on smaller screens) */}
+        <div className="xl:hidden mb-6 p-4 bg-[#0f1011] border border-[#1f2022] rounded-lg">
+          <TOC source={doc.body} />
+        </div>
+
+        {/* Markdown content */}
+        <div className="mb-14">
+          <Markdown source={doc.body} />
+        </div>
+
+        {/* Related Documents */}
+        {related.length > 0 && (
+          <aside className="mt-12 pt-8 border-t border-[#1f2022]">
+            <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span>Related Knowledge</span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {related.map((r) => {
+                const rInfo = getSectionInfo(r.section);
+                return (
+                  <Link
+                    key={r.slug}
+                    href={`/${r.slug}`}
+                    className="group block bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-lg p-4 transition-all shadow-sm"
                   >
-                    Restore
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        </aside>
-      )}
-    </article>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-xs text-[#7170ff] font-mono uppercase">
+                        {rInfo.icon} {r.section}
+                      </span>
+                      <time className="text-[11px] text-[#62666d] font-mono">
+                        {new Date(r.updatedAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </time>
+                    </div>
+                    <h3 className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-1">
+                      {r.title}
+                    </h3>
+                  </Link>
+                );
+              })}
+            </div>
+          </aside>
+        )}
+
+        {/* Revision History */}
+        {revisions.length > 0 && (
+          <aside className="mt-10 pt-8 border-t border-[#1f2022]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">
+                Revision History ({revisions.length})
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {revisions.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="flex items-center justify-between gap-3 p-3 bg-[#0f1011] border border-[#1f2022] rounded-lg text-xs"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-[#7170ff] bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded border border-[#5e6ad2]/30">
+                      v{rev.revisionNo}
+                    </span>
+                    <span className="text-[#d0d6e0] truncate">
+                      {rev.reason || "Updated document"}
+                    </span>
+                    <span className="text-[#62666d] hidden sm:inline">
+                      · {new Date(rev.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  {canEdit && (
+                    <form action="/api/revisions/restore" method="post">
+                      <input type="hidden" name="id" value={rev.id} />
+                      <button
+                        type="submit"
+                        className="text-xs text-[#d0d6e0] hover:text-white bg-[#141517] hover:bg-[#23252a] px-2.5 py-1 rounded border border-[#23252a] hover:border-[#5e6ad2] transition-colors"
+                      >
+                        Restore
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ))}
+            </div>
+          </aside>
+        )}
+      </article>
+
+      {/* Desktop Sticky Table of Contents Column */}
+      <aside className="hidden xl:block w-64 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pl-6 border-l border-[#1f2022]">
+        <TOC source={doc.body} />
+      </aside>
+    </div>
   );
 }

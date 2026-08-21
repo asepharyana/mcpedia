@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SECTIONS } from "@mcpedia/config/sections";
@@ -12,17 +12,13 @@ interface Doc {
   tags: string[];
 }
 
-/**
- * Build a hierarchical folder tree from flat document slugs.
- * Each node is either a folder (has children) or a leaf doc.
- */
 interface TreeNode {
   name: string;
   slug: string;
   title: string;
   children: TreeNode[];
   isLeaf: boolean;
-  docCount: number; // total docs in subtree
+  docCount: number;
 }
 
 function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
@@ -30,7 +26,6 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
 
   for (const doc of docs.filter((d) => d.section === section)) {
     const parts = doc.slug.split("/");
-    // parts[0] is the section; skip it
     let current = root;
 
     for (let i = 1; i < parts.length; i++) {
@@ -63,7 +58,6 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
     }
   }
 
-  // Recursively compute docCount
   function countDocs(node: TreeNode): number {
     if (node.isLeaf) return 1;
     return node.children.reduce((sum, child) => sum + countDocs(child), 0);
@@ -73,15 +67,15 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
     node.docCount = countDocs(node);
   }
 
-  // Sort: folders first, then docs, alphabetically
   function sortNodes(nodes: TreeNode[]): TreeNode[] {
     return nodes.sort((a, b) => {
       const aFolder = a.children.length > 0 ? 0 : 1;
       const bFolder = b.children.length > 0 ? 0 : 1;
       if (aFolder !== bFolder) return aFolder - bFolder;
-      return a.title.localeCompare(b.title);
+      return (a.title || a.name).localeCompare(b.title || b.name);
     });
   }
+
   for (const node of root) {
     sortNodes(node.children);
   }
@@ -89,55 +83,96 @@ function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
   return sortNodes(root);
 }
 
-/**
- * Recursively render the folder tree with proper depth styling.
- * Each level gets a 20px left margin + subtle border for visual hierarchy.
- */
-function renderTreeNode(
-  node: TreeNode,
-  depth: number,
-  pathname: string,
-): React.ReactElement {
+function TreeNodeItem({
+  node,
+  depth,
+  pathname,
+  collapsedMap,
+  toggleCollapse,
+}: {
+  node: TreeNode;
+  depth: number;
+  pathname: string;
+  collapsedMap: Record<string, boolean>;
+  toggleCollapse: (slug: string) => void;
+}) {
   const isFolder = node.children.length > 0;
   const isActive = pathname === `/${node.slug}`;
-  const hasActiveChild = pathname.startsWith(`/${node.slug}/`);
+  const isParentOfActive = pathname.startsWith(`/${node.slug}/`);
+  const isCollapsed = collapsedMap[node.slug] ?? false;
 
   return (
-    <li key={node.slug} className={depth > 0 ? "ml-5 border-l border-[#1f2022] pl-2" : ""}>
-      <Link
-        href={`/${node.slug}`}
-        className={`flex items-center justify-between gap-1.5 text-xs py-1 px-2 rounded transition-all ${
+    <li className={`select-none ${depth > 0 ? "ml-3 pl-2 border-l border-[#1f2022]" : ""}`}>
+      <div
+        className={`group flex items-center justify-between gap-1.5 text-xs py-1.5 px-2 rounded-md transition-all ${
           isActive
-            ? "text-[#7170ff] bg-[#191a1b]"
-            : hasActiveChild
-              ? "text-[#d0d6e0]"
-              : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#191a1b]"
+            ? "text-[#7170ff] bg-[#5e6ad2]/15 font-medium border border-[#5e6ad2]/30 shadow-sm"
+            : isParentOfActive
+              ? "text-[#d0d6e0] bg-[#141517]/80"
+              : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#141517]"
         }`}
-        title={node.title}
       >
-        <span className="flex items-center gap-1.5 truncate">
-          <span>{isFolder ? "📁" : "📄"}</span>
-          {node.title || node.name}
-        </span>
-        {isFolder && node.docCount > 0 && (
-          <span className="ml-auto text-[#62666d] bg-[#191a1b] px-1 py-0 rounded">
-            {node.docCount}
+        <Link
+          href={`/${node.slug}`}
+          className="flex items-center gap-2 min-w-0 flex-1 py-0.5"
+          title={node.title || node.name}
+        >
+          <span className="text-xs shrink-0 opacity-80 group-hover:opacity-100">
+            {isFolder ? "📁" : "📄"}
           </span>
+          <span className="truncate">{node.title || node.name}</span>
+        </Link>
+
+        {isFolder && (
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[10px] text-[#62666d] bg-[#191a1b] px-1 py-0.2 rounded font-mono">
+              {node.docCount}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCollapse(node.slug);
+              }}
+              className="p-0.5 text-[#62666d] hover:text-[#d0d6e0] rounded hover:bg-[#23252a] transition-transform"
+              aria-label={isCollapsed ? "Expand folder" : "Collapse folder"}
+            >
+              <svg
+                className={`w-3 h-3 transition-transform duration-200 ${isCollapsed ? "-rotate-90" : "rotate-0"}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         )}
-      </Link>
-      {node.children.length > 0 && (
-        <ul className="mt-0.5 space-y-0.5">
-          {node.children.map((child) => renderTreeNode(child, depth + 1, pathname))}
+      </div>
+
+      {isFolder && !isCollapsed && (
+        <ul className="mt-0.5 space-y-0.5 animate-fade-in">
+          {node.children.map((child) => (
+            <TreeNodeItem
+              key={child.slug}
+              node={child}
+              depth={depth + 1}
+              pathname={pathname}
+              collapsedMap={collapsedMap}
+              toggleCollapse={toggleCollapse}
+            />
+          ))}
         </ul>
       )}
     </li>
   );
 }
 
-/** Client-side sidebar (fetches doc list via /api/docs at runtime).
- *  Client component so `next build` SSG doesn't hit Postgres (CI has no DB). */
 export default function Sidebar() {
   const [docs, setDocs] = useState<Doc[]>([]);
+  const [filterText, setFilterText] = useState("");
+  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
 
   useEffect(() => {
@@ -150,40 +185,112 @@ export default function Sidebar() {
       .catch(() => setDocs([]));
   }, []);
 
+  function toggleCollapse(slug: string) {
+    setCollapsedMap((prev) => ({ ...prev, [slug]: !prev[slug] }));
+  }
+
+  const filteredDocs = useMemo(() => {
+    if (!filterText.trim()) return docs;
+    const lower = filterText.toLowerCase();
+    return docs.filter(
+      (d) =>
+        d.title.toLowerCase().includes(lower) ||
+        d.slug.toLowerCase().includes(lower) ||
+        d.tags.some((t) => t.toLowerCase().includes(lower)),
+    );
+  }, [docs, filterText]);
+
   return (
-    <nav className="h-full overflow-y-auto py-6">
-      <div className="mb-4 px-3">
-        <span className="text-xs text-[#62666d] uppercase">
-          {docs.length} documents
-        </span>
+    <nav className="h-full flex flex-col py-4 px-3">
+      {/* Sidebar search filter */}
+      <div className="mb-3">
+        <div className="relative">
+          <input
+            type="text"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            placeholder="Filter docs..."
+            className="w-full pl-7 pr-3 py-1.5 bg-[#141517] border border-[#23252a] hover:border-[#383b42] rounded-md text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] transition-colors"
+          />
+          <svg
+            className="w-3.5 h-3.5 text-[#62666d] absolute left-2 top-2.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {filterText && (
+            <button
+              onClick={() => setFilterText("")}
+              className="absolute right-2 top-2 text-xs text-[#62666d] hover:text-[#d0d6e0]"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
-      <ul className="space-y-3 px-3 text-sm">
+
+      {/* Summary count */}
+      <div className="flex items-center justify-between px-1 mb-3 text-[11px] text-[#62666d]">
+        <span className="uppercase tracking-wider font-mono">Documentation</span>
+        <span>{filteredDocs.length} items</span>
+      </div>
+
+      {/* Section Trees */}
+      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {SECTIONS.map(({ id, label, icon }) => {
-          const sectionDocs = docs.filter((d) => d.section === id);
+          const sectionDocs = filteredDocs.filter((d) => d.section === id);
           if (sectionDocs.length === 0) return null;
 
-          const tree = buildFolderTree(docs, id);
-          const isActive = pathname === `/${id}` || pathname.startsWith(`/${id}/`);
+          const tree = buildFolderTree(filteredDocs, id);
+          const isSectionActive = pathname === `/${id}` || pathname.startsWith(`/${id}/`);
 
           return (
-            <li key={id} className="border-b border-[#141516] pb-2 last:border-0">
-              <div
-                className={`flex items-center gap-1.5 mb-1.5 ${
-                  isActive ? "text-[#7170ff]" : "text-[#62666d]"
+            <div key={id} className="border-b border-[#141516] pb-3 last:border-0">
+              <Link
+                href={`/${id}`}
+                className={`flex items-center justify-between gap-1.5 px-1 py-1 mb-1 rounded text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  isSectionActive
+                    ? "text-[#7170ff]"
+                    : "text-[#8a8f98] hover:text-[#d0d6e0]"
                 }`}
               >
-                <span className="text-lg">{icon}</span>
-                <span className="font-medium text-xs uppercase tracking-wider">
-                  {label}
+                <div className="flex items-center gap-1.5">
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </div>
+                <span className="text-[10px] text-[#62666d] font-normal font-mono">
+                  {sectionDocs.length}
                 </span>
-              </div>
-              <ul className="space-y-0.5">
-                {tree.map((node) => renderTreeNode(node, 0, pathname))}
+              </Link>
+
+              <ul className="space-y-0.5 mt-1">
+                {tree.map((node) => (
+                  <TreeNodeItem
+                    key={node.slug}
+                    node={node}
+                    depth={0}
+                    pathname={pathname}
+                    collapsedMap={collapsedMap}
+                    toggleCollapse={toggleCollapse}
+                  />
+                ))}
               </ul>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
+
+      {/* Bottom quick links */}
+      <div className="pt-3 border-t border-[#1f2022] mt-auto">
+        <Link
+          href="/create"
+          className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs bg-[#141517] hover:bg-[#1b1d20] border border-[#23252a] text-[#d0d6e0] hover:text-white rounded-md transition-colors font-medium"
+        >
+          <span>+ Create New Document</span>
+        </Link>
+      </div>
     </nav>
   );
 }

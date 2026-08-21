@@ -13,16 +13,12 @@ interface DocMeta {
   path: string;
 }
 
-/**
- * Build a hierarchical folder tree from a flat list of documents.
- * Each node is either a folder (has children) or a leaf doc.
- */
 interface TreeNode {
   name: string;
   slug: string;
   doc?: DocMeta;
   children: TreeNode[];
-  docCount: number; // total docs in subtree
+  docCount: number;
 }
 
 function buildFolderTree(docs: DocMeta[], section: string): TreeNode[] {
@@ -62,7 +58,6 @@ function buildFolderTree(docs: DocMeta[], section: string): TreeNode[] {
     }
   }
 
-  // Recursively compute docCount for folder nodes
   function countDocs(node: TreeNode): number {
     if (node.doc) return 1;
     return node.children.reduce((sum, child) => sum + countDocs(child), 0);
@@ -77,7 +72,7 @@ function buildFolderTree(docs: DocMeta[], section: string): TreeNode[] {
 
 function renderTree(nodes: TreeNode[], pathname: string) {
   return (
-    <ul className="space-y-0.5">
+    <ul className="space-y-1">
       {nodes.map((node) => {
         const isFolder = node.children.length > 0;
         const isActive = pathname === `/${node.slug}`;
@@ -87,26 +82,26 @@ function renderTree(nodes: TreeNode[], pathname: string) {
           <li key={node.slug}>
             <Link
               href={`/${node.slug}`}
-              className={`flex items-center justify-between gap-2 text-xs py-1 px-2 rounded transition-all ${
+              className={`flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg transition-all ${
                 isActive
-                  ? "text-[#7170ff] bg-[#191a1b]"
+                  ? "text-[#7170ff] bg-[#5e6ad2]/15 font-medium border border-[#5e6ad2]/30"
                   : hasActiveChild
-                    ? "text-[#d0d6e0]"
-                    : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#191a1b]"
+                    ? "text-[#d0d6e0] bg-[#141517]"
+                    : "text-[#8a8f98] hover:text-[#d0d6e0] hover:bg-[#141517]"
               }`}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2 truncate">
                 <span>{isFolder ? "📁" : "📄"}</span>
-                {node.doc?.title || node.name}
+                <span className="truncate">{node.doc?.title || node.name}</span>
               </span>
               {isFolder && (
-                <span className="text-[#62666d] bg-[#191a1b] px-1.5 py-0.25 rounded">
-                  {node.docCount}
+                <span className="text-[10px] text-[#62666d] bg-[#191a1b] px-1.5 py-0.5 rounded font-mono">
+                  {node.docCount} docs
                 </span>
               )}
             </Link>
             {node.children.length > 0 && (
-              <div className="ml-4 mt-0.5">
+              <div className="ml-4 border-l border-[#1f2022] pl-2 mt-1">
                 {renderTree(node.children, pathname)}
               </div>
             )}
@@ -127,8 +122,9 @@ export default async function SectionIndexPage({
   const sectionInfo = SECTIONS.find((s) => s.id === section);
   if (!sectionInfo) {
     return (
-      <div>
-        <h1 className="text-2xl font-medium text-[#f7f8f8]">Unknown section</h1>
+      <div className="py-12 text-center">
+        <h1 className="text-2xl font-semibold text-[#f7f8f8]">Unknown section</h1>
+        <p className="text-sm text-[#8a8f98] mt-2">Section &quot;{section}&quot; does not exist.</p>
       </div>
     );
   }
@@ -138,34 +134,66 @@ export default async function SectionIndexPage({
   const tree = buildFolderTree(allDocs, section);
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-2xl">{sectionInfo.icon}</span>
-        <h1 className="text-3xl font-medium text-[#f7f8f8]">{sectionInfo.label}</h1>
-        <span className="text-xs text-[#62666d] bg-[#191a1b] px-2 py-0.5 rounded">
-          {sectionDocs.length} document{sectionDocs.length !== 1 ? "s" : ""}
-        </span>
+    <div className="space-y-10">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-xs text-[#62666d]">
+        <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
+          MCPedia
+        </Link>
+        <span>/</span>
+        <span className="text-[#8a8f98] font-medium">{sectionInfo.label}</span>
+      </nav>
+
+      {/* Hero Card */}
+      <div className="bg-[#0f1011] border border-[#1f2022] rounded-xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-[#141517] border border-[#23252a] flex items-center justify-center text-2xl shadow-inner">
+              {sectionInfo.icon}
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#f7f8f8] tracking-tight">
+                {sectionInfo.label}
+              </h1>
+              <p className="text-xs text-[#8a8f98] mt-0.5 font-mono uppercase">
+                Section: {section}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-[#7170ff] bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 px-2.5 py-1 rounded-md">
+              {sectionDocs.length} document{sectionDocs.length !== 1 ? "s" : ""}
+            </span>
+            <Link
+              href="/create"
+              className="inline-flex items-center gap-1 text-xs bg-[#5e6ad2] hover:bg-[#6a75e0] text-white px-3 py-1 rounded-md font-medium transition-all"
+            >
+              <span>+ Create</span>
+            </Link>
+          </div>
+        </div>
+
+        <p className="text-sm text-[#8a8f98] leading-relaxed max-w-2xl mt-2">
+          {sectionInfo.desc}
+        </p>
       </div>
 
-      <p className="text-sm text-[#8a8f98] mb-8 max-w-2xl">
-        {sectionInfo.desc}
-      </p>
-
-      {tree.length > 0 ? (
-        <div className="mb-12">
-          <h2 className="text-xs font-medium text-[#8a8f98] uppercase mb-3 tracking-wider">
-            Folder structure
+      {/* Hierarchical Folder Directory */}
+      {tree.length > 0 && (
+        <section className="bg-[#0c0d0e] border border-[#1f2022] rounded-xl p-6">
+          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span>Folder Structure</span>
           </h2>
           {renderTree(tree, section)}
-        </div>
-      ) : (
-        <p className="text-sm text-[#62666d] mb-8">No documents found in this section.</p>
+        </section>
       )}
 
-      {sectionDocs.length > 0 && (
-        <div>
-          <h2 className="text-xs font-medium text-[#8a8f98] uppercase mb-3 tracking-wider">
-            Recently updated
+      {/* Document List */}
+      {sectionDocs.length > 0 ? (
+        <section>
+          <h2 className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider mb-4">
+            All Documents in {sectionInfo.label}
           </h2>
           <div className="space-y-2">
             {[...sectionDocs]
@@ -177,20 +205,42 @@ export default async function SectionIndexPage({
                 <Link
                   key={d.slug}
                   href={`/${d.slug}`}
-                  className="group flex items-center justify-between gap-3 py-2 border-b border-[#141516] last:border-0"
+                  className="group flex items-center justify-between gap-4 p-4 bg-[#0f1011] hover:bg-[#141517] border border-[#1f2022] hover:border-[#5e6ad2]/40 rounded-xl transition-all shadow-sm"
                 >
-                  <span className="text-sm text-[#d0d6e0] group-hover:text-[#7170ff] transition-colors line-clamp-1">
-                    {d.title}
-                  </span>
-                  <time className="text-xs text-[#62666d] flex-shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-lg opacity-70 group-hover:opacity-100">📄</span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors truncate">
+                        {d.title}
+                      </h3>
+                      {d.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {d.tags.slice(0, 4).map((t) => (
+                            <span
+                              key={t}
+                              className="text-[10px] px-1.5 py-0.25 bg-[#141517] border border-[#23252a] rounded text-[#8a8f98]"
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <time className="text-xs text-[#62666d] font-mono shrink-0">
                     {new Date(d.updatedAt).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
+                      year: "numeric",
                     })}
                   </time>
                 </Link>
               ))}
           </div>
+        </section>
+      ) : (
+        <div className="text-center py-12 border border-[#1f2022] rounded-xl bg-[#0f1011]">
+          <p className="text-sm text-[#8a8f98]">No documents in this section yet.</p>
         </div>
       )}
     </div>
