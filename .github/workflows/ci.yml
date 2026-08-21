@@ -232,7 +232,7 @@ jobs:
       - name: Unpack .next
         run: tar -xzf /tmp/web-next/web-next.tar.gz -C apps/web/
 
-      - name: Install deps (for node_modules in web.nix)
+      - name: Install deps (for bunx in web.nix)
         run: bun install --frozen-lockfile
 
       - name: Build web Nix derivation
@@ -242,8 +242,6 @@ jobs:
           nix-build -E \
             "let pkgs = import <nixpkgs> {}; in pkgs.callPackage ${REPO_ROOT}/web.nix {
               webNextDir = ${REPO_ROOT}/apps/web/.next;
-              webPkgDir = ${REPO_ROOT}/apps/web;
-              nodeModulesPath = ${REPO_ROOT};
             }" \
             --impure --option sandbox false
           STORE_PATH=$(readlink result)
