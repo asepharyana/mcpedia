@@ -22,8 +22,8 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: mcpedia-web-standalone
-          path: standalone
+          name: mcpedia-web-build
+          path: .next
 
       - name: Copy pre-built .next to VPS
         uses: appleboy/scp-action@v1
@@ -32,7 +32,7 @@ jobs:
           port: ${{ secrets.SSH_DEPLOY_PORT }}
           username: ${{ secrets.SSH_DEPLOY_USER }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
-          source: "standalone/***"
+          source: ".next/*"
           target: "/home/code/mcpedia/apps/web/.next"
 
       - name: Deploy to VPS over SSH
