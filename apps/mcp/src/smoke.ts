@@ -15,16 +15,20 @@ async function main() {
   const names = tools.tools.map((t) => t.name).sort();
   console.log("tools:", names.join(", "));
   const expected = [
+    "create_document",
+    "delete_document",
     "get_document",
     "get_related_documents",
     "hybrid_search",
     "index_document",
     "list_documents",
+    "list_sections",
     "queue_status",
     "reindex_all",
     "restore_revision",
     "search_documents",
     "semantic_search",
+    "update_document",
   ].sort();
   if (JSON.stringify(names) !== JSON.stringify(expected)) {
     throw new Error(`tool set mismatch: ${names.join(",")}`);
