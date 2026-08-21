@@ -39,6 +39,24 @@ jobs:
       - name: Test
         run: bun run test
 
+      # Build .next for web — done here because Next.js/Turbopack has a
+      # Bun incompatibility in the Nix sandbox. The web derivation packages
+      # this pre-built .next (see build-and-deploy matrix below).
+      - name: Build Next.js .next
+        working-directory: apps/web
+        run: bun run build
+
+      # Upload .next for the web Nix derivation
+      - name: Tar .next
+        run: tar -C apps/web --exclude='.next/cache' -czf web-next.tar.gz .next
+
+      - name: Upload web .next artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcpedia-web-next
+          path: web-next.tar.gz
+          if-no-files-found: error
+
   build-and-deploy:
     name: build + deploy (Nix)
     needs: test
@@ -47,7 +65,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [web, api, mcp, worker]
+        service: [api, mcp, worker]
 
     steps:
       - name: Checkout
@@ -95,10 +113,8 @@ jobs:
           SERVICE="${{ matrix.service }}"
           PROFILE="mcpedia-${SERVICE}"
 
-          # Copy Nix closure to VPS
           nix copy --to "ssh://***@$VPS_HOST" "$STORE_PATH"
 
-          # Deploy: set profile + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
               --profile /nix/var/nix/profiles/$PROFILE \
@@ -108,8 +124,100 @@ jobs:
             sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
 
       - name: Verify service
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         run: |
           SERVICE="${{ matrix.service }}"
-          PORT_MAP="web:4016 api:4017 mcp:4021 worker:4018"
+          PORT_MAP="api:4017 mcp:4021 worker:4018"
           PORT=$(echo "$PORT_MAP" | grep "$SERVICE" | awk -F: '{print $2}')
-          ssh "$VPS_USER@$VPS_HOST" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/health 2>/dev/null || systemctl is-active $PROFILE"
+          ssh "$VPS_USER@$VPS_HOST" \
+            "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/health 2>/dev/null \
+             || systemctl is-active $PROFILE"
+
+  deploy-web:
+    name: build + deploy (web)
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+        with:
+          determinate: false
+          extra-conf: |
+            sandbox = false
+            accept-flake-config = true
+
+      - name: Cache Nix
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+        with:
+          use-flakehub: false
+
+      - name: Download web .next artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mcpedia-web-next
+          path: /tmp/web-next
+
+      - name: Unpack .next
+        run: |
+          mkdir -p apps/web/.next
+          tar -xzf /tmp/web-next/web-next.tar.gz -C apps/web/
+
+      # Full monorepo install (needed for node_modules + workspace symlinks)
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Build web Nix derivation
+        id: build
+        run: |
+          nix-build -E \
+            "let pkgs = import <nixpkgs> {}; in pkgs.callPackage ./web.nix {
+              webNextDir = /home/runner/work/mcpedia/mcpedia/apps/web/.next;
+              webPkgDir = /home/runner/work/mcpedia/mcpedia/apps/web;
+              nodeModulesPath = /home/runner/work/mcpedia/mcpedia;
+            }" \
+            --impure --option sandbox false
+          STORE_PATH=$(readlink result)
+          echo "store-path=$STORE_PATH" >> "$GITHUB_OUTPUT"
+          echo "Build OK web: $STORE_PATH"
+
+      - name: Setup SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          sed -i 's/\r$//' ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1 || { echo "SSH key invalid"; exit 1; }
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Copy to VPS & deploy
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          STORE_PATH="${{ steps.build.outputs.store-path }}"
+          PROFILE="mcpedia-web"
+
+          nix copy --to "ssh://***@$VPS_HOST" "$STORE_PATH"
+
+          ssh "$VPS_USER@$VPS_HOST" \
+            "sudo /nix/var/nix/profiles/default/bin/nix-env \
+              --profile /nix/var/nix/profiles/$PROFILE \
+              --set '$STORE_PATH' && \
+            sudo systemctl restart $PROFILE && \
+            sleep 3 && \
+            sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
+
+      - name: Verify public URL
+        env:
+          SSH_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" \
+            "curl -sk -o /dev/null -w '%{http_code}' https://wiki.asepharyana.my.id/"
