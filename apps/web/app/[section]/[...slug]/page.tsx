@@ -390,8 +390,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                   <span className="uppercase">{sectionInfo.label}</span>
                 </span>
                 <span className="text-xs text-[var(--text-dim)]">·</span>
-                <span className="text-xs text-[var(--text-muted)] capitalize">
-                  {doc.type}
+                <span className="text-xs text-[var(--text-muted)]">
+                  {doc.type.charAt(0).toUpperCase() + doc.type.slice(1)}
                 </span>
                 <span className="text-xs text-[var(--text-dim)]">·</span>
                 <span className="text-xs text-[var(--text-muted)] font-mono">
