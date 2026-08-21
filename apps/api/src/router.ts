@@ -6,6 +6,7 @@ import {
   hybridSearch,
   keywordSearch,
   listDocuments,
+  listSections,
   semanticSearch,
   listRevisions,
   getRevision,
@@ -17,10 +18,9 @@ import {
 import { getQueue, INDEX_QUEUE } from "@mcpedia/queue";
 import { getConnection, BULLMQ_PREFIX } from "@mcpedia/queue/client";
 
-// restoreRevision is a state-changing action (it rewrites the live document row
-// + rebuilds its chunks). It must NOT be callable anonymously over the network —
-// only the Web UI (which calls @mcpedia/core directly) and an operator with the
-// webhook secret may use it. Anything else is rejected.
+// restoreRevision and CRUD operations are state-changing actions.
+// They must NOT be callable anonymously over the network —
+// only an operator with the webhook secret (or authorized UI) may execute them.
 const requireWriteAuth = t.middleware(({ ctx, next }) => {
   if (!ctx.expectedSecret) {
     throw new Error("WEBHOOK_SECRET is not configured; writes are disabled");
@@ -52,11 +52,13 @@ export const appRouter = router({
     .input(z.object({ section: z.string().optional(), status: z.string().optional() }).optional())
     .query(async ({ input }) => listDocuments(input ?? {})),
 
+  sections: publicProcedure.query(async () => listSections()),
+
   related: publicProcedure
     .input(z.object({ slug: z.string(), limit: z.number().int().min(1).max(20).default(5) }))
     .query(async ({ input }) => getRelated(input.slug, input.limit)),
 
-  // --- Phase 3: revisions ---
+  // --- Revisions ---
   revisions: publicProcedure
     .input(z.object({ slug: z.string(), limit: z.number().int().min(1).max(50).default(20) }))
     .query(async ({ input }) => listRevisions(input.slug, input.limit)),
@@ -70,16 +72,16 @@ export const appRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => restoreRevision(input.id)),
 
-  // --- Phase 11: CRUD (gated by x-webhook-secret / admin auth) ---
+  // --- CRUD (gated by x-webhook-secret / admin auth) ---
   createDocument: publicProcedure
     .use(requireWriteAuth)
     .input(
       z.object({
         slug: z.string().min(1),
         title: z.string().min(1),
-        section: z.enum(["docs", "writeups", "research", "notes"]),
+        section: z.string().min(1),
         body: z.string(),
-        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        type: z.string().optional(),
         status: z.enum(["published", "draft"]).optional(),
         author: z.string().optional(),
         tags: z.array(z.string()).optional(),
@@ -95,7 +97,8 @@ export const appRouter = router({
         slug: z.string().min(1),
         title: z.string().min(1).optional(),
         body: z.string().optional(),
-        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        section: z.string().min(1).optional(),
+        type: z.string().optional(),
         status: z.enum(["published", "draft"]).optional(),
         tags: z.array(z.string()).optional(),
         author: z.string().optional(),
@@ -112,7 +115,7 @@ export const appRouter = router({
     .input(z.object({ slug: z.string().min(1) }))
     .mutation(async ({ input }) => deleteDocument(input.slug)),
 
-  // --- Phase 3: async job status ---
+  // --- Async job status ---
   jobStatus: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { listDocuments, extractFoldersForSection } from "@mcpedia/core";
-import { SECTIONS } from "@mcpedia/config/sections";
+import { listDocuments, extractFoldersForSection, listSections } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -13,8 +12,13 @@ export default async function CreatePage() {
   const isAdmin = cookieStore.get("mcpedia_admin")?.value != null;
   if (!isAdmin) redirect("/login");
 
-  const all = await listDocuments();
-  const docPaths = all.map((d) => d.path);
+  const [all, sections] = await Promise.all([
+    listDocuments(),
+    listSections(),
+  ]);
+
+  const docSlugs = all.map((d) => d.slug);
+  const sectionIds = Array.from(new Set([...sections.map((s) => s.id), ...all.map((d) => d.section)]));
 
   return (
     <div className="space-y-6">
@@ -36,7 +40,7 @@ export default async function CreatePage() {
           <div>
             <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Create Document</h1>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              Writes markdown file to disk, records revision, and computes 2048-dim vector embeddings.
+              Writes directly to PostgreSQL, records revision history, and computes vector embeddings.
             </p>
           </div>
         </div>
@@ -45,8 +49,9 @@ export default async function CreatePage() {
       <DocForm
         mode="create"
         secret={WEBHOOK_SECRET}
+        existingSections={sectionIds}
         existingFolders={Object.fromEntries(
-          SECTIONS.map((s) => [s.id, extractFoldersForSection(docPaths, s.id)])
+          sectionIds.map((sid) => [sid, extractFoldersForSection(docSlugs, sid)])
         )}
       />
     </div>

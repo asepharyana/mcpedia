@@ -8,14 +8,6 @@ import type {
   DocumentMeta,
 } from "@mcpedia/types";
 
-const SECTIONS: DocSection[] = ["docs", "writeups", "research", "notes"];
-
-const VALID_TYPES: DocType[] = [
-  "documentation",
-  "writeup",
-  "research",
-  "note",
-];
 
 // Standard frontmatter keys that are rendered explicitly in the UI template.
 // Any other key in frontmatter becomes a dynamic "extra field" badge.
@@ -41,13 +33,16 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
   const raw = readFileSync(absPath, "utf8");
   const { data, content } = matter(raw);
 
+  const parts = relPath.split("/");
+  const derivedSection = parts.length > 1 ? parts[0] : "docs";
   const section: DocSection =
-    (SECTIONS.find((s) => relPath.startsWith(s + "/")) as DocSection | undefined) ??
-    "docs";
+    typeof data.section === "string" && data.section.trim() !== ""
+      ? data.section.trim()
+      : derivedSection;
 
   const slug = relPath.replace(/\.mdx?$/, "");
 
-  const type = (VALID_TYPES.includes(data.type) ? data.type : "documentation") as DocType;
+  const type = (typeof data.type === "string" && data.type.trim() !== "" ? data.type.trim() : "documentation") as DocType;
   const status = (data.status === "draft" ? "draft" : "published") as DocStatus;
 
   const tags: string[] = Array.isArray(data.tags)

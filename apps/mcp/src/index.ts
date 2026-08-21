@@ -4,6 +4,7 @@ import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   listDocuments,
+  listSections,
   getDocument,
   getRelated,
   semanticSearch,
@@ -76,13 +77,25 @@ export function createMcpServer(authSecret?: string): McpServer {
   );
 
   server.registerTool(
+    "list_sections",
+    {
+      description: "List all active knowledge base sections and document counts from PostgreSQL.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const sections = await listSections();
+      return {
+        content: [{ type: "text", text: JSON.stringify(sections, null, 2) }],
+      };
+    },
+  );
+
+  server.registerTool(
     "list_documents",
     {
       description: "List documents, optionally filtered by section.",
       inputSchema: z.object({
-        section: z
-          .enum(["docs", "writeups", "research", "notes"])
-          .optional(),
+        section: z.string().optional().describe("Section name to filter by (e.g. 'docs', 'writeups', 'ctf')"),
       }),
     },
     async ({ section }) => {
@@ -146,7 +159,7 @@ export function createMcpServer(authSecret?: string): McpServer {
     },
   );
 
-  // --- Phase 7: mutating + admin tools (require x-webhook-secret) ---
+  // --- Mutating & admin tools (require x-webhook-secret) ---
   server.registerTool(
     "index_document",
     {
@@ -198,18 +211,18 @@ export function createMcpServer(authSecret?: string): McpServer {
     },
   );
 
-  // --- Phase 11: CRUD write tools (require x-webhook-secret) ---
+  // --- CRUD write tools (require x-webhook-secret) ---
   server.registerTool(
     "create_document",
     {
       description:
-        "Create a new document (writes markdown file + DB row + revision + chunks). Requires the x-webhook-secret header.",
+        "Create a new document in PostgreSQL (writes DB row, revision, chunks, and disk backup). Requires the x-webhook-secret header.",
       inputSchema: z.object({
-        slug: z.string().describe("URL-safe slug (e.g. 'docs/my-new-doc')"),
+        slug: z.string().describe("URL-safe slug (e.g. 'docs/my-new-doc' or 'ctf/challenge-1')"),
         title: z.string().describe("Document title"),
-        section: z.enum(["docs", "writeups", "research", "notes"]).describe("Content section"),
+        section: z.string().describe("Content section (e.g. 'docs', 'writeups', 'research', 'notes', 'guides', 'ctf')"),
         body: z.string().describe("Markdown body"),
-        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        type: z.string().optional().describe("Document type (e.g. 'documentation', 'writeup', 'research', 'note')"),
         status: z.enum(["published", "draft"]).optional(),
         author: z.string().optional(),
         tags: z.array(z.string()).optional(),
@@ -239,23 +252,25 @@ export function createMcpServer(authSecret?: string): McpServer {
     "update_document",
     {
       description:
-        "Update an existing document (title, body, tags, status, etc.). Requires the x-webhook-secret header.",
+        "Update an existing document in PostgreSQL (title, body, section, tags, status, etc.). Requires the x-webhook-secret header.",
       inputSchema: z.object({
         slug: z.string().describe("Document slug to update"),
         title: z.string().optional(),
         body: z.string().optional(),
-        type: z.enum(["documentation", "writeup", "research", "note"]).optional(),
+        section: z.string().optional(),
+        type: z.string().optional(),
         status: z.enum(["published", "draft"]).optional(),
         tags: z.array(z.string()).optional(),
         author: z.string().optional(),
         extraFields: z.record(z.string(), z.unknown()).optional().describe("Dynamic custom metadata key-value pairs"),
       }),
     },
-    async ({ slug, title, body, type, status, tags, author, extraFields }) => {
+    async ({ slug, title, body, section, type, status, tags, author, extraFields }) => {
       requireMcpAuth(authSecret);
       const doc = await updateDocument(slug, {
         title,
         body,
+        section,
         type,
         status,
         tags,
@@ -316,7 +331,7 @@ export function createMcpServer(authSecret?: string): McpServer {
     },
   );
 
-  // --- Phase 3: MCP Resources (read-only knowledge base surfaced via URIs) ---
+  // --- MCP Resources (read-only knowledge base surfaced via URIs) ---
   // mcpedia://docs                       -> list all published documents
   // mcpedia://docs/{slug}                -> full markdown body (from disk)
   // mcpedia://docs/{slug}/chunks         -> chunked preview (semantic slices)

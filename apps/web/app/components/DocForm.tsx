@@ -9,20 +9,21 @@ interface DocFormProps {
   slug?: string;
   secret: string;
   existingFolders?: Record<string, string[]>;
+  existingSections?: string[];
   initial?: {
     title?: string;
     body?: string;
-    section?: "docs" | "writeups" | "research" | "notes";
-    type?: "documentation" | "writeup" | "research" | "note";
-    status?: "published" | "draft";
+    section?: string;
+    type?: string;
+    status?: "published" | "draft" | string;
     tags?: string[];
     author?: string;
     extraFields?: Record<string, unknown>;
   };
 }
 
-const SECTION_OPTIONS = ["docs", "writeups", "research", "notes"] as const;
-const TYPE_OPTIONS = ["documentation", "writeup", "research", "note"] as const;
+const DEFAULT_SECTION_LIST = ["docs", "writeups", "research", "notes", "guides", "tutorials", "ctf", "api", "projects"];
+const DEFAULT_TYPE_LIST = ["documentation", "writeup", "research", "note", "guide", "tutorial", "spec"];
 
 const PRESET_FIELDS = [
   { key: "difficulty", value: "medium" },
@@ -37,6 +38,7 @@ export default function DocForm({
   slug,
   secret,
   existingFolders,
+  existingSections,
   initial,
 }: DocFormProps) {
   const router = useRouter();
@@ -55,6 +57,10 @@ export default function DocForm({
   const [parentFolder, setParentFolder] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const sectionOptions = Array.from(
+    new Set([...(existingSections ?? []), ...DEFAULT_SECTION_LIST, section].filter(Boolean)),
+  );
 
   // Extract existing custom fields
   const [customFields, setCustomFields] = useState<Array<{ key: string; value: string }>>(() => {
@@ -198,7 +204,7 @@ export default function DocForm({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. DEF CON Quals 2024 — pwn-100 Writeup"
+          placeholder="e.g. Database Architecture Overview"
           className={`${baseInputCls} text-base`}
           required
         />
@@ -210,34 +216,46 @@ export default function DocForm({
           <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Section
           </label>
-          <select
-            value={section}
-            onChange={(e) => setSection(e.target.value as typeof section)}
-            className={baseInputCls}
-            disabled={isEdit}
-          >
-            {SECTION_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s.toUpperCase()}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              list="section-list"
+              value={section}
+              onChange={(e) => setSection(e.target.value)}
+              placeholder="e.g. docs, writeups, ctf, guides"
+              className={baseInputCls}
+              required
+            />
+            <datalist id="section-list">
+              {sectionOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s.toUpperCase()}
+                </option>
+              ))}
+            </datalist>
+          </div>
         </div>
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
             Type
           </label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as typeof type)}
-            className={baseInputCls}
-          >
-            {TYPE_OPTIONS.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              list="type-list"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              placeholder="e.g. documentation, writeup, note"
+              className={baseInputCls}
+            />
+            <datalist id="type-list">
+              {DEFAULT_TYPE_LIST.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </datalist>
+          </div>
         </div>
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">

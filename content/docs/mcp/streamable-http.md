@@ -27,7 +27,7 @@ The server uses `StreamableHTTPServerTransport` in **stateless mode**
 - One `McpServer` + transport is created **per request**.
 - No session affinity, no shared-transport `connect()` race, no session-map memory
   leak under burst traffic.
-- Re-registering the 6 tools + 4 resources per request is negligible for a KB-sized
+- Re-registering tools and resources per request is negligible for a KB-sized
   corpus.
 
 Stateful mode (a `sessionIdGenerator` returning a UUID) would require holding a
@@ -53,8 +53,4 @@ clients can call it directly. Preflight `OPTIONS` is answered with 204.
 
 ## Auth for write tools
 
-Read tools (`search_documents`, `get_document`, ...) are open. Write tools
-(`index_document`, `reindex_all`, `restore_revision`) require the
-`x-webhook-secret` header to match `WEBHOOK_SECRET` — the same shared secret used by
-the git-sync webhook. A missing/invalid header makes the tool return an error before
-any mutation.
+Read tools (`search_documents`, `get_document`, `semantic_search`, `hybrid_search`, `list_documents`, `get_related_documents`, `queue_status`) are open. Write and mutating tools (`create_document`, `update_document`, `delete_document`, `index_document`, `reindex_all`, `restore_revision`) require the `x-webhook-secret` header matching `WEBHOOK_SECRET` — the same shared secret used by the git-sync webhook. A missing or invalid header returns an authorization error before executing any mutation.

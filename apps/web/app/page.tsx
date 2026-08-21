@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { listDocuments } from "@mcpedia/core";
-import { SECTIONS } from "@mcpedia/config/sections";
+import { listDocuments, listSections } from "@mcpedia/core";
+import { getSectionMeta, type SectionConfig } from "@mcpedia/config";
 import McpConfigSnippet from "@/components/McpConfigSnippet";
 
 export const dynamic = "force-dynamic";
@@ -116,8 +116,6 @@ function SectionTree({ section, docs, pathname }: SectionTreeProps) {
     docs.filter((d) => d.slug.startsWith(`${section}/`)),
     section,
   );
-  const sectionInfo = SECTIONS.find((s) => s.id === section);
-  if (!sectionInfo) return null;
 
   return (
     <div>
@@ -131,7 +129,10 @@ function SectionTree({ section, docs, pathname }: SectionTreeProps) {
 }
 
 export default async function HomePage() {
-  const all = await listDocuments();
+  const [all, sections] = await Promise.all([
+    listDocuments(),
+    listSections(),
+  ]);
 
   const recent = [...all]
     .sort(
@@ -146,7 +147,7 @@ export default async function HomePage() {
       <section className="relative pt-4 pb-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 text-[#5e6ad2] dark:text-[#7170ff] text-xs font-medium mb-6">
           <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
-          <span>Model Context Protocol + Unified Knowledge Base</span>
+          <span>Model Context Protocol + PostgreSQL Core</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)] tracking-tight mb-5 leading-tight">
@@ -157,7 +158,7 @@ export default async function HomePage() {
         </h1>
 
         <p className="text-base sm:text-lg text-[var(--text-muted)] max-w-2xl leading-relaxed mb-8">
-          A high-performance, content-first documentation system. Browse hierarchical notes and CTF writeups in your browser, or connect AI coding assistants directly via native MCP tools.
+          A high-performance, database-backed documentation system. Browse hierarchical notes and technical writeups in your browser, or connect AI coding assistants directly via native MCP tools.
         </p>
 
         {/* Quick action buttons & stats */}
@@ -190,18 +191,18 @@ export default async function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl max-w-3xl shadow-sm">
           <div>
             <div className="text-xl font-bold text-[var(--text-primary)]">{all.length}</div>
-            <div className="text-xs text-[var(--text-muted)]">Documents indexed</div>
+            <div className="text-xs text-[var(--text-muted)]">Documents in DB</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-[var(--text-primary)]">{SECTIONS.length}</div>
-            <div className="text-xs text-[var(--text-muted)]">Core sections</div>
+            <div className="text-xl font-bold text-[var(--text-primary)]">{sections.length}</div>
+            <div className="text-xs text-[var(--text-muted)]">Active sections</div>
           </div>
           <div>
             <div className="text-xl font-bold text-[#5e6ad2] dark:text-[#7170ff]">RRF Hybrid</div>
-            <div className="text-xs text-[var(--text-muted)]">FTS + 2048-dim vectors</div>
+            <div className="text-xs text-[var(--text-muted)]">FTS + Cosine Vectors</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">10 MCP Tools</div>
+            <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">13 MCP Tools</div>
             <div className="text-xs text-[var(--text-muted)]">Streamable HTTP :4021</div>
           </div>
         </div>
@@ -216,8 +217,8 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {SECTIONS.map((s) => {
-            const sectionDocs = all.filter((d) => d.section === s.id);
+          {sections.map((s) => {
+            const sectionDocs = all.filter((d) => (d.section || "docs").toLowerCase() === s.id);
             return (
               <div
                 key={s.id}
@@ -272,7 +273,7 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recent.map((d) => {
-              const sInfo = SECTIONS.find((s) => s.id === d.section);
+              const sInfo = getSectionMeta(d.section);
               return (
                 <Link
                   key={d.slug}

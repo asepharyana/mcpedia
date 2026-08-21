@@ -8,7 +8,7 @@ import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
 import DocActions from "@/components/DocActions";
 import { classifyPath, extractFoldersForSection } from "@mcpedia/core";
-import { SECTIONS_BY_ID } from "@mcpedia/config/sections";
+import { getSectionMeta } from "@mcpedia/config";
 import type { DocumentMeta } from "@mcpedia/core";
 
 export const dynamic = "force-dynamic";
@@ -19,17 +19,7 @@ interface DocPageProps {
 }
 
 function getSectionInfo(section: string) {
-  const info = SECTIONS_BY_ID.get(section);
-  if (!info) {
-    return {
-      label: section.charAt(0).toUpperCase() + section.slice(1),
-      icon: "📄",
-    };
-  }
-  return {
-    label: info.label,
-    icon: info.icon,
-  };
+  return getSectionMeta(section);
 }
 
 function calculateReadingTime(text: string): string {
@@ -128,9 +118,9 @@ function FolderIndexPage({
 }) {
   const prefix = `${section}/${slug}/`;
   const folderDocPaths = allDocs
-    .filter((d) => d.path.startsWith(prefix))
+    .filter((d) => d.slug.startsWith(prefix))
     .map((d) => ({
-      rel: d.path.slice(prefix.length).replace(/\.md$/, ""),
+      rel: d.slug.slice(prefix.length),
       doc: d,
     }))
     .sort((a, b) => a.rel.localeCompare(b.rel));
@@ -292,8 +282,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   const fullSlug = `${section}/${slug.join("/")}`;
 
   const allDocs = await listDocuments();
-  const docPaths = allDocs.map((d) => d.path);
-  const classification = classifyPath(docPaths, fullSlug);
+  const docSlugs = allDocs.map((d) => d.slug);
+  const classification = classifyPath(docSlugs, fullSlug);
 
   if (classification === "folder") {
     return <FolderIndexPage section={section} slug={slug.join("/")} allDocs={allDocs} />;
@@ -312,7 +302,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   ]);
 
   if (edit === "1" && canEdit) {
-    const existingFolders = extractFoldersForSection(docPaths, doc.section);
+    const existingFolders = extractFoldersForSection(docSlugs, doc.section);
     return (
       <div>
         <Link
@@ -328,6 +318,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           mode="edit"
           slug={fullSlug}
           secret={WEBHOOK_SECRET}
+          existingSections={Array.from(new Set(allDocs.map((d) => d.section)))}
           existingFolders={{
             [doc.section]: existingFolders,
           }}

@@ -20,7 +20,7 @@ type-safe API described in the tRPC integration notes.
 
 ## Handshake
 
-A client opens a single WebSocket connection and sends an `init` frame携带 an
+A client opens a single WebSocket connection and sends an `init` frame containing an
 auth token. The server answers with `ready` or closes the socket with code 4401
 if the token is invalid.
 

@@ -2,17 +2,16 @@ import { test, expect } from "bun:test";
 import { shouldCreateRevision } from "../src/index.service";
 
 /**
- * Phase 9: unit tests for the revision-dedup decision rule.
+ * Unit tests for the revision-dedup decision rule.
  *
  * `shouldCreateRevision` is the pure predicate that `indexContentFile` consults
- * before writing a new row to `document_revisions`. It's extracted because the
+ * before writing a new row to `document_revisions`. It is extracted because the
  * dedup correctness is the single most important guarantee of the revision
  * system ("metadata-only edits don't bloat history"), and it must hold without
  * a database.
  *
  * The DB-backed paths (`snapshotRevision`, `restoreRevision`) are exercised
- * end-to-end by the existing manual e2e (`bun run index` + restore via the web
- * /api/revisions/restore route, see PHASES.md Phase 4 verification). Here we
+ * end-to-end via the indexer and the web revision restore route. Here we
  * lock the decision invariant in CI.
  */
 

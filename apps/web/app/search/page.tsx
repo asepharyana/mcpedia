@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { SECTIONS } from "@mcpedia/config/sections";
+import { DEFAULT_SECTIONS, type SectionConfig } from "@mcpedia/config/sections";
 
 interface DocHit {
   slug: string;
@@ -24,9 +24,21 @@ function SearchContent() {
   const [mode, setMode] = useState<SearchMode>(
     ["hybrid", "keyword", "semantic"].includes(initialMode) ? initialMode : "hybrid",
   );
+  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   const [selectedSection, setSelectedSection] = useState<string>("all");
   const [results, setResults] = useState<DocHit[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/sections")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSections(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSearch = useCallback(async (q: string, searchMode: SearchMode) => {
     if (!q.trim()) {
@@ -154,7 +166,7 @@ function SearchContent() {
             >
               All Sections
             </button>
-            {SECTIONS.map((s) => (
+            {sections.map((s) => (
               <button
                 key={s.id}
                 type="button"

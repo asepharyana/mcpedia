@@ -1,15 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SECTIONS } from "@mcpedia/config/sections";
+import { DEFAULT_SECTIONS, type SectionConfig } from "@mcpedia/config/sections";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandMenu from "@/components/CommandMenu";
 
 export default function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
+
+  useEffect(() => {
+    fetch("/api/sections")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSections(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-color)] glass-nav">
@@ -31,7 +43,7 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {SECTIONS.map((s) => {
+          {sections.map((s) => {
             const isActive = pathname === `/${s.id}` || pathname.startsWith(`/${s.id}/`);
             return (
               <Link
@@ -107,7 +119,7 @@ export default function Header() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 space-y-1 animate-fade-in shadow-lg">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <Link
               key={s.id}
               href={`/${s.id}`}

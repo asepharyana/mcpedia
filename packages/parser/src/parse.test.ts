@@ -57,13 +57,20 @@ test("parseFile: section derived from top-level dir", () => {
   expect(writeDoc("notes/baz.md", "---\ntitle: C\n---\nbody").meta.section).toBe("notes");
 });
 
-test("parseFile: invalid type/status fall back to defaults", () => {
-  const { meta } = writeDoc(
+test("parseFile: dynamic type and status with defaults", () => {
+  const { meta: m1 } = writeDoc(
     "docs/x.md",
-    "---\ntitle: X\ntype: bogus\nstatus: bogus\n---\n",
+    "---\ntitle: X\ntype: custom-type\nstatus: draft\n---\n",
   );
-  expect(meta.type).toBe("documentation");
-  expect(meta.status).toBe("published");
+  expect(m1.type).toBe("custom-type");
+  expect(m1.status).toBe("draft");
+
+  const { meta: m2 } = writeDoc(
+    "docs/y.md",
+    "---\ntitle: Y\n---\n",
+  );
+  expect(m2.type).toBe("documentation");
+  expect(m2.status).toBe("published");
 });
 
 test("parseFile: missing optional fields get sane defaults", () => {

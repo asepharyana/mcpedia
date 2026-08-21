@@ -36,6 +36,7 @@ mock.module("@mcpedia/core", () => ({
   keywordSearch: () => Promise.resolve([]),
   getDocument: () => Promise.resolve(null),
   listDocuments: () => Promise.resolve([]),
+  listSections: () => Promise.resolve([]),
   getRelated: () => Promise.resolve([]),
   semanticSearch: () => Promise.resolve([]),
   hybridSearch: () => Promise.resolve([]),
@@ -209,6 +210,7 @@ test("tool discovery works without auth (read tools present)", async () => {
   expect(names).toContain("search_documents");
   expect(names).toContain("get_document");
   expect(names).toContain("list_documents");
+  expect(names).toContain("list_sections");
   expect(names).toContain("semantic_search");
   expect(names).toContain("hybrid_search");
   expect(names).toContain("get_related_documents");

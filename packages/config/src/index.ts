@@ -39,20 +39,27 @@ export const EMBED_BASE_URL = process.env.EMBED_BASE_URL ?? "";
 export const EMBED_API_KEY = process.env.EMBED_API_KEY ?? "";
 export const EMBED_MODEL = process.env.EMBED_MODEL ?? "";
 
-// Phase 3: Redis + BullMQ (shared imrnes Redis, no auth by default).
+// Redis + BullMQ (shared Redis instance).
 export const REDIS_URL = process.env.REDIS_URL ?? "redis://100.121.180.82:6379";
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD ?? "";
 export const QUEUE_PREFIX = process.env.QUEUE_PREFIX ?? "mcpedia";
 
-// Phase 4: git-sync webhook shared secret.
+// Git-sync webhook and API write shared secret.
 export const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? "";
 
-// Phase 11: Admin password for web-based CRUD.
+// Admin password for web-based CRUD.
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
 
-// Phase 14: Section registry — re-exported from a Node-free module so client
-// components can safely import SECTIONS without pulling in node:fs.
-export { SECTIONS, SECTIONS_BY_ID, SECTION_IDS, type SectionConfig } from "./sections";
+// Dynamic Section registry & helpers — re-exported from a Node-free module.
+export {
+  SECTIONS,
+  SECTIONS_BY_ID,
+  SECTION_IDS,
+  DEFAULT_SECTIONS,
+  SECTION_PRESETS,
+  getSectionMeta,
+  type SectionConfig,
+} from "./sections";
 
 // NOTE: we deliberately do NOT throw here if DATABASE_URL is empty.
 // Throwing at import time breaks `next build` SSG and any runtime-injected env.

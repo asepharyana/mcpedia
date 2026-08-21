@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
-import { SECTIONS } from "@mcpedia/config/sections";
+import { getSectionMeta } from "@mcpedia/config";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +24,11 @@ interface TreeNode {
 function buildFolderTree(docs: DocMeta[], section: string): TreeNode[] {
   const root: TreeNode[] = [];
 
-  for (const doc of docs.filter((d) => d.section === section)) {
-    const rel = doc.path.startsWith(`${section}/`)
-      ? doc.path.slice(section.length + 1)
-      : doc.path;
-    const cleanPath = rel.replace(/\.md$/, "");
-    const parts = cleanPath.split("/");
+  for (const doc of docs.filter((d) => (d.section || "").toLowerCase() === section.toLowerCase())) {
+    const rel = doc.slug.startsWith(`${section}/`)
+      ? doc.slug.slice(section.length + 1)
+      : doc.slug;
+    const parts = rel.split("/");
 
     let current = root;
     let currentPath = section;
@@ -118,19 +117,10 @@ export default async function SectionIndexPage({
   params: Promise<{ section: string }>;
 }) {
   const { section } = await params;
-
-  const sectionInfo = SECTIONS.find((s) => s.id === section);
-  if (!sectionInfo) {
-    return (
-      <div className="py-12 text-center">
-        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Unknown section</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-2">Section &quot;{section}&quot; does not exist.</p>
-      </div>
-    );
-  }
+  const sectionInfo = getSectionMeta(section);
 
   const allDocs = await listDocuments();
-  const sectionDocs = allDocs.filter((d) => d.section === section);
+  const sectionDocs = allDocs.filter((d) => (d.section || "").toLowerCase() === section.toLowerCase());
   const tree = buildFolderTree(allDocs, section);
 
   return (

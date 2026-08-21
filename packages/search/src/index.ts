@@ -27,26 +27,21 @@ export function cosine(a: number[], b: number[]): number {
   return denom === 0 ? 0 : dot / denom;
 }
 
-const VALID_SECTIONS: DocSection[] = ["docs", "writeups", "research", "notes"];
-const VALID_TYPES: DocType[] = ["documentation", "writeup", "research", "note"];
-
-/** Map a Drizzle row (text columns, Date timestamps) into the strict types. */
+/** Map a Drizzle row into DocumentMeta. */
 function toMeta(row: DocumentRow): DocumentMeta {
   const extra = (row.extraFields ?? {}) as Record<string, unknown>;
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
-    type: (VALID_TYPES.includes(row.type as DocType) ? row.type : "documentation") as DocType,
-    section: (VALID_SECTIONS.includes(row.section as DocSection)
-      ? row.section
-      : "docs") as DocSection,
+    type: row.type || "documentation",
+    section: row.section || "docs",
     status: (row.status === "draft" ? "draft" : "published") as DocStatus,
-    author: row.author,
-    tags: row.tags,
-    path: row.path,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
+    author: row.author || "",
+    tags: row.tags || [],
+    path: row.path || `${row.slug}.md`,
+    createdAt: row.createdAt ? row.createdAt.toISOString() : new Date().toISOString(),
+    updatedAt: row.updatedAt ? row.updatedAt.toISOString() : new Date().toISOString(),
     extraFields: extra,
     // Spread dynamic extra fields (CTF: event, challenge, category, difficulty, points, etc.)
     ...extra,

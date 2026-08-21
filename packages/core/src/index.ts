@@ -12,4 +12,6 @@ export type {
   Document,
   DocumentMeta,
   SearchHit,
+  SectionInfo,
 } from "@mcpedia/types";
+

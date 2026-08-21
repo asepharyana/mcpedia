@@ -1,6 +1,15 @@
-export type DocSection = "docs" | "writeups" | "research" | "notes";
-export type DocType = "documentation" | "writeup" | "research" | "note";
-export type DocStatus = "published" | "draft";
+export type DocSection = string;
+export type DocType = string;
+export type DocStatus = "published" | "draft" | string;
+
+export interface SectionInfo {
+  id: string;
+  label: string;
+  icon: string;
+  desc: string;
+  docCount: number;
+  updatedAt?: string;
+}
 
 export interface DocumentMeta {
   id: string; // slug
@@ -18,10 +27,11 @@ export interface DocumentMeta {
   // difficulty, points). Content creators add arbitrary key-value pairs.
   // Values can be strings, numbers, booleans, arrays, or objects.
   extraFields?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface Document extends DocumentMeta {
-  body: string; // raw markdown (read from disk or stored)
+  body: string; // markdown body
 }
 
 export interface SearchHit {
@@ -29,3 +39,4 @@ export interface SearchHit {
   rank: number;
   snippet: string;
 }
+

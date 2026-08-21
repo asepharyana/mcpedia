@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SECTIONS } from "@mcpedia/config/sections";
+import { getSectionMeta } from "@mcpedia/config/sections";
 
 interface Doc {
   slug: string;
@@ -200,6 +200,17 @@ export default function Sidebar() {
     );
   }, [docs, filterText]);
 
+  const distinctSections = useMemo(() => {
+    const map = new Map<string, { id: string; label: string; icon: string }>();
+    for (const doc of filteredDocs) {
+      const s = (doc.section || "docs").toLowerCase();
+      if (!map.has(s)) {
+        map.set(s, getSectionMeta(s));
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [filteredDocs]);
+
   return (
     <nav className="h-full flex flex-col py-4 px-3">
       {/* Sidebar search filter */}
@@ -233,14 +244,14 @@ export default function Sidebar() {
 
       {/* Summary count */}
       <div className="flex items-center justify-between px-1 mb-3 text-[11px] text-[var(--text-dim)]">
-        <span className="uppercase tracking-wider font-mono">Documentation</span>
+        <span className="uppercase tracking-wider font-mono">Knowledge Base</span>
         <span>{filteredDocs.length} items</span>
       </div>
 
       {/* Section Trees */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {SECTIONS.map(({ id, label, icon }) => {
-          const sectionDocs = filteredDocs.filter((d) => d.section === id);
+        {distinctSections.map(({ id, label, icon }) => {
+          const sectionDocs = filteredDocs.filter((d) => (d.section || "docs").toLowerCase() === id);
           if (sectionDocs.length === 0) return null;
 
           const tree = buildFolderTree(filteredDocs, id);

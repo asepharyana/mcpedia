@@ -1,7 +1,7 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, desc } from "drizzle-orm";
 import { db } from "@mcpedia/db";
 import { documentChunks, documentRevisions, documents } from "@mcpedia/db/schema";
-import { CONTENT_ROOT } from "@mcpedia/config";
+import { CONTENT_ROOT, DEFAULT_SECTIONS, getSectionMeta } from "@mcpedia/config";
 import { parseFile } from "@mcpedia/parser";
 import { existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
@@ -11,6 +11,7 @@ import type {
   DocSection,
   DocType,
   DocStatus,
+  SectionInfo,
 } from "@mcpedia/types";
 import { chunkText, embedChunks, createEmbeddingProvider } from "@mcpedia/embeddings";
 import { readContentFile } from "./content.service";
@@ -19,10 +20,47 @@ import { snapshotRevision } from "./index.service";
 
 const embedder = createEmbeddingProvider();
 
-export async function listDocuments(opts: {
-  section?: string;
-  status?: string;
-} = {}): Promise<DocumentMeta[]> {
+/**
+ * List all active sections dynamically from the database, including document counts.
+ */
+export async function listSections(): Promise<SectionInfo[]> {
+  const rows = await db
+    .select({
+      section: documents.section,
+      count: sql<number>`count(*)::int`,
+      latestUpdate: sql<string>`max(${documents.updatedAt})::text`,
+    })
+    .from(documents)
+    .where(eq(documents.status, "published"))
+    .groupBy(documents.section)
+    .orderBy(sql`count(*) desc`);
+
+  if (rows.length === 0) {
+    return DEFAULT_SECTIONS.map((s) => ({
+      ...s,
+      docCount: 0,
+    }));
+  }
+
+  return rows.map((r) => {
+    const meta = getSectionMeta(r.section, r.count);
+    return {
+      ...meta,
+      docCount: r.count,
+      updatedAt: r.latestUpdate,
+    };
+  });
+}
+
+/**
+ * List documents from the database, optionally filtered by section or status.
+ */
+export async function listDocuments(
+  opts: {
+    section?: string;
+    status?: string;
+  } = {},
+): Promise<DocumentMeta[]> {
   const status = opts.status ?? "published";
   const where = [eq(documents.status, status)];
   if (opts.section) where.push(eq(documents.section, opts.section));
@@ -30,35 +68,40 @@ export async function listDocuments(opts: {
     .select()
     .from(documents)
     .where(and(...where))
-    .orderBy(documents.updatedAt);
+    .orderBy(desc(documents.updatedAt));
   return rows.map(toMeta);
 }
 
+/**
+ * Fetch a single document directly from PostgreSQL (primary data store).
+ */
 export async function getDocument(slug: string): Promise<Document | null> {
   const [row] = await db.select().from(documents).where(eq(documents.slug, slug));
   if (!row) return null;
-  // Prefer the on-disk file (source of truth); fall back to stored body.
-  // Use parseFile (gray-matter) so the frontmatter is stripped — matches what
-  // the indexer stores and what ReactMarkdown expects.
-  const abs = join(CONTENT_ROOT, row.path);
-  let body: string;
-  if (existsSync(abs)) {
-    const { body: parsedBody } = parseFile(abs, row.path);
-    body = parsedBody;
-  } else {
-    body = row.body;
+
+  let body = row.body;
+  // Fallback to disk only if DB body is empty (e.g. during initial migration)
+  if (!body) {
+    const abs = join(CONTENT_ROOT, row.path);
+    if (existsSync(abs)) {
+      const parsed = parseFile(abs, row.path);
+      body = parsed.body;
+    }
   }
+
   return { ...toMeta(row), body };
 }
 
+/**
+ * Find related documents sharing tags with the given slug.
+ */
 export async function getRelated(slug: string, limit = 5): Promise<DocumentMeta[]> {
   const [row] = await db
     .select({ tags: documents.tags })
     .from(documents)
     .where(eq(documents.slug, slug));
   if (!row || row.tags.length === 0) return [];
-  // Build a text[] array literal for the && (overlap) operator, binding each
-  // tag as a parameter to avoid SQL injection from frontmatter content.
+
   const arrLit = sql`ARRAY[${sql.join(
     row.tags.map((t) => sql.param(t)),
     sql`, `,
@@ -76,7 +119,6 @@ export { readContentFile };
 /**
  * Chunk a document body, embed the chunks, and upsert them into
  * `document_chunks` (replacing any prior chunks for the same slug).
- * Failures are thrown so the caller can decide whether to abort the index.
  */
 export async function indexChunks(slug: string, body: string): Promise<number> {
   const [doc] = await db
@@ -110,13 +152,7 @@ export async function indexChunks(slug: string, body: string): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
-// Phase 11: CRUD — create, update, delete documents.
-//
-// Source of truth for content is the filesystem: each doc is a markdown file
-// under content/{section}/{slug}.md. The `documents` DB table mirrors the
-// metadata + body for fast search. CRUD ops write the file first, then upsert
-// the DB row, then snapshot a revision + reindex chunks. `deleteDocument`
-// also cleans up chunks + revisions.
+// Dynamic CRUD operations (Database-First)
 // ---------------------------------------------------------------------------
 
 export interface CreateDocInput {
@@ -134,6 +170,7 @@ export interface CreateDocInput {
 export interface UpdateDocInput {
   title?: string;
   body?: string;
+  section?: DocSection;
   type?: DocType;
   status?: DocStatus;
   tags?: string[];
@@ -150,10 +187,9 @@ function validateSlug(slug: string): string {
   return slug;
 }
 
-/** Compute the relative file path for a slug (content/{section}/{slug}.md). */
+/** Compute the relative file path for a slug. */
 function slugToRelPath(section: DocSection, slug: string): string {
   const cleanSlug = validateSlug(slug);
-  // If the slug already starts with the section, strip it to avoid doubling.
   const pathPart = cleanSlug.startsWith(`${section}/`)
     ? cleanSlug.slice(section.length + 1)
     : cleanSlug;
@@ -161,17 +197,15 @@ function slugToRelPath(section: DocSection, slug: string): string {
 }
 
 /**
- * Create a new document: write the markdown file, upsert the DB row,
- * snapshot a revision, and index semantic chunks.
- * @returns the created DocumentMeta
+ * Create a new document in the PostgreSQL database, snapshot revision, and index chunks.
  */
 export async function createDocument(input: CreateDocInput): Promise<DocumentMeta> {
-  const section = input.section;
+  const section = (input.section || "docs").trim();
   const slug = validateSlug(input.slug);
   const relPath = slugToRelPath(section, slug);
-  const absPath = join(CONTENT_ROOT, relPath);
 
-  if (existsSync(absPath)) {
+  const [existing] = await db.select({ id: documents.id }).from(documents).where(eq(documents.slug, slug));
+  if (existing) {
     throw new Error(`document already exists at slug: ${slug}`);
   }
 
@@ -191,11 +225,7 @@ export async function createDocument(input: CreateDocInput): Promise<DocumentMet
     extraFields: input.extraFields ?? {},
   };
 
-  // Write file to disk first (source of truth).
-  const { stringifyFile } = await import("@mcpedia/parser");
-  stringifyFile(absPath, relPath, meta, input.body);
-
-  // Upsert DB row.
+  // Upsert to DB directly
   await db.insert(documents).values({
     id: meta.id,
     slug: meta.slug,
@@ -212,21 +242,28 @@ export async function createDocument(input: CreateDocInput): Promise<DocumentMet
     updatedAt: new Date(meta.updatedAt),
   });
 
-  // Snapshot revision + index chunks (best-effort; chunks must not block create).
-  await snapshotRevision(slug, meta, input.body, "index");
+  // Snapshot revision + index chunks
+  await snapshotRevision(slug, meta, input.body, "create");
   try {
     await indexChunks(slug, input.body);
   } catch (err) {
     console.error(`createDocument: chunk/embed FAILED for ${slug}: ${err instanceof Error ? err.message : err}`);
   }
 
+  // Safe optional disk file sync
+  try {
+    const absPath = join(CONTENT_ROOT, relPath);
+    const { stringifyFile } = await import("@mcpedia/parser");
+    stringifyFile(absPath, relPath, meta, input.body);
+  } catch (fsErr) {
+    // Non-fatal
+  }
+
   return meta;
 }
 
 /**
- * Update an existing document: write new file, upsert DB row, snapshot a
- * revision (if body changed), and reindex chunks.
- * @returns the updated DocumentMeta
+ * Update an existing document in PostgreSQL, snapshot revision, and reindex chunks.
  */
 export async function updateDocument(
   slug: string,
@@ -240,12 +277,11 @@ export async function updateDocument(
     ...doc,
     title: input.title ?? doc.title,
     type: input.type ?? doc.type,
-    section: doc.section,
+    section: input.section ?? doc.section,
     status: input.status ?? doc.status,
     tags: input.tags ?? doc.tags,
     author: input.author ?? doc.author,
     updatedAt,
-    // Merge: new extraFields override old ones; merge with existing
     extraFields:
       input.extraFields !== undefined
         ? { ...doc.extraFields, ...input.extraFields }
@@ -253,12 +289,7 @@ export async function updateDocument(
   };
   const body = input.body ?? doc.body;
 
-  // Write file to disk (source of truth).
-  const absPath = join(CONTENT_ROOT, doc.path);
-  const { stringifyFile } = await import("@mcpedia/parser");
-  stringifyFile(absPath, doc.path, updated, body);
-
-  // Upsert DB row.
+  // Update DB row directly
   await db
     .update(documents)
     .set({
@@ -268,13 +299,13 @@ export async function updateDocument(
       status: updated.status,
       author: updated.author,
       tags: updated.tags,
-      extraFields: input.extraFields ?? doc.extraFields ?? {},
+      extraFields: updated.extraFields ?? {},
       body,
       updatedAt: new Date(updatedAt),
     })
     .where(eq(documents.slug, slug));
 
-  // Snapshot revision (only if body changed) + reindex chunks.
+  // Snapshot revision (if body changed) + reindex chunks
   await snapshotRevision(slug, updated, body, "update");
   try {
     await indexChunks(slug, body);
@@ -282,52 +313,60 @@ export async function updateDocument(
     console.error(`updateDocument: chunk/embed FAILED for ${slug}: ${err instanceof Error ? err.message : err}`);
   }
 
+  // Safe optional disk file sync
+  try {
+    const absPath = join(CONTENT_ROOT, doc.path);
+    const { stringifyFile } = await import("@mcpedia/parser");
+    stringifyFile(absPath, doc.path, updated, body);
+  } catch (fsErr) {
+    // Non-fatal
+  }
+
   return updated;
 }
 
 /**
- * Delete a document: remove the file, delete DB rows (doc + chunks + revisions).
+ * Delete a document from PostgreSQL, chunks, revisions, and optional disk file.
  */
 export async function deleteDocument(slug: string): Promise<{ deleted: boolean }> {
   const [row] = await db.select().from(documents).where(eq(documents.slug, slug));
   if (!row) return { deleted: false };
 
-  // Remove file from disk (source of truth).
-  const absPath = join(CONTENT_ROOT, row.path);
-  if (existsSync(absPath)) unlinkSync(absPath);
-
-  // Clean up DB rows (cascades would work but be explicit).
+  // Delete DB rows directly
   await db.delete(documentChunks).where(eq(documentChunks.slug, slug));
   await db.delete(documentRevisions).where(eq(documentRevisions.documentId, row.id));
   await db.delete(documents).where(eq(documents.id, row.id));
+
+  // Safe optional disk cleanup
+  try {
+    const absPath = join(CONTENT_ROOT, row.path);
+    if (existsSync(absPath)) unlinkSync(absPath);
+  } catch (fsErr) {
+    // Non-fatal
+  }
 
   return { deleted: true };
 }
 
 // ---------------------------------------------------------------------------
-// Phase 14: Hierarchical folder structure helpers.
-// These enable GitHub-style nested folder browsing — the content creator
-// decides folder structure via where they place files; no config needed.
+// Hierarchical folder structure helpers (dynamic, slug-driven)
 // ---------------------------------------------------------------------------
 
 /**
- * Extract the folder structure for a given section from a list of document paths.
- * Returns all distinct folder prefixes (relative to the section), sorted.
- *
- * Example: for section "docs" with paths ["docs/a/b/c.md", "docs/a/b/d.md"],
- * returns ["a", "a/b"].
+ * Extract the folder structure for a given section from a list of document slugs/paths.
  */
 export function extractFoldersForSection(
-  docPaths: string[],
+  docSlugs: string[],
   section: string,
 ): string[] {
   const folders = new Set<string>();
   const base = `${section}/`;
+  const cleanSlugs = docSlugs.map((s) => s.replace(/\.md$/, ""));
 
-  for (const path of docPaths) {
-    const rel = path.startsWith(base) ? path.slice(base.length) : path;
-    const cleanPath = rel.replace(/\.md$/, "");
-    const parts = cleanPath.split("/");
+  for (const slug of cleanSlugs) {
+    if (!slug.startsWith(base)) continue;
+    const rel = slug.slice(base.length);
+    const parts = rel.split("/");
 
     let acc = "";
     for (let i = 0; i < parts.length - 1; i++) {
@@ -340,28 +379,22 @@ export function extractFoldersForSection(
 }
 
 /**
- * Given a full URL slug path (e.g. "writeups/ctf/defcon-quals-2024"), determine
- * if it represents a folder (i.e., there are other docs whose paths start with
- * this prefix) or a leaf document.
- *
- * Returns:
- *  - "doc" if the path is a leaf document (path + ".md" matches a doc)
- *  - "folder" if the path is a parent of other doc paths
- *  - "none" if neither
+ * Determine if a path represents a folder or a leaf document.
  */
 export function classifyPath(
-  docPaths: string[],
+  docSlugs: string[],
   path: string,
 ): "doc" | "folder" | "none" {
-  const dotMd = `${path}.md`;
+  const cleanPath = path.replace(/\.md$/, "");
+  const cleanSlugs = docSlugs.map((s) => s.replace(/\.md$/, ""));
 
-  // Check if it's a leaf document
-  if (docPaths.includes(dotMd)) return "doc";
+  // Check leaf doc match
+  if (cleanSlugs.includes(cleanPath)) return "doc";
 
-  // Check if it's a folder (parent of other paths)
-  const prefix = `${path}/`;
-  const hasChildren = docPaths.some((p) => p.startsWith(prefix));
-  if (hasChildren) return "folder";
+  // Check folder parent match
+  const prefix = `${cleanPath}/`;
+  if (cleanSlugs.some((s) => s.startsWith(prefix))) return "folder";
 
   return "none";
 }
+
