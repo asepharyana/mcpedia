@@ -42,30 +42,39 @@ export default function DocForm({
   const [status, setStatus] = useState(initial?.status ?? "published");
   const [tags, setTags] = useState(initial?.tags?.join(", ") ?? "");
   const [author, setAuthor] = useState(initial?.author ?? "");
+  const [parentFolder, setParentFolder] = useState("");
 
-  // Dynamic custom fields — content creators can add any metadata they want
+  // Extract existing custom fields from initial for edit mode
   const [customFields, setCustomFields] = useState<
     Array<{ key: string; value: string }>
-  >([]);
-
-  // Parent folder selection (hierarchical structure like GitHub folders)
-  const [parentFolder, setParentFolder] = useState("");
+  >(() => {
+    if (initial?.extraFields) {
+      return Object.entries(initial.extraFields)
+        .filter(([k, v]) => k !== "slug" && v !== undefined && v !== null)
+        .map(([k, v]) => ({ key: k, value: typeof v === "string" ? v : JSON.stringify(v) }))
+        .filter((f) => f.value);
+    }
+    return [];
+  });
 
   const tagList = tags
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // For edit mode, slug is fixed (full path). For create mode, build from folder + slugInput.
   const isEdit = mode === "edit";
-  const effectiveSlug = isEdit ? (slug ?? "") : parentFolder
-    ? `${parentFolder}/${slugInput}`.replace(/^\/+/, "").replace(/\/+/g, "/")
-    : slugInput;
+  const effectiveSlug = isEdit
+    ? (slug ?? "")
+    : parentFolder
+      ? `${parentFolder}/${slugInput}`.replace(/^\/+/, "").replace(/\/+/g, "/")
+      : slugInput;
 
   const availableFolders = existingFolders?.[section] ?? [];
 
   const baseInputCls =
     "w-full px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]";
+
+  const baseSelectCls = baseInputCls;
 
   function addCustomField() {
     setCustomFields([...customFields, { key: "", value: "" }]);
@@ -92,7 +101,6 @@ export default function DocForm({
       return;
     }
 
-    // Build payload with custom fields flattened at top level
     const payload: Record<string, unknown> = {
       title,
       body,
@@ -104,7 +112,6 @@ export default function DocForm({
       tags: tagList,
     };
 
-    // Merge dynamic custom fields
     for (const field of customFields) {
       if (field.key.trim() && field.value.trim()) {
         payload[field.key.trim()] = field.value.trim();
@@ -156,6 +163,7 @@ export default function DocForm({
         </div>
       )}
 
+      {/* Title */}
       <div>
         <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
           Title
@@ -169,6 +177,7 @@ export default function DocForm({
         />
       </div>
 
+      {/* Section + Type + Status */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
@@ -177,7 +186,7 @@ export default function DocForm({
           <select
             value={section}
             onChange={(e) => setSection(e.target.value as typeof section)}
-            className={baseInputCls}
+            className={baseSelectCls}
             disabled={isEdit}
           >
             {SECTION_OPTIONS.map((s) => (
@@ -194,7 +203,7 @@ export default function DocForm({
           <select
             value={type}
             onChange={(e) => setType(e.target.value as typeof type)}
-            className={baseInputCls}
+            className={baseSelectCls}
           >
             {TYPE_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -210,7 +219,7 @@ export default function DocForm({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as typeof status)}
-            className={baseInputCls}
+            className={baseSelectCls}
           >
             <option value="published">Published</option>
             <option value="draft">Draft</option>
@@ -218,90 +227,91 @@ export default function DocForm({
         </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-          Parent folder (optional)
-        </label>
-        <select
-          value={parentFolder}
-          onChange={(e) => setParentFolder(e.target.value)}
-          className={baseInputCls}
-          disabled={isEdit}
-        >
-          <option value="">(root of section)</option>
-          {availableFolders.map((folder) => (
-            <option key={folder} value={folder}>
-              {folder}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-[#62666d] mt-1">
-          Place this document inside an existing folder. The slug will be
-          prepended with the folder path (e.g. selecting "ctf/defcon-quals-2024"
-          + slug "pwn-100" → "ctf/defcon-quals-2024/pwn-100").
-        </p>
+      {/* Folder + Slug */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            Parent folder (optional)
+          </label>
+          <select
+            value={parentFolder}
+            onChange={(e) => setParentFolder(e.target.value)}
+            className={baseSelectCls}
+            disabled={isEdit}
+          >
+            <option value="">(root of section)</option>
+            {availableFolders.map((folder) => (
+              <option key={folder} value={folder}>
+                {folder}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-[#62666d] mt-1">
+            Place inside an existing folder.
+          </p>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            {isEdit ? "Full slug" : "Slug (file name)"}
+          </label>
+          {isEdit ? (
+            <input
+              type="text"
+              value={slug ?? ""}
+              readOnly
+              className="w-full px-3 py-2 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
+            />
+          ) : (
+            <input
+              type="text"
+              value={slugInput}
+              onChange={(e) => setSlugInput(e.target.value)}
+              className={baseInputCls}
+              placeholder="my-document-slug"
+              required
+            />
+          )}
+          <p className="text-xs text-[#62666d] mt-1">
+            Resolved: <code className="bg-[#191a1b] px-1 py-0.25 rounded">{effectiveSlug || section}</code>
+          </p>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-          {isEdit ? "Full slug (read-only)" : "Slug (file name)"}
-        </label>
-        {isEdit ? (
+      {/* Tags + Author */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            Tags
+          </label>
           <input
             type="text"
-            value={slug ?? ""}
-            readOnly
-            className="w-full px-3 py-2 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
-          />
-        ) : (
-          <input
-            type="text"
-            value={slugInput}
-            onChange={(e) => setSlugInput(e.target.value)}
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
             className={baseInputCls}
-            placeholder="my-document-slug"
-            required
+            placeholder="comma, separated, tags"
           />
-        )}
-        <p className="text-xs text-[#62666d] mt-1">
-          Resolved path: <code>{effectiveSlug || section}</code>
-        </p>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
+            Author
+          </label>
+          <input
+            type="text"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className={baseInputCls}
+          />
+        </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-          Tags
-        </label>
-        <input
-          type="text"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          className={baseInputCls}
-          placeholder="comma, separated, tags"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
-          Author
-        </label>
-        <input
-          type="text"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          className={baseInputCls}
-        />
-      </div>
-
-      {/* Dynamic custom fields — creators add whatever metadata they need */}
+      {/* Custom fields */}
       <div>
         <label className="block text-xs font-medium text-[#d0d6e0] mb-2">
           Custom metadata fields
         </label>
         <p className="text-xs text-[#62666d] mb-3">
-          Add extra frontmatter fields. Content creators name and define their own
-          metadata here — the system auto-renders any field as a badge on the doc
-          page based on its value.
+          Add extra frontmatter fields. Any field you add will be rendered as
+          an auto-styled badge on the doc page based on its value.
         </p>
         {customFields.length > 0 && (
           <div className="space-y-3 mb-3">
@@ -309,17 +319,17 @@ export default function DocForm({
               <div key={i} className="flex gap-2 items-center">
                 <input
                   type="text"
-                  placeholder="field name (e.g. event)"
+                  placeholder="field name"
                   value={field.key}
                   onChange={(e) => updateCustomField(i, "key", e.target.value)}
-                  className="flex-1 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
+                  className={baseInputCls}
                 />
                 <input
                   type="text"
                   placeholder="value"
                   value={field.value}
                   onChange={(e) => updateCustomField(i, "value", e.target.value)}
-                  className="flex-1 px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2]"
+                  className={baseInputCls}
                 />
                 <button
                   type="button"
@@ -341,6 +351,7 @@ export default function DocForm({
         </button>
       </div>
 
+      {/* Body */}
       <div>
         <label className="block text-xs font-medium text-[#d0d6e0] mb-1">
           Body (Markdown)
@@ -353,6 +364,7 @@ export default function DocForm({
         />
       </div>
 
+      {/* Submit */}
       <div className="flex gap-3">
         <button
           type="submit"

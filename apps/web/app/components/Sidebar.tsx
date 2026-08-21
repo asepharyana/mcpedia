@@ -19,91 +19,100 @@ const SECTIONS = [
 ] as const;
 
 /**
- * Build a hierarchical folder tree from a flat list of documents.
- * Each doc's slug is like "section/sub/sub2/leaf-name".
- * The tree groups by path segments so the sidebar shows nested folders
- * with proper indentation (like GitHub's file tree).
+ * Build a hierarchical folder tree from flat document slugs.
+ * Each node is either a folder (has children) or a leaf doc.
  */
 interface TreeNode {
   name: string;
   slug: string;
   title: string;
   children: TreeNode[];
+  isLeaf: boolean;
+  docCount: number; // total docs in subtree
 }
 
-function buildFolderTree(docs: Doc[]): Record<string, TreeNode> {
-  // Returns a map from section id → tree root for that section.
-  const result: Record<string, TreeNode> = {};
+function buildFolderTree(docs: Doc[], section: string): TreeNode[] {
+  const root: TreeNode[] = [];
 
-  for (const section of SECTIONS) {
-    const sectionDocs = docs.filter((d) => d.section === section.id);
-    const root: TreeNode = {
-      name: section.id,
-      slug: section.id,
-      title: section.label,
-      children: [],
-    };
-    const nodeMap = new Map<string, TreeNode>();
-    nodeMap.set(section.id, root);
+  for (const doc of docs.filter((d) => d.section === section)) {
+    const parts = doc.slug.split("/");
+    // parts[0] should be the section
+    let current = root;
 
-    for (const doc of sectionDocs) {
-      // slug is like "docs/websocket/contract" → parts after section
-      const parts = doc.slug.split("/");
-      // parts[0] should be the section
-      let current = root;
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      const isLeaf = i === parts.length - 1;
 
-      for (let i = 1; i < parts.length; i++) {
-        const part = parts[i];
-        const path = parts.slice(0, i + 1).join("/");
-        const isLeaf = i === parts.length - 1;
-
-        let child = current.children.find((n) => n.name === part);
-        if (!child) {
-          child = {
-            name: part,
-            slug: path,
-            title: isLeaf ? doc.title : part,
-            children: [],
-          };
-          current.children.push(child);
-          nodeMap.set(path, child);
-        } else if (isLeaf) {
-          child.title = doc.title;
-        }
-        current = child;
+      let node = current.find((n) => n.name === part);
+      if (!node) {
+        node = {
+          name: part,
+          slug: parts.slice(0, i + 1).join("/"),
+          title: "",
+          children: [],
+          isLeaf: false,
+          docCount: 0,
+        };
+        current.push(node);
       }
-    }
 
-    root.children.sort((a, b) => {
-      // Folders first, then docs
+      if (isLeaf) {
+        node.isLeaf = true;
+        node.title = doc.title;
+      } else if (!node.title) {
+        node.title = part
+          .split(/[-_]/)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+      }
+      current = node.children;
+    }
+  }
+
+  // Recursively compute docCount
+  function countDocs(node: TreeNode): number {
+    if (node.isLeaf) return 1;
+    return node.children.reduce((sum, child) => sum + countDocs(child), 0);
+  }
+
+  for (const node of root) {
+    node.docCount = countDocs(node);
+  }
+
+  // Sort: folders first, then docs, alphabetically
+  function sortNodes(nodes: TreeNode[]): TreeNode[] {
+    return nodes.sort((a, b) => {
       const aFolder = a.children.length > 0 ? 0 : 1;
       const bFolder = b.children.length > 0 ? 0 : 1;
       if (aFolder !== bFolder) return aFolder - bFolder;
-      return a.name.localeCompare(b.name);
+      return a.title.localeCompare(b.title);
     });
-
-    result[section.id] = root;
+  }
+  for (const node of root) {
+    sortNodes(node.children);
   }
 
-  return result;
+  return sortNodes(root);
 }
 
 /**
- * Recursively render the folder tree with indentation.
- * depth = 0 is the top-level items under a section.
+ * Recursively render the folder tree with proper depth styling.
  */
-function renderTreeNode(node: TreeNode, depth: number, pathname: string) {
+function renderTreeNode(
+  node: TreeNode,
+  depth: number,
+  pathname: string,
+): React.ReactElement {
   const isFolder = node.children.length > 0;
   const isActive = pathname === `/${node.slug}`;
   const hasActiveChild = pathname.startsWith(`/${node.slug}/`);
-
-  const indent = depth * 12; // 12px per level
+  const indent = depth * 16; // 16px per level
 
   return (
     <li key={node.slug}>
       <Link
         href={`/${node.slug}`}
-        className={`flex items-center gap-1.5 text-xs py-0.5 rounded transition-all ${
+        className={`flex items-center gap-1.5 text-xs py-1 px-2 rounded transition-all ${
           isActive
             ? "text-[#7170ff] bg-[#191a1b]"
             : hasActiveChild
@@ -114,10 +123,15 @@ function renderTreeNode(node: TreeNode, depth: number, pathname: string) {
         title={node.title}
       >
         <span>{isFolder ? "📁" : "📄"}</span>
-        {node.title || node.name}
+        <span className="truncate">{node.title || node.name}</span>
+        {isFolder && node.docCount > 0 && (
+          <span className="ml-auto text-[#62666d] bg-[#191a1b] px-1 py-0 rounded">
+            {node.docCount}
+          </span>
+        )}
       </Link>
-      {node.children && node.children.length > 0 && (
-        <ul>
+      {node.children.length > 0 && (
+        <ul className="mt-0.5">
           {node.children.map((child) => renderTreeNode(child, 0, pathname))}
         </ul>
       )}
@@ -141,64 +155,33 @@ export default function Sidebar() {
       .catch(() => setDocs([]));
   }, []);
 
-  const tree = buildFolderTree(docs);
-
-  // Flatten all docs count for display
-  const totalDocs = docs.length;
-
   return (
     <nav className="h-full overflow-y-auto py-6">
       <div className="mb-4 px-3">
         <span className="text-xs text-[#62666d] uppercase">
-          {totalDocs} documents · {SECTIONS.length} sections
+          {docs.length} documents
         </span>
       </div>
-      <ul className="space-y-0.5 px-3">
+      <ul className="space-y-2 px-3 text-sm">
         {SECTIONS.map(({ id, label, icon }) => {
-          const treeRoot = tree[id];
           const sectionDocs = docs.filter((d) => d.section === id);
           if (sectionDocs.length === 0) return null;
 
-          const isActive = pathname.startsWith(`/${id}`);
+          const tree = buildFolderTree(docs, id);
+          const isActive = pathname === `/${id}` || pathname.startsWith(`/${id}/`);
+
           return (
             <li key={id}>
               <div
-                className={`text-xs font-medium mb-1 flex items-center gap-1.5 ${
+                className={`flex items-center gap-1.5 mb-1 mt-4 first:mt-0 ${
                   isActive ? "text-[#7170ff]" : "text-[#62666d]"
                 }`}
               >
                 <span>{icon}</span>
-                {label}
+                <span className="text-xs font-medium">{label}</span>
               </div>
-              <ul className="space-y-0.5">
-                {treeRoot && treeRoot.children.length > 0
-                  ? treeRoot.children.map((node) =>
-                      renderTreeNode(node, 0, pathname),
-                    )
-                  : sectionDocs.map((doc) => {
-                      const parts = doc.slug.split("/").slice(1);
-                      const label = parts[parts.length - 1]
-                        .split(/[-_]/)
-                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                        .join(" ");
-                      const isDocActive = pathname === `/${doc.slug}`;
-                      return (
-                        <li key={doc.slug}>
-                          <Link
-                            href={`/${doc.slug}`}
-                            className={`flex items-center gap-1.5 text-xs py-0.5 rounded transition-all ${
-                              isDocActive
-                                ? "text-[#7170ff] bg-[#191a1b]"
-                                : "text-[#d0d6e0] hover:text-[#f7f8f8] hover:bg-[#191a1b]"
-                            }`}
-                            title={doc.title}
-                          >
-                            <span>📄</span>
-                            {label}
-                          </Link>
-                        </li>
-                      );
-                    })}
+              <ul className="space-y-0.5 pl-0">
+                {tree.map((node) => renderTreeNode(node, 0, pathname))}
               </ul>
             </li>
           );

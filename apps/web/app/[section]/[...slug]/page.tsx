@@ -7,6 +7,7 @@ import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
 import { classifyPath, extractFoldersForSection } from "@mcpedia/core";
+import type { DocumentMeta } from "@mcpedia/core";
 
 // Render at request time (content in Postgres, not available at build time).
 export const dynamic = "force-dynamic";
@@ -31,10 +32,10 @@ const SECTION_ICON: Record<string, string> = {
 };
 
 /**
- * Render any extra/custom frontmatter fields as badges.
+ * Render any extra/custom frontmatter fields as labeled badges.
  * This makes the system dynamic — the content creator decides what metadata
- * to include, not the UI template. Standard fields (title, author, tags, etc.)
- * are handled explicitly; any OTHER keys in frontmatter become badges here.
+ * to include. Standard fields (title, author, tags, etc.) are handled
+ * explicitly; any OTHER keys in frontmatter become badges here.
  */
 function CustomFieldBadges({
   doc,
@@ -43,7 +44,6 @@ function CustomFieldBadges({
   doc: Record<string, unknown>;
   standardKeys: Set<string>;
 }) {
-  // Convert doc to a plain record to get index signature
   const docRecord: Record<string, unknown> = { ...doc } as Record<string, unknown>;
   const customEntries = Object.entries(docRecord).filter(
     ([k, v]) =>
@@ -53,7 +53,7 @@ function CustomFieldBadges({
   if (customEntries.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-3">
+    <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-[#1f2022]">
       {customEntries.map(([key, value]) => {
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
         let colorClass = "bg-[#191a1b] border-[#23252a] text-[#d0d6e0]";
@@ -64,30 +64,24 @@ function CustomFieldBadges({
         //  not by using specific key names)
 
         if (typeof value === "number") {
-          // Numeric values → purple "points"-style badge with + prefix
           colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
           displayValue = `${value}`;
         } else if (typeof value === "boolean") {
-          // Boolean values → green check/X
           colorClass = value
             ? "bg-green-500/15 border-green-500/25 text-green-400"
             : "bg-red-500/15 border-red-500/25 text-red-400";
           displayValue = value ? "Yes" : "No";
         } else if (Array.isArray(value)) {
-          // Arrays → purple badge, joined values
           colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
           displayValue = value.join(", ");
         } else if (typeof value === "object" && value !== null) {
-          // Objects → neutral badge, truncated JSON
           displayValue = JSON.stringify(value).slice(0, 40) +
             (JSON.stringify(value).length > 40 ? "…" : "");
         } else {
-          // String values — auto-detect content type for styling
           const v = String(value).toLowerCase();
 
-          // Difficulty-like values (easy/medium/hard/etc) OR numeric with suffix
           const diffMatch = v.match(
-            /^(easy|simple|beginner)\b|^(medium|intermediate)\b|^(hard|expert|advanced)\b/i
+            /^(easy|simple|beginner)\b|^(medium|intermediate)\b|^(hard|expert|advanced)\b/i,
           );
           if (diffMatch) {
             if (/^easy|simple|beginner/i.test(v))
@@ -97,33 +91,24 @@ function CustomFieldBadges({
             else if (/^hard|expert|advanced/i.test(v))
               colorClass = "bg-red-500/10 border-red-500/30 text-red-400";
             displayValue = diffMatch[0];
-          }
-          // Event-like values (contains CTF, DEF CON, hack, etc.)
-          else if (/ctf|def.?con|hack|game|competition|tournament|qualifier/i.test(v)) {
+          } else if (/ctf|def.?con|hack|game|competition|tournament|qualifier/i.test(v)) {
             colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
             displayValue = String(value);
-          }
-          // Points-like values (number + "pts" suffix)
-          else if (/(\d+)\s*pts?$/i.test(v)) {
+          } else if (/(\d+)\s*pts?$/i.test(v)) {
             const match = v.match(/(\d+)\s*pts?$/i);
             colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#7170ff]";
             displayValue = match ? `${match[1]} pts` : String(value);
-          }
-          // Category-like values (pwn/web/crypto/etc)
-          else if (/^(pwn|web|crypto|misc|forensic|reverse|pwnable|binary|webexploit)$/i.test(v)) {
+          } else if (/^(pwn|web|crypto|misc|forensic|reverse|pwnable|binary|webexploit)$/i.test(v)) {
             colorClass = "bg-orange-500/15 border-orange-500/25 text-orange-400";
             displayValue = v.charAt(0).toUpperCase() + v.slice(1);
-          }
-          // Status-like values (solved/pending/wip)
-          else if (/^(solved|pending|wip|in.?progress|completed|todo)$/i.test(v)) {
+          } else if (/^(solved|pending|wip|in.?progress|completed|todo)$/i.test(v)) {
             colorClass = v.includes("solved") || v.includes("completed")
               ? "bg-green-500/10 border-green-500/30 text-green-400"
               : v.includes("wip") || v.includes("progress")
                 ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
                 : "bg-red-500/10 border-red-500/30 text-red-400";
             displayValue = v.charAt(0).toUpperCase() + v.slice(1);
-          }
-          else {
+          } else {
             displayValue = String(value);
           }
         }
@@ -132,6 +117,7 @@ function CustomFieldBadges({
           <span
             key={key}
             className={`px-2 py-0.5 border rounded text-xs ${colorClass}`}
+            title={label}
           >
             {displayValue}
           </span>
@@ -148,80 +134,113 @@ function CustomFieldBadges({
 function FolderIndexPage({
   section,
   slug,
-  docPaths,
+  allDocs,
 }: {
   section: string;
   slug: string;
-  docPaths: string[];
+  allDocs: DocumentMeta[];
 }) {
   const prefix = `${section}/${slug}/`;
-  const folderDocs = docPaths
-    .filter((p) => p.startsWith(prefix))
-    .map((p) => p.slice(prefix.length).replace(/\.md$/, ""))
-    .sort();
+  const folderDocPaths = allDocs
+    .filter((d) => d.path.startsWith(prefix))
+    .map((d) => ({
+      rel: d.path.slice(prefix.length).replace(/\.md$/, ""),
+      doc: d,
+    }))
+    .sort((a, b) => a.rel.localeCompare(b.rel));
 
   // Group into immediate children: folders vs leaf docs
-  const immediateFolders = new Set<string>();
-  const immediateDocs: { name: string; slug: string }[] = [];
+  const immediateFolders = new Map<string, { docCount: number }>();
+  const immediateDocs: DocumentMeta[] = [];
 
-  for (const relPath of folderDocs) {
-    const parts = relPath.split("/");
+  for (const { rel, doc } of folderDocPaths) {
+    const parts = rel.split("/");
     if (parts.length === 1) {
-      // Leaf doc directly in this folder
-      immediateDocs.push({ name: parts[0], slug: `${section}/${slug}/${parts[0]}`.replace(/\/+/g, "/") });
+      immediateDocs.push(doc);
     } else {
-      // Deeper — register the immediate folder
-      immediateFolders.add(parts[0]);
+      const folder = parts[0];
+      const existing = immediateFolders.get(folder) || { docCount: 0 };
+      existing.docCount += 1;
+      immediateFolders.set(folder, existing);
     }
   }
 
-  const folders = [...immediateFolders].sort();
+  const folders = [...immediateFolders.entries()].sort(([a], [b]) => a.localeCompare(b));
+
+  const sectionInfo = {
+    icon: SECTION_ICON[section] || "📁",
+    label: SECTION_LABEL[section] || section,
+  };
 
   return (
     <div>
+      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-[#62666d] mb-6">
         <Link href="/" className="hover:text-[#d0d6e0] transition-colors">
           MCPedia
         </Link>
         <span>/</span>
+        <Link
+          href={`/${section}`}
+          className="hover:text-[#d0d6e0] transition-colors"
+        >
+          {sectionInfo.label}
+        </Link>
         {slug.split("/").map((part, i) => {
           const path = `${section}/${slug.split("/").slice(0, i + 1).join("/")}`;
           const isLast = i === slug.split("/").length - 1;
+          const label = part
+            .split(/[-_]/)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
           return (
             <>
-              <Link
+              <span>/</span>
+              <span
                 key={path}
-                href={`/${path}`}
-                className={isLast ? "text-[#8a8f98]" : "hover:text-[#d0d6e0] transition-colors"}
+                className={isLast ? "text-[#8a8f98]" : "hover:text-[#d0d6e0]"}
               >
-                {part}
-              </Link>
-              {!isLast && <span>/</span>}
+                {label}
+              </span>
             </>
           );
         })}
       </nav>
 
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-xl">📁</span>
-        <h1 className="text-3xl font-medium text-[#f7f8f8]">{slug.split("/").pop()}</h1>
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-8">
+        <span className="text-2xl">📁</span>
+        <h1 className="text-3xl font-medium text-[#f7f8f8]">
+          {slug.split("/").pop()!.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
+        </h1>
+        <span className="text-xs text-[#62666d] bg-[#191a1b] px-2 py-0.5 rounded">
+          {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       {(folders.length > 0 || immediateDocs.length > 0) ? (
         <div>
           {folders.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-3">
+            <div className="mb-8">
+              <h2 className="text-xs font-medium text-[#8a8f98] uppercase mb-3 tracking-wider">
                 Subfolders
               </h2>
-              <div className="space-y-2">
-                {folders.map((folder) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {folders.map(([folder, info]) => (
                   <Link
                     key={folder}
                     href={`/${section}/${slug}/${folder}`.replace(/\/+/g, "/")}
-                    className="flex items-center gap-2 text-sm text-[#d0d6e0] hover:text-[#7170ff] transition-colors"
+                    className="group flex items-center gap-3 p-3 bg-[#0f1011] border border-[#1f2022] rounded-lg hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all"
                   >
-                    <span>📁</span> {folder}
+                    <span className="text-2xl">📁</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors">
+                        {folder.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
+                      </div>
+                      <div className="text-xs text-[#62666d] mt-0.5">
+                        {info.docCount} document{info.docCount !== 1 ? "s" : ""}
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -229,7 +248,7 @@ function FolderIndexPage({
           )}
           {immediateDocs.length > 0 && (
             <div>
-              <h2 className="text-sm font-medium text-[#d0d6e0] uppercase mb-3">
+              <h2 className="text-xs font-medium text-[#8a8f98] uppercase mb-3 tracking-wider">
                 Documents
               </h2>
               <div className="space-y-2">
@@ -237,9 +256,34 @@ function FolderIndexPage({
                   <Link
                     key={doc.slug}
                     href={`/${doc.slug}`}
-                    className="flex items-center gap-2 text-sm text-[#d0d6e0] hover:text-[#7170ff] transition-colors line-clamp-1"
+                    className="group flex items-center justify-between gap-3 p-3 bg-[#0f1011] border border-[#1f2022] rounded-lg hover:border-[#5e6ad2]/40 hover:bg-[#131415] transition-all"
                   >
-                    <span>📄</span> {doc.name}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xl">📄</span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-[#f7f8f8] group-hover:text-[#7170ff] transition-colors line-clamp-1">
+                          {doc.title}
+                        </div>
+                        {doc.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {doc.tags.slice(0, 3).map((t) => (
+                              <span
+                                key={t}
+                                className="text-xs px-1.5 py-0.25 bg-[#191a1b] border border-[#23252a] rounded text-[#8a8f98]"
+                              >
+                                #{t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <time className="text-xs text-[#62666d] flex-shrink-0">
+                      {new Date(doc.updatedAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </time>
                   </Link>
                 ))}
               </div>
@@ -266,7 +310,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
   // If the slug path is a folder (not a leaf doc), render the folder index
   if (classification === "folder") {
-    return <FolderIndexPage section={section} slug={slug.join("/")} docPaths={docPaths} />;
+    return <FolderIndexPage section={section} slug={slug.join("/")} allDocs={allDocs} />;
   }
 
   // Otherwise, treat as a document (existing behavior)
@@ -285,7 +329,6 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
   // Edit mode: inline form
   if (edit === "1" && canEdit) {
-    // Load existing folders for the folder picker in edit mode
     const existingFolders = extractFoldersForSection(docPaths, doc.section);
     return (
       <div>
@@ -361,38 +404,58 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
         })}
       </nav>
 
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">
+      {/* Metadata Card */}
+      <div className="bg-[#0f1011] border border-[#1f2022] rounded-lg p-6 mb-8">
+        <div className="flex items-start gap-3 mb-4">
+          <span className="text-2xl">
             {SECTION_ICON[doc.section] || "📄"}
           </span>
-          <span className="text-xs font-medium text-[#7170ff] uppercase">
-            {SECTION_LABEL[doc.section] || doc.section}
-          </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-medium text-[#7170ff] uppercase">
+                {SECTION_LABEL[doc.section] || doc.section}
+              </span>
+              <span className="text-xs text-[#62666d]">·</span>
+              <span className="text-xs text-[#62666d]">
+                {doc.type}
+              </span>
+            </div>
+            <h1 className="text-3xl font-medium text-[#f7f8f8] leading-tight">
+              {doc.title}
+            </h1>
+          </div>
         </div>
-        <h1 className="text-4xl font-medium text-[#f7f8f8] mb-4 leading-tight">
-          {doc.title}
-        </h1>
 
+        {/* Author + date + tags */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-[#62666d] mb-3">
-          <span className="text-[#d0d6e0]">{doc.author || "unknown"}</span>
-          <span>·</span>
-          <time dateTime={doc.updatedAt}>
-            Updated {new Date(doc.updatedAt).toLocaleDateString(undefined, {
+          {doc.author && (
+            <>
+              <span className="text-[#d0d6e0]">by {doc.author}</span>
+              <span>·</span>
+            </>
+          )}
+          <span className="text-[#d0d6e0]">
+            updated {new Date(doc.updatedAt).toLocaleDateString(undefined, {
               month: "long",
               day: "numeric",
               year: "numeric",
             })}
-          </time>
-          {doc.tags.map((t) => (
-            <span
-              key={t}
-              className="px-2 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
-            >
-              #{t}
-            </span>
-          ))}
+          </span>
+          {doc.tags.length > 0 && (
+            <>
+              <span>·</span>
+              <div className="flex flex-wrap gap-1">
+                {doc.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="px-2 py-0.5 bg-[#191a1b] border border-[#23252a] rounded text-[#d0d6e0]"
+                  >
+                    #{t}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Dynamic custom field badges — content creator controls what shows */}
@@ -400,7 +463,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       </div>
 
       {/* Content + TOC */}
-      <div className="mb-8">
+      <div className="mb-12">
         <TOC source={doc.body} />
         <Markdown source={doc.body} />
       </div>
