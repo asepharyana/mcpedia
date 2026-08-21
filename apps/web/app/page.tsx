@@ -86,7 +86,7 @@ function renderTree(nodes: TreeNode[], pathname: string) {
             href={`/${node.slug}`}
             className={`flex items-center gap-1.5 text-xs py-1 px-1.5 rounded transition-all ${
               pathname === `/${node.slug}`
-                ? "text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/15 font-medium"
+                ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/15 font-medium"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             }`}
             title={node.title}
@@ -145,14 +145,14 @@ export default async function HomePage() {
     <div className="space-y-16">
       {/* Hero Section */}
       <section className="relative pt-4 pb-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 text-[#5e6ad2] dark:text-[#7170ff] text-xs font-medium mb-6">
-          <span className="w-2 h-2 rounded-full bg-[#5e6ad2] animate-pulse" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--brand)]/10 border border-[var(--brand)]/25 text-[var(--brand)] dark:text-[var(--accent)] text-xs font-medium mb-6">
+          <span className="w-2 h-2 rounded-full bg-[var(--brand)] animate-pulse" />
           <span>Model Context Protocol + PostgreSQL Core</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)] tracking-tight mb-5 leading-tight">
           Knowledge Base for <br />
-          <span className="bg-gradient-to-r from-[#5e6ad2] via-[#7170ff] to-[#4338ca] dark:to-white bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[var(--brand)] via-[var(--accent)] to-[var(--accent-hover)] dark:to-white bg-clip-text text-transparent">
             Humans and AI Agents
           </span>
         </h1>
@@ -165,7 +165,7 @@ export default async function HomePage() {
         <div className="flex flex-wrap items-center gap-3 mb-10">
           <Link
             href="/docs"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5e6ad2] hover:bg-[#6a75e0] text-white rounded-lg font-medium text-sm transition-all shadow-md shadow-[#5e6ad2]/20"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-lg font-medium text-sm transition-all shadow-md shadow-[var(--brand)]/20"
           >
             <span>Browse Documentation</span>
             <span>→</span>
@@ -198,7 +198,7 @@ export default async function HomePage() {
             <div className="text-xs text-[var(--text-muted)]">Active sections</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-[#5e6ad2] dark:text-[#7170ff]">RRF Hybrid</div>
+            <div className="text-xl font-bold text-[var(--brand)] dark:text-[var(--accent)]">RRF Hybrid</div>
             <div className="text-xs text-[var(--text-muted)]">FTS + Cosine Vectors</div>
           </div>
           <div>
@@ -229,12 +229,12 @@ export default async function HomePage() {
                     <span className="text-2xl">{s.icon}</span>
                     <Link
                       href={`/${s.id}`}
-                      className="text-xs font-mono text-[#5e6ad2] dark:text-[#7170ff] hover:underline"
+                      className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] hover:underline"
                     >
                       {sectionDocs.length} docs →
                     </Link>
                   </div>
-                  <h3 className="font-semibold text-base text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors mb-1.5">
+                  <h3 className="font-semibold text-base text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors mb-1.5">
                     {s.label}
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] mb-4 line-clamp-2 leading-relaxed">
@@ -265,7 +265,7 @@ export default async function HomePage() {
             </h2>
             <Link
               href="/docs"
-              className="text-xs text-[#5e6ad2] dark:text-[#7170ff] hover:underline font-medium"
+              className="text-xs text-[var(--brand)] dark:text-[var(--accent)] hover:underline font-medium"
             >
               View all ({all.length}) →
             </Link>
@@ -281,7 +281,7 @@ export default async function HomePage() {
                   className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl p-4 transition-all shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs font-mono text-[#5e6ad2] dark:text-[#7170ff] uppercase">
+                    <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] uppercase">
                       {sInfo?.icon} {d.section}
                     </span>
                     <time className="text-[11px] text-[var(--text-dim)] font-mono">
@@ -291,7 +291,7 @@ export default async function HomePage() {
                       })}
                     </time>
                   </div>
-                  <h3 className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-2">
+                  <h3 className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors line-clamp-1 mb-2">
                     {d.title}
                   </h3>
                   {d.tags.length > 0 && (

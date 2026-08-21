@@ -35,7 +35,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-[var(--bg-app)] text-[var(--text-secondary)] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white flex flex-col transition-colors duration-150">
+      <body className="min-h-screen bg-[var(--bg-app)] text-[var(--text-secondary)] font-sans antialiased selection:bg-[var(--brand)]/30 selection:text-white flex flex-col transition-colors duration-150">
         <div hidden>
           <div id="a11y-live-region" aria-live="polite" aria-atomic="true" />
         </div>

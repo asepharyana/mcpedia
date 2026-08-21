@@ -29,7 +29,7 @@ export default function Header() {
         {/* Brand */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#5e6ad2] to-[#7170ff] flex items-center justify-center text-white font-bold text-xs shadow-md shadow-[#5e6ad2]/20 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--brand)] to-[var(--accent)] flex items-center justify-center text-white font-bold text-xs shadow-md shadow-[var(--brand)]/20 group-hover:scale-105 transition-transform">
               M
             </div>
             <span className="font-semibold text-[var(--text-primary)] text-base tracking-tight transition-colors">
@@ -78,7 +78,7 @@ export default function Header() {
 
           <Link
             href="/create"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[#5e6ad2] hover:bg-[#7170ff] text-white text-xs font-medium rounded-lg transition-all shadow-sm"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--brand)] hover:bg-[var(--accent)] text-white text-xs font-medium rounded-lg transition-all shadow-sm"
           >
             <span>+</span>
             <span>New Doc</span>
@@ -141,7 +141,7 @@ export default function Header() {
             <Link
               href="/create"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 text-center py-2 text-xs bg-[#5e6ad2] text-white rounded-lg font-medium"
+              className="flex-1 text-center py-2 text-xs bg-[var(--brand)] text-white rounded-lg font-medium"
             >
               + Create
             </Link>

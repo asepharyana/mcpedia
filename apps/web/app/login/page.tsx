@@ -40,10 +40,10 @@ export default function LoginPage() {
     <div className="flex min-h-[65vh] items-center justify-center px-4">
       <div className="w-full max-w-md bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         {/* Top decorative glow */}
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-[#5e6ad2]/20 blur-2xl pointer-events-none rounded-full" />
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-[var(--brand)]/20 blur-2xl pointer-events-none rounded-full" />
 
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#5e6ad2] text-white font-bold text-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#5e6ad2]/25">
+          <div className="w-12 h-12 rounded-xl bg-[var(--brand)] text-white font-bold text-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[var(--brand)]/25">
             M
           </div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Admin Authentication</h1>
@@ -69,7 +69,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password..."
-                className="w-full px-3.5 py-2.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition-colors"
                 required
                 autoFocus
               />
@@ -86,7 +86,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-[#5e6ad2] hover:bg-[#6a75e0] text-white rounded-lg transition-all font-medium text-sm shadow-md shadow-[#5e6ad2]/20 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-lg transition-all font-medium text-sm shadow-md shadow-[var(--brand)]/20 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading && (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

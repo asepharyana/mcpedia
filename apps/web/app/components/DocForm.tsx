@@ -88,7 +88,7 @@ export default function DocForm({
   const availableFolders = existingFolders?.[section] ?? [];
 
   const baseInputCls =
-    "w-full px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[#5e6ad2] transition-colors";
+    "w-full px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition-colors";
 
   function addCustomField(key = "", value = "") {
     setCustomFields([...customFields, { key, value }]);
@@ -314,7 +314,7 @@ export default function DocForm({
             />
           )}
           <p className="text-[11px] text-[var(--text-dim)] mt-1 font-mono">
-            Path: <span className="text-[#5e6ad2] dark:text-[#7170ff]">{effectiveSlug || section}</span>
+            Path: <span className="text-[var(--brand)] dark:text-[var(--accent)]">{effectiveSlug || section}</span>
           </p>
         </div>
       </div>
@@ -404,7 +404,7 @@ export default function DocForm({
         <button
           type="button"
           onClick={() => addCustomField()}
-          className="text-xs text-[#5e6ad2] dark:text-[#7170ff] hover:underline px-3 py-1.5 rounded-lg border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 bg-[#5e6ad2]/5 transition-colors font-medium"
+          className="text-xs text-[var(--brand)] dark:text-[var(--accent)] hover:underline px-3 py-1.5 rounded-lg border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 bg-[var(--brand)]/5 transition-colors font-medium"
         >
           + Add Custom Field
         </button>
@@ -421,7 +421,7 @@ export default function DocForm({
               onClick={() => setActiveTab("write")}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                 activeTab === "write"
-                  ? "bg-[#5e6ad2] text-white shadow-sm"
+                  ? "bg-[var(--brand)] text-white shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -432,7 +432,7 @@ export default function DocForm({
               onClick={() => setActiveTab("preview")}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                 activeTab === "preview"
-                  ? "bg-[#5e6ad2] text-white shadow-sm"
+                  ? "bg-[var(--brand)] text-white shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -521,7 +521,7 @@ export default function DocForm({
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-[#5e6ad2] hover:bg-[#6a75e0] text-white rounded-lg font-medium text-sm transition-all shadow-md shadow-[#5e6ad2]/20 disabled:opacity-50 flex items-center gap-2"
+          className="px-6 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-lg font-medium text-sm transition-all shadow-md shadow-[var(--brand)]/20 disabled:opacity-50 flex items-center gap-2"
         >
           {loading && (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -78,7 +78,7 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
       {/* Edit Link */}
       <Link
         href={canEdit ? `/${slug}?edit=1` : `/login?redirect=/${slug}`}
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 hover:border-[#5e6ad2]/60 text-[#5e6ad2] dark:text-[#7170ff] rounded-md transition-all font-medium"
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20 border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 text-[var(--brand)] dark:text-[var(--accent)] rounded-md transition-all font-medium"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

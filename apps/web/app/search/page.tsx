@@ -103,11 +103,11 @@ function SearchContent() {
             value={query}
             onChange={handleChange}
             placeholder="Search by keywords, challenge names, tools, concepts..."
-            className="w-full pl-11 pr-10 py-3 bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[#5e6ad2]/20 text-base transition-all"
+            className="w-full pl-11 pr-10 py-3 bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20 text-base transition-all"
             autoFocus
           />
           <svg
-            className="w-5 h-5 text-[#5e6ad2] dark:text-[#7170ff] absolute left-3.5 top-3.5"
+            className="w-5 h-5 text-[var(--brand)] dark:text-[var(--accent)] absolute left-3.5 top-3.5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -144,7 +144,7 @@ function SearchContent() {
                 title={m.desc}
                 className={`px-3 py-1 rounded-md border font-medium transition-all ${
                   mode === m.id
-                    ? "bg-[#5e6ad2] border-[#5e6ad2] text-white shadow-sm"
+                    ? "bg-[var(--brand)] border-[var(--brand)] text-white shadow-sm"
                     : "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
@@ -187,7 +187,7 @@ function SearchContent() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center gap-3 py-8 text-[var(--text-muted)] text-sm">
-          <div className="w-5 h-5 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
           <span>Searching knowledge base...</span>
         </div>
       )}
@@ -241,7 +241,7 @@ function SearchContent() {
               >
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#5e6ad2]/10 border border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff] uppercase">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--brand)]/10 border border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)] uppercase">
                       {r.section}
                     </span>
                     <span className="text-xs text-[var(--text-dim)] font-mono truncate">
@@ -253,13 +253,13 @@ function SearchContent() {
                   </span>
                 </div>
 
-                <h2 className="text-base font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors mb-2">
+                <h2 className="text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors mb-2">
                   {r.title}
                 </h2>
 
                 {r.snippet && (
                   <p
-                    className="text-xs text-[var(--text-muted)] leading-relaxed line-clamp-2 [&>mark]:bg-[#5e6ad2]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:px-1 [&>mark]:rounded [&>mark]:font-medium"
+                    className="text-xs text-[var(--text-muted)] leading-relaxed line-clamp-2 [&>mark]:bg-[var(--brand)]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:px-1 [&>mark]:rounded [&>mark]:font-medium"
                     dangerouslySetInnerHTML={{ __html: r.snippet }}
                   />
                 )}

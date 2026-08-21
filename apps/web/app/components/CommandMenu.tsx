@@ -116,7 +116,7 @@ export default function CommandMenu() {
       <div className="relative w-full max-w-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden animate-fade-in">
         {/* Search input bar */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-color)] bg-[var(--bg-elevated)]">
-          <svg className="w-5 h-5 text-[#5e6ad2] dark:text-[#7170ff] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-[var(--brand)] dark:text-[var(--accent)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -129,7 +129,7 @@ export default function CommandMenu() {
             className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] text-sm focus:outline-none"
           />
           {loading && (
-            <div className="w-4 h-4 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin shrink-0" />
+            <div className="w-4 h-4 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin shrink-0" />
           )}
           <button
             onClick={() => setOpen(false)}
@@ -164,22 +164,22 @@ export default function CommandMenu() {
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={`flex items-start justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
                       isSelected
-                        ? "bg-[#5e6ad2]/15 border border-[#5e6ad2]/40 text-[var(--text-primary)]"
+                        ? "bg-[var(--brand)]/15 border border-[var(--brand)]/40 text-[var(--text-primary)]"
                         : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-transparent"
                     }`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[#5e6ad2] dark:text-[#7170ff] font-mono">
+                        <span className="text-xs px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--brand)] dark:text-[var(--accent)] font-mono">
                           {hit.section}
                         </span>
-                        <span className={`text-sm font-medium ${isSelected ? "text-[#5e6ad2] dark:text-[#7170ff]" : "text-[var(--text-primary)]"} truncate`}>
+                        <span className={`text-sm font-medium ${isSelected ? "text-[var(--brand)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]"} truncate`}>
                           {hit.title}
                         </span>
                       </div>
                       {hit.snippet && (
                         <p
-                          className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 [&>mark]:bg-[#5e6ad2]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:rounded [&>mark]:px-0.5"
+                          className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 [&>mark]:bg-[var(--brand)]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:rounded [&>mark]:px-0.5"
                           dangerouslySetInnerHTML={{ __html: hit.snippet }}
                         />
                       )}
@@ -200,7 +200,7 @@ export default function CommandMenu() {
           <Link
             href={`/search?q=${encodeURIComponent(query)}`}
             onClick={() => setOpen(false)}
-            className="hover:text-[#5e6ad2] dark:hover:text-[#7170ff] transition-colors"
+            className="hover:text-[var(--brand)] dark:hover:text-[var(--accent)] transition-colors"
           >
             Open full search page →
           </Link>

@@ -70,7 +70,7 @@ export default function McpConfigSnippet() {
               onClick={() => setActiveTab(c.id)}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                 activeTab === c.id
-                  ? "bg-[#5e6ad2] text-white shadow-sm"
+                  ? "bg-[var(--brand)] text-white shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
               }`}
             >

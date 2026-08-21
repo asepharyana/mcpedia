@@ -52,7 +52,7 @@ function CustomFieldBadges({
         let displayValue: string;
 
         if (typeof value === "number") {
-          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff]";
+          colorClass = "bg-[var(--brand)]/10 border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)]";
           icon = "🎯";
           displayValue = `${value} pts`;
         } else if (typeof value === "boolean") {
@@ -62,7 +62,7 @@ function CustomFieldBadges({
           icon = value ? "✓" : "✕";
           displayValue = value ? "Solved" : "Pending";
         } else if (Array.isArray(value)) {
-          colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff]";
+          colorClass = "bg-[var(--brand)]/10 border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)]";
           icon = "🗂️";
           displayValue = value.join(", ");
         } else {
@@ -84,7 +84,7 @@ function CustomFieldBadges({
             icon = "⚡";
             displayValue = v.toUpperCase();
           } else if (/ctf|def.?con|event/i.test(v)) {
-            colorClass = "bg-[#5e6ad2]/10 border-[#5e6ad2]/30 text-[#5e6ad2] dark:text-[#7170ff]";
+            colorClass = "bg-[var(--brand)]/10 border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)]";
             icon = "🏆";
             displayValue = String(value);
           } else {
@@ -182,7 +182,7 @@ function FolderIndexPage({
                 {folderName}
               </h1>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Directory path: <code className="text-[#5e6ad2] dark:text-[#7170ff] font-mono">{section}/{slug}</code>
+                Directory path: <code className="text-[var(--brand)] dark:text-[var(--accent)] font-mono">{section}/{slug}</code>
               </p>
             </div>
           </div>
@@ -208,7 +208,7 @@ function FolderIndexPage({
               >
                 <span className="text-2xl group-hover:scale-110 transition-transform">📁</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors truncate">
+                  <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
                     {folder.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
                   </div>
                   <div className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
@@ -238,7 +238,7 @@ function FolderIndexPage({
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-xl opacity-70 group-hover:opacity-100">📄</span>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors truncate">
+                    <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
                       {doc.title}
                     </div>
                     {doc.tags.length > 0 && (
@@ -376,7 +376,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-[#5e6ad2]/15 text-[#5e6ad2] dark:text-[#7170ff] border border-[#5e6ad2]/30">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium bg-[var(--brand)]/15 text-[var(--brand)] dark:text-[var(--accent)] border border-[var(--brand)]/30">
                   <span>{sectionInfo.icon}</span>
                   <span className="uppercase">{sectionInfo.label}</span>
                 </span>
@@ -402,7 +402,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] pt-3 border-t border-[var(--border-color)]">
             {doc.author && (
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-[#5e6ad2] text-white flex items-center justify-center text-[10px] font-bold">
+                <div className="w-4 h-4 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold">
                   {doc.author.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-[var(--text-secondary)]">{doc.author}</span>
@@ -463,7 +463,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                     className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg p-4 transition-all shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-xs text-[#5e6ad2] dark:text-[#7170ff] font-mono uppercase">
+                      <span className="text-xs text-[var(--brand)] dark:text-[var(--accent)] font-mono uppercase">
                         {rInfo.icon} {r.section}
                       </span>
                       <time className="text-[11px] text-[var(--text-dim)] font-mono">
@@ -473,7 +473,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                         })}
                       </time>
                     </div>
-                    <h3 className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors line-clamp-1 mb-1">
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors line-clamp-1 mb-1">
                       {r.title}
                     </h3>
                   </Link>
@@ -498,7 +498,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                   className="flex items-center justify-between gap-3 p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg text-xs shadow-sm"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-mono text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded border border-[#5e6ad2]/30 font-semibold">
+                    <span className="font-mono text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 px-1.5 py-0.5 rounded border border-[var(--brand)]/30 font-semibold">
                       v{rev.revisionNo}
                     </span>
                     <span className="text-[var(--text-primary)] truncate">

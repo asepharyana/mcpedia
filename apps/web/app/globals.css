@@ -19,6 +19,7 @@
   --text-dim: #94a3b8;
 
   --brand: #5e6ad2;
+  --brand-hover: #6a75e0; /* lighter for hover in light mode */
   --accent: #4f46e5;
   --accent-hover: #4338ca;
 
@@ -50,6 +51,7 @@ html.dark {
   --text-dim: #62666d;
 
   --brand: #5e6ad2;
+  --brand-hover: #7170ff; /* lighter for hover in dark mode */
   --accent: #7170ff;
   --accent-hover: #828fff;
 
@@ -81,6 +83,7 @@ html.dark {
   --color-text-quaternary: var(--text-dim);
 
   --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
 }

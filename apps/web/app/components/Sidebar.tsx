@@ -106,7 +106,7 @@ function TreeNodeItem({
       <div
         className={`group flex items-center justify-between gap-1.5 text-xs py-1.5 px-2 rounded-md transition-all ${
           isActive
-            ? "text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/15 font-semibold border border-[#5e6ad2]/30 shadow-sm"
+            ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/15 font-semibold border border-[var(--brand)]/30 shadow-sm"
             : isParentOfActive
               ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
               : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
@@ -263,7 +263,7 @@ export default function Sidebar() {
                 href={`/${id}`}
                 className={`flex items-center justify-between gap-1.5 px-1 py-1 mb-1 rounded text-xs font-semibold uppercase tracking-wider transition-colors ${
                   isSectionActive
-                    ? "text-[#5e6ad2] dark:text-[#7170ff]"
+                    ? "text-[var(--brand)] dark:text-[var(--accent)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >

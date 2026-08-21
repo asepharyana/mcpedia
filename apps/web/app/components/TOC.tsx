@@ -61,7 +61,7 @@ export default function TOC({ source }: { source: string }) {
   return (
     <nav className="text-xs">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--border-color)]">
-        <svg className="w-3.5 h-3.5 text-[#5e6ad2] dark:text-[#7170ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
         </svg>
         <span className="font-semibold uppercase tracking-wider text-[var(--text-muted)] text-[11px]">
@@ -92,7 +92,7 @@ export default function TOC({ source }: { source: string }) {
                 }}
                 className={`block py-0.5 transition-colors line-clamp-1 ${
                   isActive
-                    ? "text-[#5e6ad2] dark:text-[#7170ff] font-semibold translate-x-0.5"
+                    ? "text-[var(--brand)] dark:text-[var(--accent)] font-semibold translate-x-0.5"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
                 title={entry.text}

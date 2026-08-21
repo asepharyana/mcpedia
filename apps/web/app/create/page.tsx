@@ -34,7 +34,7 @@ export default async function CreatePage() {
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#5e6ad2]/15 border border-[#5e6ad2]/30 flex items-center justify-center text-xl text-[#5e6ad2] dark:text-[#7170ff]">
+          <div className="w-10 h-10 rounded-lg bg-[var(--brand)]/15 border border-[var(--brand)]/30 flex items-center justify-center text-xl text-[var(--brand)] dark:text-[var(--accent)]">
             ✏️
           </div>
           <div>

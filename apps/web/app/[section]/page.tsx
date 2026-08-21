@@ -83,7 +83,7 @@ function renderTree(nodes: TreeNode[], pathname: string) {
               href={`/${node.slug}`}
               className={`flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg transition-all ${
                 isActive
-                  ? "text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/15 font-semibold border border-[#5e6ad2]/30"
+                  ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/15 font-semibold border border-[var(--brand)]/30"
                   : hasActiveChild
                     ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
@@ -152,12 +152,12 @@ export default async function SectionIndexPage({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-[#5e6ad2] dark:text-[#7170ff] bg-[#5e6ad2]/10 border border-[#5e6ad2]/25 px-2.5 py-1 rounded-md">
+            <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 border border-[var(--brand)]/25 px-2.5 py-1 rounded-md">
               {sectionDocs.length} document{sectionDocs.length !== 1 ? "s" : ""}
             </span>
             <Link
               href="/create"
-              className="inline-flex items-center gap-1 text-xs bg-[#5e6ad2] hover:bg-[#6a75e0] text-white px-3 py-1 rounded-md font-medium transition-all"
+              className="inline-flex items-center gap-1 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3 py-1 rounded-md font-medium transition-all"
             >
               <span>+ Create</span>
             </Link>
@@ -200,7 +200,7 @@ export default async function SectionIndexPage({
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-lg opacity-70 group-hover:opacity-100">📄</span>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[#5e6ad2] dark:group-hover:text-[#7170ff] transition-colors truncate">
+                      <h3 className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
                         {d.title}
                       </h3>
                       {d.tags.length > 0 && (
