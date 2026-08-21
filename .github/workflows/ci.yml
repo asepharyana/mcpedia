@@ -35,9 +35,12 @@ jobs:
         run: cd apps/web && bun run build
 
       # Smoke: verify the MCP server + resources load and the indexer/module
-      # graph resolves. Requires no external services (Redis/Postgres) — pure
-      # module load + in-memory smoke test.
+      # graph resolves. Requires Postgres + Redis — only runs when available.
       - name: MCP smoke test
+        if: env.DATABASE_URL != ''
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: cd apps/mcp && bun run smoke
 
       # Unit tests across all packages + apps. CI has no Postgres/Redis, so
