@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    name: typecheck + build (turbo)
+    name: typecheck + build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,23 +27,22 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Real build: typecheck + turbo run build across all workspace packages
-      # (incl. the Next.js web app). A green run means the whole monorepo
-      # compiles and the web app prerenders.
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Build
-        run: bun run build
+      - name: Build web
+        run: bun --cwd apps/web run build
 
-      # Smoke: verify the MCP server + resources load and the indexer/module
-      # graph resolves. Requires no external services (Redis/Postgres) — pure
-      # module load + in-memory smoke test.
       - name: MCP smoke test
         run: bun --cwd apps/mcp run smoke
 
-      # Unit tests across all packages + apps. CI has no Postgres/Redis, so
-      # tests use bun:test module mocking to stub @mcpedia/db, @mcpedia/queue,
-      # and @mcpedia/embeddings — no live I/O.
       - name: Test
         run: bun run test
+
+      # Upload the built .next directory as a deploy artifact.
+      # The VPS deploy step copies this directly — no build needed on VPS.
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcpedia-web-build
+          path: apps/web/.next/
