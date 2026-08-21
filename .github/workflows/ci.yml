@@ -167,8 +167,10 @@ jobs:
           PROFILE="mcpedia-${SERVICE}"
           # Substitute from Attic cache (fast — downloads over HTTPS)
           # Falls back to SSH copy if substitution fails
-          ssh "$VPS_USER@$VPS_HOST" \
-            "curl -s -o /dev/null -w '%{http_code}' https://attic.asepharyana.my.id/mcpedia/$(echo '$STORE_PATH' | cut -d'-' -f2).narinfo 2>/dev/null; sudo /nix/var/nix/profiles/default/bin/nix-store --realise '$STORE_PATH'"
+          REALISE_RESULT=$(ssh "$VPS_USER@$VPS_HOST" \
+            "sudo /nix/var/nix/profiles/default/bin/nix-store --realise '$STORE_PATH' 2>&1 || true")
+          echo "$REALISE_RESULT"
+
           # Update profile + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
@@ -236,11 +238,12 @@ jobs:
       - name: Build web Nix derivation
         id: build
         run: |
+          REPO_ROOT="$(pwd)"
           nix-build -E \
-            "let pkgs = import <nixpkgs> {}; in pkgs.callPackage ./web.nix {
-              webNextDir = ./apps/web/.next;
-              webPkgDir = ./apps/web;
-              nodeModulesPath = .;
+            "let pkgs = import <nixpkgs> {}; in pkgs.callPackage ${REPO_ROOT}/web.nix {
+              webNextDir = ${REPO_ROOT}/apps/web/.next;
+              webPkgDir = ${REPO_ROOT}/apps/web;
+              nodeModulesPath = ${REPO_ROOT};
             }" \
             --impure --option sandbox false
           STORE_PATH=$(readlink result)

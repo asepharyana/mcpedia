@@ -10,10 +10,15 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = import nixpkgs { inherit system; }; in {
         packages = {
+          # ─── API: Hono ────────────────────────────────────────────────
+          # bun build bundles TS → JS. @mcpedia/* kept external (resolved from
+          # root node_modules at runtime). We copy the ROOT node_modules (the
+          # full workspace install) so all transitive deps are available.
           api = pkgs.stdenvNoCC.mkDerivation {
             pname = "mcpedia-api";
             version = "1.0.0";
             src = ./.;
+            dontFixup = true;
             nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
             buildPhase = ''
               export HOME=$TMPDIR
@@ -29,7 +34,8 @@
             installPhase = ''
               mkdir -p $out/share/mcpedia-api
               cp -r apps/api/dist $out/share/mcpedia-api/dist
-              cp -rL apps/api/node_modules $out/share/mcpedia-api/node_modules
+              mkdir -p $out/share/mcpedia-api/node_modules
+              cp -r node_modules/* $out/share/mcpedia-api/node_modules/ 2>/dev/null || true
               cp apps/api/package.json $out/share/mcpedia-api/
               makeBinaryWrapper ${pkgs.bun}/bin/bun $out/bin/mcpedia-api \
                 --add-flags "run dist/index.js" \
@@ -37,10 +43,12 @@
             '';
           };
 
+          # ─── MCP: Streamable HTTP ──────────────────────────────────────
           mcp = pkgs.stdenvNoCC.mkDerivation {
             pname = "mcpedia-mcp";
             version = "1.0.0";
             src = ./.;
+            dontFixup = true;
             nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
             buildPhase = ''
               export HOME=$TMPDIR
@@ -56,7 +64,8 @@
             installPhase = ''
               mkdir -p $out/share/mcpedia-mcp
               cp -r apps/mcp/dist $out/share/mcpedia-mcp/dist
-              cp -rL apps/mcp/node_modules $out/share/mcpedia-mcp/node_modules
+              mkdir -p $out/share/mcpedia-mcp/node_modules
+              cp -r node_modules/* $out/share/mcpedia-mcp/node_modules/ 2>/dev/null || true
               cp apps/mcp/package.json $out/share/mcpedia-mcp/
               makeBinaryWrapper ${pkgs.bun}/bin/bun $out/bin/mcpedia-mcp \
                 --add-flags "run dist/http.js" \
@@ -64,10 +73,14 @@
             '';
           };
 
+          # ─── Worker: BullMQ ────────────────────────────────────────────
           worker = pkgs.stdenvNoCC.mkDerivation {
             pname = "mcpedia-worker";
             version = "1.0.0";
             src = ./.;
+            # The .bun cache in node_modules uses symlinks that may be
+            # broken in the Nix store. Skip the fixup phase's symlink check.
+            dontFixup = true;
             nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
             buildPhase = ''
               export HOME=$TMPDIR
@@ -83,7 +96,8 @@
             installPhase = ''
               mkdir -p $out/share/mcpedia-worker
               cp -r apps/worker/dist $out/share/mcpedia-worker/dist
-              cp -rL apps/worker/node_modules $out/share/mcpedia-worker/node_modules
+              mkdir -p $out/share/mcpedia-worker/node_modules
+              cp -r node_modules/* $out/share/mcpedia-worker/node_modules/ 2>/dev/null || true
               cp apps/worker/package.json $out/share/mcpedia-worker/
               makeBinaryWrapper ${pkgs.bun}/bin/bun $out/bin/mcpedia-worker \
                 --add-flags "run dist/index.js" \
