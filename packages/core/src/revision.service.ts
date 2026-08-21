@@ -3,6 +3,8 @@ import { documents, documentRevisions, documentChunks } from "@mcpedia/db/schema
 import { reindexChunks } from "./index.service";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { toMeta } from "./row-map";
+import { CONTENT_ROOT } from "@mcpedia/config";
+import { join } from "node:path";
 import type { DocumentMeta } from "@mcpedia/types";
 
 export interface RevisionSummary {
@@ -77,7 +79,8 @@ export async function getRevision(
 }
 
 /**
- * Restore a revision: write its body+metadata back into the live `documents` row.
+ * Restore a revision: write its body+metadata back into the live `documents` row
+ * and update the on-disk markdown file.
  *
  * @param id   revision UUID
  * @param opts optional seam for testing — override the chunk-rebuild step so
@@ -110,6 +113,11 @@ export async function restoreRevision(
     tags?: string[];
   };
 
+  const [docRow] = await db
+    .select({ path: documents.path })
+    .from(documents)
+    .where(eq(documents.id, rev.documentId));
+
   await db
     .update(documents)
     .set({
@@ -123,6 +131,34 @@ export async function restoreRevision(
       updatedAt: new Date(),
     })
     .where(eq(documents.id, rev.documentId));
+
+  // Sync back to disk (source of truth for file-based reads)
+  if (docRow?.path) {
+    const absPath = join(CONTENT_ROOT, docRow.path);
+    try {
+      const { stringifyFile } = await import("@mcpedia/parser");
+      stringifyFile(
+        absPath,
+        docRow.path,
+        {
+          id: rev.slug,
+          slug: rev.slug,
+          title: rev.title,
+          type: (m.type as any) ?? "documentation",
+          section: (m.section as any) ?? "docs",
+          status: (m.status as any) ?? "published",
+          author: m.author ?? "",
+          tags: m.tags ?? [],
+          path: docRow.path,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        rev.body,
+      );
+    } catch (err) {
+      console.error(`restoreRevision: failed to write file to disk for ${rev.slug}:`, err);
+    }
+  }
 
   // Rebuild semantic chunks + embeddings from the restored body so semantic
   // and hybrid search stay consistent (otherwise document_chunks would hold

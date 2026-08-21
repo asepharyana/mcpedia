@@ -79,3 +79,56 @@ test("parseFile: body excludes frontmatter delimiter", () => {
   expect(body).not.toContain("---");
   expect(body).toContain("# Real body");
 });
+
+test("parseFile: extracts dynamic extra fields", () => {
+  const { meta } = writeDoc(
+    "writeups/ctf/chal.md",
+    [
+      "---",
+      'title: CTF Challenge',
+      'event: DEF CON 2024',
+      'points: 100',
+      'solved: true',
+      "---",
+      "# Solved",
+    ].join("\n"),
+  );
+  expect(meta.extraFields?.event).toBe("DEF CON 2024");
+  expect(meta.extraFields?.points).toBe(100);
+  expect(meta.extraFields?.solved).toBe(true);
+});
+
+test("stringifyFile: writes file that round-trips via parseFile", async () => {
+  const { stringifyFile } = await import("../src/index");
+  const p = join(tmp, "docs/roundtrip.md");
+  const meta = {
+    id: "docs/roundtrip",
+    slug: "docs/roundtrip",
+    title: "Roundtrip Test",
+    type: "documentation" as const,
+    section: "docs" as const,
+    status: "published" as const,
+    author: "tester",
+    tags: ["a", "b"],
+    path: "docs/roundtrip.md",
+    createdAt: "2026-08-21T00:00:00.000Z",
+    updatedAt: "2026-08-21T00:00:00.000Z",
+    extraFields: {
+      event: "DEF CON",
+      difficulty: "medium",
+      points: 500,
+    },
+  };
+  const body = "# Content\n\nParagraph content.";
+  stringifyFile(p, "docs/roundtrip.md", meta, body);
+
+  const parsed = parseFile(p, "docs/roundtrip.md");
+  expect(parsed.meta.title).toBe("Roundtrip Test");
+  expect(parsed.meta.author).toBe("tester");
+  expect(parsed.meta.tags).toEqual(["a", "b"]);
+  expect(parsed.meta.extraFields?.event).toBe("DEF CON");
+  expect(parsed.meta.extraFields?.difficulty).toBe("medium");
+  expect(parsed.meta.extraFields?.points).toBe(500);
+  expect(parsed.body.trim()).toBe(body);
+});
+

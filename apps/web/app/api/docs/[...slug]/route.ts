@@ -22,6 +22,26 @@ const STANDARD_FIELDS = new Set([
   "author", "tags", "createdAt", "updatedAt", "id", "path", "slug",
 ]);
 
+function parseCustomValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "true") return true;
+    if (trimmed === "false") return false;
+    if (/^-?\d+(\.\d+)?$/.test(trimmed) && !(trimmed.startsWith("0") && trimmed.length > 1 && !trimmed.startsWith("0."))) {
+      const num = Number(trimmed);
+      if (!isNaN(num)) return num;
+    }
+    if ((trimmed.startsWith("[") && trimmed.endsWith("]")) || (trimmed.startsWith("{") && trimmed.endsWith("}"))) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return value;
+      }
+    }
+  }
+  return value;
+}
+
 function splitPayload(body: Record<string, unknown>): {
   standard: Record<string, unknown>;
   extraFields: Record<string, unknown>;
@@ -29,10 +49,12 @@ function splitPayload(body: Record<string, unknown>): {
   const standard: Record<string, unknown> = {};
   const extraFields: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(body)) {
-    if (STANDARD_FIELDS.has(key)) {
+    if (key === "extraFields" && typeof value === "object" && value !== null) {
+      Object.assign(extraFields, value);
+    } else if (STANDARD_FIELDS.has(key)) {
       standard[key] = value;
     } else if (value !== undefined && value !== null) {
-      extraFields[key] = value;
+      extraFields[key] = parseCustomValue(value);
     }
   }
   return { standard, extraFields };

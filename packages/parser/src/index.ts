@@ -60,11 +60,10 @@ export function parseFile(absPath: string, relPath: string): ParsedFile {
 
   // Extract any non-standard frontmatter keys as dynamic extra fields.
   // These are stored in DB as JSONB + rendered as dynamic badges in the UI.
-  const extraFields: Record<string, string> = {};
+  const extraFields: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(data)) {
     if (!STANDARD_FRONTMATTER_KEYS.has(k) && v !== undefined && v !== null) {
-      // Serialize non-string values (numbers, booleans) to string
-      extraFields[k] = typeof v === "string" ? v : JSON.stringify(v);
+      extraFields[k] = v;
     }
   }
 

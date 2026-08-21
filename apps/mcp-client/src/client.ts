@@ -130,6 +130,7 @@ export class McpediaClient {
     status?: "published" | "draft";
     author?: string;
     tags?: string[];
+    extraFields?: Record<string, unknown>;
   }): Promise<any> {
     const result = await this.callTool("create_document", input);
     return JSON.parse(extractText(result) || "{}");

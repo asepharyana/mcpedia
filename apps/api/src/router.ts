@@ -83,6 +83,7 @@ export const appRouter = router({
         status: z.enum(["published", "draft"]).optional(),
         author: z.string().optional(),
         tags: z.array(z.string()).optional(),
+        extraFields: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .mutation(async ({ input }) => createDocument(input)),
@@ -98,6 +99,7 @@ export const appRouter = router({
         status: z.enum(["published", "draft"]).optional(),
         tags: z.array(z.string()).optional(),
         author: z.string().optional(),
+        extraFields: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .mutation(async ({ input }) => {

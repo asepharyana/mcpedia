@@ -213,9 +213,10 @@ export function createMcpServer(authSecret?: string): McpServer {
         status: z.enum(["published", "draft"]).optional(),
         author: z.string().optional(),
         tags: z.array(z.string()).optional(),
+        extraFields: z.record(z.string(), z.unknown()).optional().describe("Dynamic custom metadata key-value pairs"),
       }),
     },
-    async ({ slug, title, section, body, type, status, author, tags }) => {
+    async ({ slug, title, section, body, type, status, author, tags, extraFields }) => {
       requireMcpAuth(authSecret);
       const doc = await createDocument({
         slug,
@@ -226,6 +227,7 @@ export function createMcpServer(authSecret?: string): McpServer {
         status,
         author,
         tags,
+        extraFields,
       });
       return {
         content: [{ type: "text", text: JSON.stringify({ ok: true, slug: doc.slug }) }],
@@ -246,9 +248,10 @@ export function createMcpServer(authSecret?: string): McpServer {
         status: z.enum(["published", "draft"]).optional(),
         tags: z.array(z.string()).optional(),
         author: z.string().optional(),
+        extraFields: z.record(z.string(), z.unknown()).optional().describe("Dynamic custom metadata key-value pairs"),
       }),
     },
-    async ({ slug, title, body, type, status, tags, author }) => {
+    async ({ slug, title, body, type, status, tags, author, extraFields }) => {
       requireMcpAuth(authSecret);
       const doc = await updateDocument(slug, {
         title,
@@ -257,6 +260,7 @@ export function createMcpServer(authSecret?: string): McpServer {
         status,
         tags,
         author,
+        extraFields,
       });
       return {
         content: [{ type: "text", text: JSON.stringify({ ok: true, slug: doc.slug }) }],
