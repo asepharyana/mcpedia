@@ -2,108 +2,75 @@
   description = "MCPedia — Nix-native build for api, mcp, worker. Web .next pre-built in CI.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = import nixpkgs { inherit system; }; in {
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          config = { allowUnfree = true; };
+        };
+
+        bunBin = pkgs.bun + "/bin/bun";
+
+        mkBunApp = { pname, appName, entry, outEntry }: pkgs.stdenvNoCC.mkDerivation {
+          pname = pname;
+          version = "1.0.11";
+          src = ./.;
+          dontFixup = true;
+          nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
+          buildPhase = ''
+            export HOME=$TMPDIR
+            bun install --frozen-lockfile 2>&1
+            # Dereference ALL symlinks in .bun cache to fix nix sandbox issues
+            if [ -d node_modules/.bun ]; then
+              rm -rf $TMPDIR/.bun-fixed
+              mkdir -p $TMPDIR/.bun-fixed
+              # Copy each .bun subpackage, dereferencing all symlinks
+              for subdir in node_modules/.bun/*/; do
+                cp -rL "$subdir" "$TMPDIR/.bun-fixed/" 2>/dev/null || true
+              done
+              rm -rf node_modules/.bun
+              cp -r $TMPDIR/.bun-fixed node_modules/.bun
+            fi
+            bun build ${entry} --outdir apps/${appName}/dist --target bun
+          '';
+          installPhase = ''
+            mkdir -p $out/share/${pname}
+            cp -r apps/${appName}/dist $out/share/${pname}/dist
+
+            makeBinaryWrapper ${bunBin} $out/bin/${pname} \
+              --add-flags "run dist/${outEntry}" \
+              --chdir $out/share/${pname}
+          '';
+        };
+
+      in {
         packages = {
-          # ─── API: Hono ────────────────────────────────────────────────
-          # bun build bundles TS → JS. @mcpedia/* kept external (resolved from
-          # root node_modules at runtime). We copy the ROOT node_modules (the
-          # full workspace install) so all transitive deps are available.
-          api = pkgs.stdenvNoCC.mkDerivation {
+          api = mkBunApp {
             pname = "mcpedia-api";
-            version = "1.0.0";
-            src = ./.;
-            dontFixup = true;
-            nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
-            buildPhase = ''
-              export HOME=$TMPDIR
-              bun install --frozen-lockfile 2>&1
-              bun build apps/api/src/index.ts \
-                --outdir apps/api/dist \
-                --target bun \
-                --external @mcpedia/config \
-                --external @mcpedia/core \
-                --external @mcpedia/db \
-                --external @mcpedia/queue
-            '';
-            installPhase = ''
-              mkdir -p $out/share/mcpedia-api
-              cp -r apps/api/dist $out/share/mcpedia-api/dist
-              mkdir -p $out/share/mcpedia-api/node_modules
-              cp -r node_modules/* $out/share/mcpedia-api/node_modules/ 2>/dev/null || true
-              cp apps/api/package.json $out/share/mcpedia-api/
-              makeBinaryWrapper ${pkgs.bun}/bin/bun $out/bin/mcpedia-api \
-                --add-flags "run dist/index.js" \
-                --chdir $out/share/mcpedia-api
-            '';
+            appName = "api";
+            entry = "apps/api/src/index.ts";
+            outEntry = "index.js";
           };
 
-          # ─── MCP: Streamable HTTP ──────────────────────────────────────
-          mcp = pkgs.stdenvNoCC.mkDerivation {
+          mcp = mkBunApp {
             pname = "mcpedia-mcp";
-            version = "1.0.0";
-            src = ./.;
-            dontFixup = true;
-            nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
-            buildPhase = ''
-              export HOME=$TMPDIR
-              bun install --frozen-lockfile 2>&1
-              bun build apps/mcp/src/http.ts \
-                --outdir apps/mcp/dist \
-                --target bun \
-                --external @mcpedia/config \
-                --external @mcpedia/core \
-                --external @mcpedia/queue \
-                --external @modelcontextprotocol/sdk
-            '';
-            installPhase = ''
-              mkdir -p $out/share/mcpedia-mcp
-              cp -r apps/mcp/dist $out/share/mcpedia-mcp/dist
-              mkdir -p $out/share/mcpedia-mcp/node_modules
-              cp -r node_modules/* $out/share/mcpedia-mcp/node_modules/ 2>/dev/null || true
-              cp apps/mcp/package.json $out/share/mcpedia-mcp/
-              makeBinaryWrapper ${pkgs.bun}/bin/bun $out/bin/mcpedia-mcp \
-                --add-flags "run dist/http.js" \
-                --chdir $out/share/mcpedia-mcp
-            '';
+            appName = "mcp";
+            entry = "apps/mcp/src/http.ts";
+            outEntry = "http.js";
           };
 
-          # ─── Worker: BullMQ ────────────────────────────────────────────
-          worker = pkgs.stdenvNoCC.mkDerivation {
+          worker = mkBunApp {
             pname = "mcpedia-worker";
-            version = "1.0.0";
-            src = ./.;
-            # The .bun cache in node_modules uses symlinks that may be
-            # broken in the Nix store. Skip the fixup phase's symlink check.
-            dontFixup = true;
-            nativeBuildInputs = [ pkgs.bun pkgs.makeBinaryWrapper ];
-            buildPhase = ''
-              export HOME=$TMPDIR
-              bun install --frozen-lockfile 2>&1
-              bun build apps/worker/src/index.ts \
-                --outdir apps/worker/dist \
-                --target bun \
-                --external @mcpedia/config \
-                --external @mcpedia/core \
-                --external @mcpedia/db \
-                --external @mcpedia/queue
-            '';
-            installPhase = ''
-              mkdir -p $out/share/mcpedia-worker
-              cp -r apps/worker/dist $out/share/mcpedia-worker/dist
-              mkdir -p $out/share/mcpedia-worker/node_modules
-              cp -r node_modules/* $out/share/mcpedia-worker/node_modules/ 2>/dev/null || true
-              cp apps/worker/package.json $out/share/mcpedia-worker/
-              makeBinaryWrapper ${pkgs.bun}/bin/bun $out/bin/mcpedia-worker \
-                --add-flags "run dist/index.js" \
-                --chdir $out/share/mcpedia-worker
-            '';
+            appName = "worker";
+            entry = "apps/worker/src/index.ts";
+            outEntry = "index.js";
           };
         };
-      });
+      }
+    );
 }
