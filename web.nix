@@ -23,9 +23,9 @@ stdenv.mkDerivation {
 #!${pkgs.bash}/bin/bash
 export NODE_ENV=production
 export PORT=4016
-cd /home/code/mcpedia/apps/web
-rm -rf .next
-cp -r "$out/share/mcpedia-web/.next" .next
+cd /home/code/mcpedia
+rm -rf apps/web/.next
+cp -r "$out/share/mcpedia-web/.next" apps/web/.next
 exec "${bun}/bin/bun" run --cwd apps/web start
 EOF
     chmod +x $out/bin/mcpedia-web
