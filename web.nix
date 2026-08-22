@@ -3,23 +3,11 @@
 # so .next is built in CI via `bun run build` and packaged here.
 { pkgs
 , stdenv
-, writeShellScriptBin
 , bun
 , webNextDir
 , ...
 }:
 
-let
-  mcpedia-web-script = writeShellScriptBin "mcpedia-web" ''
-    #!${pkgs.bash}/bin/bash
-    export NODE_ENV=production
-    export PORT=4016
-    cd /home/code/mcpedia/apps/web
-    rm -f .next
-    ln -s "${webNextDir}" .next
-    exec "${bun}/bin/bun" x next start -p 4016
-  '';
-in
 stdenv.mkDerivation {
   pname = "mcpedia-web";
   version = "1.0.0";
@@ -31,6 +19,15 @@ stdenv.mkDerivation {
     cp -r "${webNextDir}/." $out/share/mcpedia-web/.next/
 
     mkdir -p $out/bin
-    cp ${mcpedia-web-script}/bin/mcpedia-web $out/bin/mcpedia-web
+    cat > $out/bin/mcpedia-web <<EOF
+#!${pkgs.bash}/bin/bash
+export NODE_ENV=production
+export PORT=4016
+cd /home/code/mcpedia/apps/web
+rm -rf .next
+cp -r "$out/share/mcpedia-web/.next" .next
+exec "${bun}/bin/bun" run --cwd apps/web start
+EOF
+    chmod +x $out/bin/mcpedia-web
   '';
 }
