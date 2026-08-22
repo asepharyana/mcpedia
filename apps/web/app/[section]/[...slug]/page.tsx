@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { getDocument, getRelated, listRevisions, listDocuments } from "@mcpedia/core";
+import { getDocument, getRelated, listRevisions, listDocuments, getExportDocuments } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
 import DocActions from "@/components/DocActions";
+import PdfExportView from "@/components/PdfExportView";
 import { classifyPath, extractFoldersForSection } from "@mcpedia/core";
 import { getSectionMeta } from "@mcpedia/config";
 import type { DocumentMeta } from "@mcpedia/core";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 interface DocPageProps {
   params: Promise<{ section: string; slug: string[] }>;
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; path?: string; sort?: string }>;
 }
 
 function getSectionInfo(section: string) {
@@ -191,7 +192,7 @@ function FolderIndexPage({
               {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
             </span>
             <Link
-              href={`/export/pdf?path=${section}/${slug}`}
+              href={`/${section}/${slug}/export`}
               className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3 py-1.5 rounded-lg font-medium transition-all shadow-xs"
               title={`Export all ${folderName} documents as a single PDF report`}
             >
@@ -288,7 +289,23 @@ function FolderIndexPage({
 
 export default async function DocPage({ params, searchParams }: DocPageProps) {
   const { section, slug } = await params;
-  const { edit } = await searchParams;
+  const searchParamsObj = await searchParams;
+  const { edit, path: queryPath, sort } = searchParamsObj;
+
+  // Handle direct export views: /[section]/export, /[section]/[...folder]/export, or /export/pdf
+  if (section === "export" || (slug && slug[slug.length - 1] === "export")) {
+    const isTrailingExport = slug && slug[slug.length - 1] === "export";
+    const targetSlug = isTrailingExport ? slug.slice(0, -1) : slug;
+    const targetPath = queryPath || (targetSlug.length > 0 ? `${section}/${targetSlug.join("/")}` : section);
+    const exportData = await getExportDocuments({
+      path: targetPath === "export" ? queryPath : targetPath,
+      section: targetPath === section ? section : undefined,
+      sortBy: (sort as any) || "category_points",
+    });
+    const backHref = targetPath && targetPath !== "export" ? `/${targetPath}` : section !== "export" ? `/${section}` : "/";
+    return <PdfExportView exportData={exportData} backHref={backHref} />;
+  }
+
   const fullSlug = `${section}/${slug.join("/")}`;
 
   const allDocs = await listDocuments();

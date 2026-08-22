@@ -157,8 +157,8 @@ export default async function SectionIndexPage({
             </span>
             {sectionDocs.length > 0 && (
               <Link
-                href={`/export/pdf?section=${section}`}
-                className="inline-flex items-center gap-1.5 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1 rounded-md font-medium transition-all shadow-xs"
+                href={`/${section}/export`}
+                className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20 border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 text-[var(--brand)] dark:text-[var(--accent)] px-3 py-1 rounded-md font-medium transition-all shadow-xs"
                 title={`Export all ${sectionInfo.label} documents to PDF`}
               >
                 <span>📄</span>

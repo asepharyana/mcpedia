@@ -77,7 +77,7 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
 
       {/* Export PDF */}
       <Link
-        href={`/export/pdf?path=${slug}`}
+        href={`/${slug}/export`}
         title="Export document or parent folder to PDF"
         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-sm"
       >
