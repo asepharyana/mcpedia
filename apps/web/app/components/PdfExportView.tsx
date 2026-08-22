@@ -38,6 +38,8 @@ export default function PdfExportView({
   const [copiedMd, setCopiedMd] = useState(false);
 
   const sectionMeta = getSectionMeta(summary.section);
+  const categoriesList = summary.categories || [];
+  const authorsList = summary.authors || [];
 
   // Available categories for filtering
   const allCategories = useMemo(() => {
@@ -101,76 +103,26 @@ export default function PdfExportView({
     URL.revokeObjectURL(url);
   }
 
-  function getCategoryBadgeClass(category: string): string {
-    const cat = category.toLowerCase();
-    if (cat.includes("web")) {
-      return "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30";
-    }
-    if (cat.includes("crypto")) {
-      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
-    }
-    if (cat.includes("pwn") || cat.includes("binary")) {
-      return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30";
-    }
-    if (cat.includes("reverse") || cat.includes("rev")) {
-      return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30";
-    }
-    if (cat.includes("forensic") || cat.includes("dfir")) {
-      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
-    }
-    if (cat.includes("osint")) {
-      return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30";
-    }
-    return "bg-[var(--brand)]/10 text-[var(--brand)] dark:text-[var(--accent)] border-[var(--brand)]/30";
-  }
-
-  function getCategoryIcon(category: string): string {
-    const cat = category.toLowerCase();
-    if (cat.includes("web")) return "🌐";
-    if (cat.includes("crypto")) return "🔐";
-    if (cat.includes("pwn") || cat.includes("binary")) return "⚡";
-    if (cat.includes("reverse") || cat.includes("rev")) return "⚙️";
-    if (cat.includes("forensic") || cat.includes("dfir")) return "🔍";
-    if (cat.includes("osint")) return "🛰️";
-    if (cat.includes("mobile")) return "📱";
-    if (cat.includes("hardware")) return "🔌";
-    return "🚩";
-  }
-
-  function getDifficultyBadgeClass(difficulty: string): string {
-    const diff = difficulty.toLowerCase();
-    if (/easy|simple|beginner/i.test(diff)) {
-      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
-    }
-    if (/medium|intermediate/i.test(diff)) {
-      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
-    }
-    if (/hard|expert|advanced|insane/i.test(diff)) {
-      return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30";
-    }
-    return "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-color)]";
-  }
-
   return (
     <div className="pb-16 print:pb-0">
       {/* =========================================================================
-          Export Control Toolbar (Hidden in Print)
+          Export Control Toolbar (Screen Only — Hidden in Print)
           ========================================================================= */}
-      <aside className="no-print export-toolbar sticky top-16 z-30 mb-8 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-md">
+      <aside className="no-print export-toolbar sticky top-16 z-30 mb-8 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Left info & Back button */}
           <div className="flex items-center gap-3">
             <Link
               href={backHref}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-xs"
             >
               <span>←</span>
               <span>Back</span>
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] font-semibold uppercase">
-                  {sectionMeta.icon} {sectionMeta.label}
+                <span className="text-xs font-mono text-[var(--text-primary)] font-semibold uppercase">
+                  {sectionMeta.label}
                 </span>
                 <span className="text-xs text-[var(--text-dim)]">·</span>
                 <span className="text-xs text-[var(--text-muted)] font-mono">
@@ -190,18 +142,13 @@ export default function PdfExportView({
             <button
               onClick={handleCopyMarkdown}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-xs cursor-pointer"
               title="Copy compiled markdown document"
             >
               {copiedMd ? (
-                <>
-                  <span className="text-emerald-500 font-bold">✓ Copied</span>
-                </>
+                <span className="text-emerald-600 font-bold">✓ Copied</span>
               ) : (
-                <>
-                  <span>📋</span>
-                  <span>Copy Markdown</span>
-                </>
+                <span>Copy Markdown</span>
               )}
             </button>
 
@@ -209,10 +156,9 @@ export default function PdfExportView({
             <button
               onClick={handleDownloadMarkdown}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-xs cursor-pointer"
               title="Download compiled .md file"
             >
-              <span>💾</span>
               <span>Download .md</span>
             </button>
 
@@ -220,7 +166,7 @@ export default function PdfExportView({
             <button
               onClick={handlePrint}
               type="button"
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-lg shadow-sm transition-all cursor-pointer hover:shadow-md active:scale-98"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-md shadow-sm transition-all cursor-pointer hover:shadow"
               title="Open browser print dialog to save as PDF"
             >
               <svg
@@ -249,10 +195,9 @@ export default function PdfExportView({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as ExportSortOption)}
-              aria-label="Sort documents"
-              className="bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-md px-2.5 py-1 text-xs focus:outline-none focus:border-[var(--brand)] cursor-pointer"
+              className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-md px-2.5 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-slate-500"
             >
-              <option value="category_points">Category & Points (CTF Standard)</option>
+              <option value="category_points">Category & Points (Standard)</option>
               <option value="points_desc">Points (Highest First)</option>
               <option value="difficulty">Difficulty (Easy to Hard)</option>
               <option value="title">Challenge Title (A-Z)</option>
@@ -261,84 +206,85 @@ export default function PdfExportView({
             </select>
           </div>
 
-          {/* Toggle Switches */}
-          <div className="flex items-center gap-4 flex-wrap text-[var(--text-muted)]">
-            <label className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--text-primary)]">
+          {/* Section toggles */}
+          <div className="flex items-center gap-3 flex-wrap text-[var(--text-secondary)]">
+            <label className="inline-flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={showCover}
                 onChange={(e) => setShowCover(e.target.checked)}
-                className="rounded border-[var(--border-color)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                className="rounded border-[var(--border-color)] text-slate-800"
               />
               <span>Cover Page</span>
             </label>
 
             {initialDocs.length > 1 && (
               <>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--text-primary)]">
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={showScoreboard}
                     onChange={(e) => setShowScoreboard(e.target.checked)}
-                    className="rounded border-[var(--border-color)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                    className="rounded border-[var(--border-color)] text-slate-800"
                   />
-                  <span>Scoreboard Table</span>
+                  <span>Scoreboard</span>
                 </label>
 
-                <label className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--text-primary)]">
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={showTOC}
                     onChange={(e) => setShowTOC(e.target.checked)}
-                    className="rounded border-[var(--border-color)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                    className="rounded border-[var(--border-color)] text-slate-800"
                   />
                   <span>Table of Contents</span>
                 </label>
               </>
             )}
 
-            <label className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--text-primary)]">
+            <label className="inline-flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={pageBreaks}
                 onChange={(e) => setPageBreaks(e.target.checked)}
-                className="rounded border-[var(--border-color)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                className="rounded border-[var(--border-color)] text-slate-800"
               />
               <span>Page Break per Ch</span>
             </label>
           </div>
         </div>
 
-        {/* Category Filter Chips */}
+        {/* Category filter pills */}
         {allCategories.length > 1 && (
-          <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-[var(--text-muted)] font-medium mr-1">Category:</span>
+          <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 flex-wrap text-xs">
+            <span className="text-[var(--text-muted)] mr-1">Filter:</span>
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+              type="button"
+              className={`px-2.5 py-0.5 rounded-md text-xs font-mono transition-all cursor-pointer ${
                 selectedCategory === "all"
-                  ? "bg-[var(--brand)] text-white font-medium"
+                  ? "bg-slate-900 text-white font-semibold"
                   : "bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
               }`}
             >
               All ({initialDocs.length})
             </button>
-            {allCategories.map((cat: string) => {
-              const count = initialDocs.filter((d: Document) => extractDocCategory(d) === cat).length;
-              const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
+            {allCategories.map((cat) => {
+              const count = initialDocs.filter(
+                (d) => extractDocCategory(d).toLowerCase() === cat.toLowerCase(),
+              ).length;
               return (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(isActive ? "all" : cat)}
-                  className={`px-2 py-0.5 rounded text-xs font-mono transition-colors flex items-center gap-1 ${
-                    isActive
-                      ? "bg-[var(--brand)] text-white font-medium"
+                  onClick={() => setSelectedCategory(cat)}
+                  type="button"
+                  className={`px-2.5 py-0.5 rounded-md text-xs font-mono transition-all cursor-pointer ${
+                    selectedCategory.toLowerCase() === cat.toLowerCase()
+                      ? "bg-slate-900 text-white font-semibold"
                       : "bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
                   }`}
                 >
-                  <span>{getCategoryIcon(cat)}</span>
-                  <span>{cat}</span>
-                  <span className="text-[10px] opacity-75 font-sans">({count})</span>
+                  {cat} ({count})
                 </button>
               );
             })}
@@ -347,133 +293,111 @@ export default function PdfExportView({
       </aside>
 
       {/* =========================================================================
-          Main Printable Document
+          Formal Printable Document Structure
           ========================================================================= */}
-      <div className="print-container bg-[var(--bg-surface)] print:bg-white border border-[var(--border-color)] print:border-none rounded-2xl print:rounded-none p-6 sm:p-10 print:p-0 shadow-sm print:shadow-none space-y-12 print:space-y-0">
+      <div className="print-container bg-white text-slate-900 border border-slate-200 print:border-none rounded-xl print:rounded-none p-6 sm:p-10 print:p-0 shadow-sm print:shadow-none space-y-10 print:space-y-0">
         
         {/* =======================================================================
-            1. Cover Page
+            1. Formal Cover Page
             ======================================================================= */}
         {showCover && (
-          <section className="cover-page flex flex-col justify-between min-h-[600px] print:min-h-[92vh] p-8 sm:p-12 print:p-10 border border-[var(--border-color)] print:border-none rounded-xl print:rounded-none bg-[var(--bg-elevated)] print:bg-transparent">
+          <section className="cover-page flex flex-col justify-between min-h-[600px] print:min-h-[90vh] p-8 sm:p-12 print:p-8 border border-slate-300 print:border-slate-800 rounded-lg print:rounded-none bg-white">
             <div>
-              {/* Header Badge */}
-              <div className="flex items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--brand)] text-white flex items-center justify-center font-bold text-sm">
-                    M
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
-                      MCPedia
-                    </span>
-                    <p className="text-[10px] text-[var(--text-dim)] font-mono">
-                      Knowledge Base Documentation
-                    </p>
-                  </div>
-                </div>
-
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-[var(--brand)]/15 text-[var(--brand)] dark:text-[var(--accent)] border border-[var(--brand)]/30">
-                  <span>{sectionMeta.icon}</span>
-                  <span className="uppercase">{sectionMeta.label}</span>
+              {/* Formal Header Line */}
+              <div className="border-b-2 border-slate-900 pb-3 mb-8 flex items-center justify-between">
+                <span className="text-xs font-mono font-bold tracking-widest text-slate-800 uppercase">
+                  Technical Writeups & Solutions Report
+                </span>
+                <span className="text-xs font-mono text-slate-600 uppercase">
+                  Scope: {summary.scope}
                 </span>
               </div>
 
-              {/* Title and Subtitle */}
-              <div className="space-y-3 mb-10 pt-4">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
+              {/* Title & Subtitle */}
+              <div className="space-y-3 mb-10 pt-2">
+                <h1 className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight leading-tight">
                   {summary.title}
                 </h1>
-                <p className="text-sm sm:text-base text-[var(--text-muted)] leading-relaxed max-w-2xl">
-                  Comprehensive challenge solutions, technical writeups, and security research findings.
+                <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
+                  Official compilation of challenge solutions, vulnerability analysis, and exploitation procedures.
                 </p>
               </div>
 
-              {/* Stats Metric Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-8">
-                <div className="p-4 bg-[var(--bg-surface)] print:bg-slate-50 border border-[var(--border-color)] rounded-xl">
-                  <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
-                    {filteredAndSortedDocs.length}
-                  </div>
-                  <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Challenges / Ch
-                  </div>
-                </div>
-
-                {currentTotalPoints > 0 && (
-                  <div className="p-4 bg-[var(--bg-surface)] print:bg-slate-50 border border-[var(--border-color)] rounded-xl">
-                    <div className="text-2xl font-bold text-[var(--brand)] dark:text-[var(--accent)] font-mono">
-                      {currentTotalPoints.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                      Total Points
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-4 bg-[var(--bg-surface)] print:bg-slate-50 border border-[var(--border-color)] rounded-xl">
-                  <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
-                    {summary.categories.length}
-                  </div>
-                  <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Categories
-                  </div>
-                </div>
-
-                <div className="p-4 bg-[var(--bg-surface)] print:bg-slate-50 border border-[var(--border-color)] rounded-xl">
-                  <div className="text-2xl font-bold text-[var(--text-primary)] font-mono">
-                    {summary.authors.length || 1}
-                  </div>
-                  <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Contributors
-                  </div>
-                </div>
+              {/* Summary Information Table */}
+              <div className="my-8 border border-slate-300 rounded-md overflow-hidden">
+                <table className="w-full text-xs text-left border-collapse">
+                  <tbody>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="py-2.5 px-4 font-semibold text-slate-700 w-1/3 border-r border-slate-200">
+                        Event / Document Scope
+                      </th>
+                      <td className="py-2.5 px-4 font-mono text-slate-900">
+                        {summary.scope}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-slate-200">
+                      <th className="py-2.5 px-4 font-semibold text-slate-700 border-r border-slate-200">
+                        Total Challenges Compiled
+                      </th>
+                      <td className="py-2.5 px-4 font-mono font-bold text-slate-900">
+                        {filteredAndSortedDocs.length} challenge{filteredAndSortedDocs.length !== 1 ? "s" : ""}
+                      </td>
+                    </tr>
+                    {currentTotalPoints > 0 && (
+                      <tr className="border-b border-slate-200 bg-slate-50">
+                        <th className="py-2.5 px-4 font-semibold text-slate-700 border-r border-slate-200">
+                          Total Score / Points
+                        </th>
+                        <td className="py-2.5 px-4 font-mono font-bold text-slate-900">
+                          {currentTotalPoints.toLocaleString()} pts
+                        </td>
+                      </tr>
+                    )}
+                    <tr className="border-b border-slate-200">
+                      <th className="py-2.5 px-4 font-semibold text-slate-700 border-r border-slate-200">
+                        Categories Covered
+                      </th>
+                      <td className="py-2.5 px-4 text-slate-900">
+                        {categoriesList.length > 0
+                          ? categoriesList
+                              .map((c) => `${c.name} (${c.count})`)
+                              .join(", ")
+                          : "General"}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="py-2.5 px-4 font-semibold text-slate-700 border-r border-slate-200">
+                        Author(s) / Contributors
+                      </th>
+                      <td className="py-2.5 px-4 text-slate-900 font-mono">
+                        {authorsList.length > 0
+                          ? authorsList.map((a) => `@${a}`).join(", ")
+                          : "Contributors"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th className="py-2.5 px-4 font-semibold text-slate-700 border-r border-slate-200">
+                        Date of Compilation
+                      </th>
+                      <td className="py-2.5 px-4 text-slate-900">
+                        {new Date(summary.generatedAt).toLocaleDateString(undefined, {
+                          dateStyle: "long",
+                        })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
-              {/* Categories Distribution */}
-              {summary.categories.length > 0 && (
-                <div className="space-y-2 mt-6">
-                  <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-                    Categories Covered:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {summary.categories.map((cat: ExportCategorySummary) => (
-                      <span
-                        key={cat.name}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono border ${getCategoryBadgeClass(cat.name)}`}
-                      >
-                        <span>{getCategoryIcon(cat.name)}</span>
-                        <span className="font-semibold">{cat.name}:</span>
-                        <span>{cat.count} chall{cat.count !== 1 ? "s" : ""}</span>
-                        {cat.points > 0 && <span className="opacity-75 font-sans">({cat.points} pts)</span>}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Cover Footer */}
-            <div className="pt-8 border-t border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
-              <div>
-                {summary.authors.length > 0 && (
-                  <p>
-                    <span className="font-medium text-[var(--text-secondary)]">Authors:</span>{" "}
-                    {summary.authors.map((a: string) => `@${a}`).join(", ")}
-                  </p>
-                )}
-                <p className="mt-0.5 font-mono text-[11px] text-[var(--text-dim)]">
-                  Path: {summary.scope}
-                </p>
-              </div>
-              <div className="font-mono text-right sm:text-right">
-                <p>
-                  {new Date(summary.generatedAt).toLocaleDateString(undefined, {
-                    dateStyle: "long",
-                  })}
-                </p>
-                <p className="text-[10px] text-[var(--text-dim)]">Generated by MCPedia</p>
-              </div>
+            <div className="pt-6 border-t border-slate-300 flex items-center justify-between text-xs text-slate-500 font-mono">
+              <span>CONFIDENTIAL & TECHNICAL REPORT</span>
+              <span>
+                {new Date(summary.generatedAt).toLocaleDateString(undefined, {
+                  dateStyle: "long",
+                })}
+              </span>
             </div>
           </section>
         )}
@@ -482,31 +406,30 @@ export default function PdfExportView({
             2. Scoreboard / Challenge Matrix Table
             ======================================================================= */}
         {showScoreboard && filteredAndSortedDocs.length > 1 && (
-          <section className="scoreboard-page py-6 print:py-8 border-t border-[var(--border-color)] print:border-none">
+          <section className="scoreboard-page py-6 print:py-8 border-t border-slate-200 print:border-none">
             <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                <span>📊</span>
-                <span>Challenge Overview & Scoreboard</span>
+              <h2 className="text-base font-bold text-slate-950 uppercase tracking-tight font-mono">
+                1. Challenge Overview & Scoreboard Matrix
               </h2>
-              <span className="text-xs font-mono text-[var(--text-muted)]">
+              <span className="text-xs font-mono text-slate-600">
                 {filteredAndSortedDocs.length} Total Challenges
               </span>
             </div>
 
-            <div className="overflow-x-auto border border-[var(--border-color)] rounded-xl shadow-xs">
+            <div className="border border-slate-300 rounded-md overflow-hidden">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
-                  <tr className="bg-[var(--bg-elevated)] print:bg-slate-100 border-b border-[var(--border-color)] text-[var(--text-muted)] font-mono uppercase">
-                    <th className="py-2.5 px-3 w-12 text-center">#</th>
-                    <th className="py-2.5 px-3">Challenge</th>
-                    <th className="py-2.5 px-3">Category</th>
-                    <th className="py-2.5 px-3">Difficulty</th>
-                    <th className="py-2.5 px-3 text-right">Points</th>
-                    <th className="py-2.5 px-3">Author</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
+                  <tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-mono font-semibold uppercase">
+                    <th className="py-2 px-3 w-10 text-center border-r border-slate-200">#</th>
+                    <th className="py-2 px-3 border-r border-slate-200">Challenge</th>
+                    <th className="py-2 px-3 border-r border-slate-200">Category</th>
+                    <th className="py-2 px-3 border-r border-slate-200">Difficulty</th>
+                    <th className="py-2 px-3 text-right border-r border-slate-200">Points</th>
+                    <th className="py-2 px-3 border-r border-slate-200">Author</th>
+                    <th className="py-2 px-3 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--border-color)]">
+                <tbody className="divide-y divide-slate-200 text-slate-800">
                   {filteredAndSortedDocs.map((doc, idx) => {
                     const chNum = idx + 1;
                     const cat = extractDocCategory(doc);
@@ -517,52 +440,33 @@ export default function PdfExportView({
                     return (
                       <tr
                         key={doc.slug}
-                        className="hover:bg-[var(--bg-elevated)]/50 transition-colors"
+                        className={idx % 2 === 1 ? "bg-slate-50/70" : "bg-white"}
                       >
-                        <td className="py-2.5 px-3 text-center font-mono text-[var(--text-dim)]">
+                        <td className="py-2 px-3 text-center font-mono text-slate-600 border-r border-slate-200">
                           {chNum}
                         </td>
-                        <td className="py-2.5 px-3 font-medium text-[var(--text-primary)]">
+                        <td className="py-2 px-3 font-medium text-slate-900 border-r border-slate-200">
                           <a
                             href={`#ch-${chNum}`}
-                            className="hover:text-[var(--brand)] dark:hover:text-[var(--accent)] hover:underline"
+                            className="hover:underline text-slate-900 font-semibold"
                           >
                             {doc.title}
                           </a>
                         </td>
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border ${getCategoryBadgeClass(cat)}`}
-                          >
-                            <span>{getCategoryIcon(cat)}</span>
-                            <span>{cat}</span>
-                          </span>
+                        <td className="py-2 px-3 font-mono text-slate-800 border-r border-slate-200">
+                          {cat}
                         </td>
-                        <td className="py-2.5 px-3">
-                          {diff ? (
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${getDifficultyBadgeClass(diff)}`}
-                            >
-                              {diff}
-                            </span>
-                          ) : (
-                            <span className="text-[var(--text-dim)]">-</span>
-                          )}
+                        <td className="py-2 px-3 text-slate-700 border-r border-slate-200">
+                          {diff || "-"}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono font-semibold text-[var(--brand)] dark:text-[var(--accent)]">
+                        <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 border-r border-slate-200">
                           {pts > 0 ? `${pts} pts` : "-"}
                         </td>
-                        <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                        <td className="py-2 px-3 text-slate-700 border-r border-slate-200 font-mono">
                           {doc.author ? `@${doc.author}` : "-"}
                         </td>
-                        <td className="py-2.5 px-3 text-center">
-                          {isSolved ? (
-                            <span className="text-emerald-600 font-bold" title="Solved">
-                              ✓
-                            </span>
-                          ) : (
-                            <span className="text-[var(--text-dim)]">-</span>
-                          )}
+                        <td className="py-2 px-3 text-center font-mono text-xs">
+                          {isSolved ? "Solved" : "-"}
                         </td>
                       </tr>
                     );
@@ -577,42 +481,39 @@ export default function PdfExportView({
             3. Table of Contents (TOC)
             ======================================================================= */}
         {showTOC && filteredAndSortedDocs.length > 1 && (
-          <section className="toc-page py-6 print:py-8 border-t border-[var(--border-color)] print:border-none">
-            <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mb-4 flex items-center gap-2">
-              <span>📑</span>
-              <span>Table of Contents</span>
+          <section className="toc-page py-6 print:py-8 border-t border-slate-200 print:border-none">
+            <h2 className="text-base font-bold text-slate-950 uppercase tracking-tight font-mono mb-4">
+              2. Table of Contents
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="border border-slate-200 rounded-md divide-y divide-slate-200">
               {filteredAndSortedDocs.map((doc, idx) => {
                 const chNum = idx + 1;
                 const cat = extractDocCategory(doc);
                 const pts = extractDocPoints(doc);
 
                 return (
-                  <a
+                  <div
                     key={doc.slug}
-                    href={`#ch-${chNum}`}
-                    className="group flex items-center justify-between p-3 rounded-lg bg-[var(--bg-elevated)] print:bg-slate-50 hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-xs transition-colors"
+                    className="flex items-center justify-between p-2.5 text-xs text-slate-800 hover:bg-slate-50 transition-colors"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                      <span className="font-mono text-[11px] font-bold text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 px-1.5 py-0.5 rounded shrink-0">
-                        Ch {chNum}
+                    <div className="flex items-center gap-2 min-w-0 pr-4">
+                      <span className="font-mono font-bold text-slate-700 shrink-0">
+                        Chapter {chNum}:
                       </span>
-                      <span className="font-medium text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] truncate">
+                      <a
+                        href={`#ch-${chNum}`}
+                        className="font-medium text-slate-900 hover:underline truncate"
+                      >
                         {doc.title}
-                      </span>
+                      </a>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0 font-mono text-[11px]">
-                      <span className="text-[var(--text-muted)]">{cat}</span>
-                      {pts > 0 && (
-                        <span className="text-[var(--brand)] dark:text-[var(--accent)] font-semibold">
-                          · {pts}p
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 shrink-0 font-mono text-[11px] text-slate-600">
+                      <span>[{cat}]</span>
+                      {pts > 0 && <span className="font-semibold">{pts} pts</span>}
                     </div>
-                  </a>
+                  </div>
                 );
               })}
             </div>
@@ -639,81 +540,56 @@ export default function PdfExportView({
                   pageBreaks && idx > 0 ? "page-break-before" : ""
                 } pt-8 first:pt-0 print:pt-6`}
               >
-                {/* Chapter Header Card */}
-                <div className="challenge-header-card bg-[var(--bg-elevated)] print:bg-slate-50 border border-[var(--border-color)] print:border-slate-300 rounded-xl p-5 sm:p-6 mb-6 shadow-xs">
+                {/* Formal Chapter Header */}
+                <header className="challenge-header-card border-b-2 border-slate-800 pb-3 mb-6">
                   {/* Chapter index label */}
-                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-[var(--brand)] text-white">
-                        CHAPTER {chNum}
-                      </span>
-                      <span className="text-xs font-mono text-[var(--text-dim)]">
-                        Challenge {chNum} of {filteredAndSortedDocs.length}
-                      </span>
-                    </div>
-
-                    <span className="text-xs font-mono text-[var(--text-dim)]">
+                  <div className="flex items-center justify-between gap-3 text-xs font-mono text-slate-600 mb-1">
+                    <span className="font-bold tracking-wider uppercase text-slate-800">
+                      CHAPTER {chNum} · CHALLENGE {chNum} OF {filteredAndSortedDocs.length}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
                       {doc.slug}
                     </span>
                   </div>
 
                   {/* Challenge Title */}
-                  <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight leading-snug mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight leading-snug mb-3">
                     {doc.title}
                   </h2>
 
-                  {/* Metadata Chips Bar */}
-                  <div className="badge-container flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--border-color)]">
-                    {/* Category Chip */}
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold border ${getCategoryBadgeClass(cat)}`}
-                    >
-                      <span>{getCategoryIcon(cat)}</span>
-                      <span>Category: {cat}</span>
+                  {/* Formal Metadata Line */}
+                  <div className="badge-container flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-700 pt-1">
+                    <span>
+                      <strong className="text-slate-900">Category:</strong> {cat}
                     </span>
-
-                    {/* Points Chip */}
                     {pts > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-[var(--brand)]/10 text-[var(--brand)] dark:text-[var(--accent)] border border-[var(--brand)]/30">
-                        <span>🎯</span>
-                        <span>{pts} pts</span>
+                      <span>
+                        <strong className="text-slate-900">Points:</strong> {pts} pts
                       </span>
                     )}
-
-                    {/* Difficulty Chip */}
                     {diff && (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${getDifficultyBadgeClass(diff)}`}
-                      >
-                        <span>Difficulty: {diff}</span>
+                      <span>
+                        <strong className="text-slate-900">Difficulty:</strong> {diff}
                       </span>
                     )}
-
-                    {/* Solved Status */}
                     {isSolved && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                        <span>✓</span>
-                        <span>Solved</span>
+                      <span>
+                        <strong className="text-slate-900">Status:</strong> Solved
                       </span>
                     )}
-
-                    {/* Author Chip */}
                     {doc.author && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-secondary)]">
-                        <span>👤</span>
-                        <span>@{doc.author}</span>
+                      <span>
+                        <strong className="text-slate-900">Author:</strong> @{doc.author}
                       </span>
                     )}
-
-                    {/* Date Chip */}
                     {doc.updatedAt && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-dim)] font-mono">
-                        <span>📅</span>
-                        <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
+                      <span>
+                        <strong className="text-slate-900">Date:</strong>{" "}
+                        {new Date(doc.updatedAt).toLocaleDateString()}
                       </span>
                     )}
 
-                    {/* Custom Extra Fields badges (excluding already rendered keys) */}
+                    {/* Extra fields */}
                     {Object.entries(extra).map(([k, v]) => {
                       const lowerKey = k.toLowerCase();
                       if (
@@ -734,27 +610,21 @@ export default function PdfExportView({
                         return null;
                       }
                       return (
-                        <span
-                          key={k}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-muted)] font-mono"
-                        >
-                          <span className="text-[var(--text-dim)]">{k}:</span>
-                          <span className="text-[var(--text-secondary)] font-semibold">
-                            {String(v)}
-                          </span>
+                        <span key={k}>
+                          <strong className="text-slate-900">{k}:</strong> {String(v)}
                         </span>
                       );
                     })}
                   </div>
-                </div>
+                </header>
 
                 {/* Markdown Writeup Body */}
-                <div className="prose-content mb-10">
+                <div className="prose-content mb-10 text-slate-900">
                   <Markdown source={doc.body} />
                 </div>
 
-                {/* Chapter End Divider */}
-                <div className="print:hidden border-b border-[var(--border-color)] my-8" />
+                {/* Chapter End Divider (screen only) */}
+                <div className="print:hidden border-b border-slate-200 my-8" />
               </article>
             );
           })}

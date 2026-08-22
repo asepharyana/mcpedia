@@ -376,7 +376,7 @@ export function compileExportMarkdown(exportData: ExportData): string {
   // Cover / Header
   lines.push(`# ${summary.title}`);
   lines.push("");
-  lines.push(`*Generated from MCPedia Knowledge Base on ${new Date(summary.generatedAt).toLocaleDateString(undefined, { dateStyle: "long" })}*`);
+  lines.push(`*Date: ${new Date(summary.generatedAt).toLocaleDateString(undefined, { dateStyle: "long" })}*`);
   lines.push("");
 
   if (summary.totalDocuments > 1) {
