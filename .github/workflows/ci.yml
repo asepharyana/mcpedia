@@ -171,11 +171,12 @@ jobs:
             "sudo /nix/var/nix/profiles/default/bin/nix-store --realise '$STORE_PATH' 2>&1 || true")
           echo "$REALISE_RESULT"
 
-          # Update profile + restart
+          # Update profile + sync git repo + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
               --profile /nix/var/nix/profiles/$PROFILE \
               --set '$STORE_PATH' && \
+            (cd /home/code/mcpedia && git fetch origin main && git reset --hard origin/main || true) && \
             sudo systemctl restart $PROFILE && \
             sleep 3 && \
             sudo systemctl status $PROFILE --no-pager --no-legend | head -5"
@@ -306,11 +307,12 @@ jobs:
           # Substitute from Attic cache (fast)
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-store --realise '$STORE_PATH'"
-          # Update profile + restart
+          # Update profile + sync git repo + restart
           ssh "$VPS_USER@$VPS_HOST" \
             "sudo /nix/var/nix/profiles/default/bin/nix-env \
               --profile /nix/var/nix/profiles/mcpedia-web \
               --set '$STORE_PATH' && \
+            (cd /home/code/mcpedia && git fetch origin main && git reset --hard origin/main) && \
             sudo systemctl restart mcpedia-web && \
             sleep 3 && \
             sudo systemctl status mcpedia-web --no-pager --no-legend | head -5"
