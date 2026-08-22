@@ -301,20 +301,10 @@ export default function PdfExportView({
             1. Formal Cover Page
             ======================================================================= */}
         {showCover && (
-          <section className="cover-page flex flex-col justify-between min-h-[600px] print:min-h-[90vh] p-8 sm:p-12 print:p-8 border border-slate-300 print:border-slate-800 rounded-lg print:rounded-none bg-white">
+          <section className="cover-page flex flex-col justify-center min-h-[600px] print:min-h-[90vh] p-8 sm:p-12 print:p-8 border border-slate-300 print:border-slate-800 rounded-lg print:rounded-none bg-white">
             <div>
-              {/* Formal Header Line */}
-              <div className="border-b-2 border-slate-900 pb-3 mb-8 flex items-center justify-between">
-                <span className="text-xs font-mono font-bold tracking-widest text-slate-800 uppercase">
-                  Technical Writeups & Solutions Report
-                </span>
-                <span className="text-xs font-mono text-slate-600 uppercase">
-                  Scope: {summary.scope}
-                </span>
-              </div>
-
               {/* Title & Subtitle */}
-              <div className="space-y-3 mb-10 pt-2">
+              <div className="space-y-3 mb-8">
                 <h1 className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight leading-tight">
                   {summary.title}
                 </h1>
@@ -324,7 +314,7 @@ export default function PdfExportView({
               </div>
 
               {/* Summary Information Table */}
-              <div className="my-8 border border-slate-300 rounded-md overflow-hidden">
+              <div className="my-6 border border-slate-300 rounded-md overflow-hidden">
                 <table className="w-full text-xs text-left border-collapse">
                   <tbody>
                     <tr className="border-b border-slate-200 bg-slate-50">
@@ -388,16 +378,6 @@ export default function PdfExportView({
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* Cover Footer */}
-            <div className="pt-6 border-t border-slate-300 flex items-center justify-between text-xs text-slate-500 font-mono">
-              <span>CONFIDENTIAL & TECHNICAL REPORT</span>
-              <span>
-                {new Date(summary.generatedAt).toLocaleDateString(undefined, {
-                  dateStyle: "long",
-                })}
-              </span>
             </div>
           </section>
         )}
