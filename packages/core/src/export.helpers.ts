@@ -416,8 +416,6 @@ export function compileExportMarkdown(exportData: ExportData): string {
     if (cat) badges.push(`**Category:** \`${cat}\``);
     if (pts > 0) badges.push(`**Points:** \`${pts} pts\``);
     if (diff) badges.push(`**Difficulty:** \`${diff}\``);
-    if (doc.author) badges.push(`**Author:** @${doc.author}`);
-    if (doc.slug) badges.push(`**Slug:** \`${doc.slug}\``);
 
     if (badges.length > 0) {
       lines.push(badges.join(" · "));

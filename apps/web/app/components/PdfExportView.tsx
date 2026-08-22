@@ -48,7 +48,6 @@ export default function PdfExportView({
   const [copiedMd, setCopiedMd] = useState(false);
 
   const sectionMeta = getSectionMeta(summary.section);
-  const authorsList = summary.authors || [];
 
   // Available categories for filtering
   const allCategories = useMemo(() => {
@@ -285,20 +284,16 @@ export default function PdfExportView({
       <main className="print-container bg-white text-slate-900 max-w-4xl mx-auto px-4 sm:px-8 py-6 print:p-0 print:max-w-none">
         
         {/* Document Header */}
-        <header className="mb-8 pb-4 border-b border-slate-300">
+        <header className="mb-8 pb-3 border-b border-slate-300">
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight mb-2">
             {summary.title}
           </h1>
-          <div className="text-xs text-slate-600 font-mono flex flex-wrap gap-x-4 gap-y-1">
-            <span><strong>Scope:</strong> {summary.scope}</span>
-            <span><strong>Total Challenges:</strong> {filteredAndSortedDocs.length}</span>
+          <div className="text-xs text-slate-500 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>{filteredAndSortedDocs.length} Challenges</span>
             {currentTotalPoints > 0 && (
-              <span><strong>Total Points:</strong> {currentTotalPoints.toLocaleString()} pts</span>
+              <span>· {currentTotalPoints.toLocaleString()} Total Points</span>
             )}
-            {authorsList.length > 0 && (
-              <span><strong>Author(s):</strong> {authorsList.map((a) => `@${a}`).join(", ")}</span>
-            )}
-            <span><strong>Date:</strong> {new Date(summary.generatedAt).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
+            <span>· {new Date(summary.generatedAt).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
           </div>
         </header>
 
@@ -357,10 +352,8 @@ export default function PdfExportView({
                     <span><strong>Category:</strong> {cat}</span>
                     {pts > 0 && <span><strong>Points:</strong> {pts} pts</span>}
                     {diff && <span><strong>Difficulty:</strong> {diff}</span>}
-                    {doc.author && <span><strong>Author:</strong> @{doc.author}</span>}
-                    {doc.slug && <span><strong>Slug:</strong> {doc.slug}</span>}
 
-                    {/* Extra fields */}
+                    {/* Extra fields (excluding author, slug, scope, etc.) */}
                     {Object.entries(extra).map(([k, v]) => {
                       const lowerKey = k.toLowerCase();
                       if (
@@ -372,8 +365,12 @@ export default function PdfExportView({
                           "difficulty",
                           "solved",
                           "author",
+                          "authors",
+                          "scope",
+                          "slug",
                           "event",
                           "challenge",
+                          "path",
                         ].includes(lowerKey) ||
                         v === null ||
                         v === undefined ||
