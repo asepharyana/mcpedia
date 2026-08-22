@@ -4,19 +4,15 @@ import { getSectionMeta, type SectionConfig } from "@mcpedia/config";
 import McpConfigSnippet from "@/components/McpConfigSnippet";
 import InteractiveTopology from "@/components/InteractiveTopology";
 import {
-  Sparkles,
   Search,
   Plus,
   BookOpen,
   ArrowRight,
   Database,
-  Cpu,
   Layers,
-  Activity,
   Folder,
   FileText,
   Clock,
-  CheckCircle2,
   Terminal,
 } from "lucide-react";
 
@@ -102,11 +98,11 @@ function renderTree(nodes: TreeNode[]) {
             className="flex items-center gap-2 text-xs py-1 px-2 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors group"
             title={node.title}
           >
-            <span className="shrink-0 text-[var(--text-dim)] group-hover:text-[var(--brand)] transition-colors">
+            <span className="shrink-0 text-[var(--text-dim)] group-hover:text-[var(--text-primary)] transition-colors">
               {node.isLeaf && node.children.length === 0 ? (
-                <FileText className="w-3 h-3" />
+                <FileText className="w-3.5 h-3.5" />
               ) : (
-                <Folder className="w-3 h-3" />
+                <Folder className="w-3.5 h-3.5" />
               )}
             </span>
             <span className="truncate">{node.title || node.name}</span>
@@ -133,7 +129,7 @@ function SectionTree({ section, docs }: { section: string; docs: { slug: string;
       {tree.length > 0 ? (
         renderTree(tree)
       ) : (
-        <p className="text-xs text-[var(--text-dim)] pl-2">No documents yet</p>
+        <p className="text-xs text-[var(--text-dim)] pl-2">No documents</p>
       )}
     </div>
   );
@@ -156,30 +152,28 @@ export default async function HomePage() {
     <div className="space-y-16">
       {/* Hero Section */}
       <section className="relative pt-2 pb-4">
-        {/* Floating status pill */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--brand)]/10 border border-[var(--brand)]/25 text-[var(--brand)] dark:text-[var(--accent)] text-xs font-semibold mb-6 shadow-xs animate-fade-in">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Model Context Protocol · PostgreSQL Source of Truth</span>
+        {/* Status indicator stamp */}
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-secondary)] text-xs font-mono mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span>PostgreSQL 16 Core · Model Context Protocol</span>
         </div>
 
-        {/* Primary Title */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[var(--text-primary)] tracking-tight mb-5 leading-[1.12]">
+        {/* Primary Title with strong monolithic weight */}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[var(--text-primary)] tracking-tight mb-5 leading-[1.1]">
           Knowledge Base for <br />
-          <span className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-cyan-500 dark:to-cyan-400 bg-clip-text text-transparent">
-            Humans and AI Agents
-          </span>
+          Humans and AI Agents.
         </h1>
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-[var(--text-muted)] max-w-2xl leading-relaxed mb-8">
-          A high-performance technical knowledge repository. Browse structured notes and CTF writeups in your browser, or equip AI coding assistants directly via native MCP tools.
+          A high-performance technical knowledge repository. Humans read the web interface; AI assistants connect directly via native MCP tools. Both share one unified database source of truth.
         </p>
 
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-3 mb-10">
           <Link
             href="/docs"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-[var(--brand)]/25 hover:shadow-[var(--brand)]/40 hover:-translate-y-0.5 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand)] hover:opacity-90 text-[var(--brand-fg)] rounded-lg font-semibold text-sm transition-all shadow-xs cursor-pointer"
           >
             <BookOpen className="w-4 h-4" />
             <span>Browse Documentation</span>
@@ -188,15 +182,15 @@ export default async function HomePage() {
 
           <Link
             href="/search"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl font-semibold text-sm transition-all shadow-xs hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--text-muted)] text-[var(--text-primary)] rounded-lg font-semibold text-sm transition-colors shadow-xs"
           >
-            <Search className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
-            <span>Hybrid Search Console</span>
+            <Search className="w-4 h-4 text-[var(--text-muted)]" />
+            <span>Hybrid Search</span>
           </Link>
 
           <Link
             href="/create"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl text-sm transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg text-sm transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>Create Document</span>
@@ -204,44 +198,44 @@ export default async function HomePage() {
         </div>
 
         {/* Live Telemetry Metric Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 sm:p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl shadow-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 sm:p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <Database className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-color)]">
+              <Database className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xl font-bold text-[var(--text-primary)]">{all.length}</div>
-              <div className="text-[11px] text-[var(--text-muted)] font-mono">Documents in DB</div>
+              <div className="text-xl font-bold text-[var(--text-primary)] font-mono">{all.length}</div>
+              <div className="text-[11px] text-[var(--text-muted)] font-mono">DB Documents</div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-              <Layers className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-color)]">
+              <Layers className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xl font-bold text-[var(--text-primary)]">{sections.length}</div>
+              <div className="text-xl font-bold text-[var(--text-primary)] font-mono">{sections.length}</div>
               <div className="text-[11px] text-[var(--text-muted)] font-mono">Active Sections</div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-              <Search className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-color)]">
+              <Search className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xl font-bold text-[var(--brand)] dark:text-[var(--accent)]">RRF Hybrid</div>
+              <div className="text-xl font-bold text-[var(--text-primary)] font-mono">RRF</div>
               <div className="text-[11px] text-[var(--text-muted)] font-mono">FTS + Cosine Vectors</div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Terminal className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-color)]">
+              <Terminal className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">13 Tools</div>
-              <div className="text-[11px] text-[var(--text-muted)] font-mono">Streamable HTTP :4021</div>
+              <div className="text-xl font-bold text-[var(--text-primary)] font-mono">13 Tools</div>
+              <div className="text-[11px] text-[var(--text-muted)] font-mono">HTTP :4021 MCP</div>
             </div>
           </div>
         </div>
@@ -254,11 +248,11 @@ export default async function HomePage() {
 
       {/* Browse Knowledge by Section */}
       <section>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
+            <Layers className="w-4 h-4 text-[var(--text-muted)]" />
             <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Browse Knowledge by Section
+              Knowledge Sections
             </h2>
           </div>
         </div>
@@ -269,19 +263,19 @@ export default async function HomePage() {
             return (
               <div
                 key={s.id}
-                className="group flex flex-col justify-between bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl p-5 transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                className="group flex flex-col justify-between bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-xl p-5 transition-all shadow-xs"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="text-2xl">{s.icon}</span>
                     <Link
                       href={`/${s.id}`}
-                      className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] hover:underline font-semibold"
+                      className="text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] font-semibold"
                     >
                       {sectionDocs.length} docs →
                     </Link>
                   </div>
-                  <h3 className="font-bold text-base text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors mb-1.5">
+                  <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1">
                     {s.label}
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] mb-4 line-clamp-2 leading-relaxed">
@@ -305,33 +299,33 @@ export default async function HomePage() {
       {/* Recently Updated Knowledge */}
       {recent.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
+              <Clock className="w-4 h-4 text-[var(--text-muted)]" />
               <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                Recently Updated Knowledge
+                Recently Updated
               </h2>
             </div>
             <Link
               href="/docs"
-              className="text-xs text-[var(--brand)] dark:text-[var(--accent)] hover:underline font-semibold flex items-center gap-1"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] font-semibold flex items-center gap-1 font-mono"
             >
               <span>View all ({all.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {recent.map((d) => {
               const sInfo = getSectionMeta(d.section);
               return (
                 <Link
                   key={d.slug}
                   href={`/${d.slug}`}
-                  className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl p-5 transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                  className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-xl p-4.5 transition-all shadow-xs"
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <span className="text-[11px] font-mono font-semibold text-[var(--brand)] dark:text-[var(--accent)] uppercase flex items-center gap-1">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-mono font-semibold text-[var(--text-muted)] uppercase flex items-center gap-1">
                       <span>{sInfo?.icon}</span>
                       <span>{d.section}</span>
                     </span>
@@ -342,15 +336,15 @@ export default async function HomePage() {
                       })}
                     </time>
                   </div>
-                  <h3 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors line-clamp-1 mb-2">
+                  <h3 className="font-semibold text-sm text-[var(--text-primary)] group-hover:underline line-clamp-1 mb-2">
                     {d.title}
                   </h3>
                   {d.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
+                    <div className="flex flex-wrap gap-1 mt-2.5">
                       {d.tags.slice(0, 3).map((t) => (
                         <span
                           key={t}
-                          className="text-[10px] px-2 py-0.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-md text-[var(--text-muted)] font-mono"
+                          className="text-[10px] px-1.5 py-0.2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)] font-mono"
                         >
                           #{t}
                         </span>
@@ -367,11 +361,10 @@ export default async function HomePage() {
       {/* Connect AI Assistant Showcase */}
       <section className="border-t border-[var(--border-color)] pt-12 pb-6">
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] text-xs font-mono mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Connect Coding Assistants</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] text-xs font-mono mb-2">
+            <span>[ MCP_INTEGRATION ]</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-1.5">
             Model Context Protocol Configuration
           </h2>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-xl leading-relaxed">

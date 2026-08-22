@@ -9,12 +9,9 @@ import {
   Sparkles,
   Search,
   Globe,
-  Terminal,
   Server,
   ArrowRight,
   CheckCircle2,
-  FileCode2,
-  ShieldCheck,
 } from "lucide-react";
 
 interface NodeDetail {
@@ -33,7 +30,7 @@ const NODES: NodeDetail[] = [
   {
     id: "ai-agents",
     title: "AI Coding Agents",
-    badge: "MCP Consumer",
+    badge: "MCP::CLIENT",
     type: "client",
     icon: Sparkles,
     desc: "Claude Desktop, Cursor, Antigravity, and Zed connect via Model Context Protocol to read and write technical knowledge directly.",
@@ -52,10 +49,10 @@ const NODES: NodeDetail[] = [
   {
     id: "web-ui",
     title: "Human Web Interface",
-    badge: "Next.js 16 + React 19",
+    badge: "UI::NEXTJS",
     type: "client",
     icon: Globe,
-    desc: "Fast, accessible, and responsive developer web interface with dark/light themes, keyboard shortcuts, and instant search.",
+    desc: "Fast, accessible developer web interface with dark/light themes, keyboard shortcuts, and instant search.",
     metrics: [
       { label: "Framework", value: "Next.js 16.3" },
       { label: "Styling", value: "Tailwind CSS v4" },
@@ -71,10 +68,10 @@ const NODES: NodeDetail[] = [
   {
     id: "mcp-server",
     title: "MCP Server Gateway",
-    badge: "Streamable HTTP :4021",
+    badge: "PORT::4021",
     type: "protocol",
     icon: Server,
-    desc: "High-throughput streamable Model Context Protocol server exposing tool endpoints and resource URIs.",
+    desc: "Streamable Model Context Protocol server exposing tool endpoints and resource URIs.",
     metrics: [
       { label: "Port", value: ":4021" },
       { label: "Protocol", value: "MCP 2024-11-05" },
@@ -90,7 +87,7 @@ const NODES: NodeDetail[] = [
   {
     id: "core-engine",
     title: "@mcpedia/core",
-    badge: "Single Source of Truth",
+    badge: "CORE::PACKAGE",
     type: "core",
     icon: Layers,
     desc: "Unified business logic layer shared across Web, MCP Server, REST API, and Background Workers.",
@@ -109,10 +106,10 @@ const NODES: NodeDetail[] = [
   {
     id: "search-engine",
     title: "Multi-Modal Search Engine",
-    badge: "RRF Algorithm",
+    badge: "SEARCH::RRF",
     type: "core",
     icon: Search,
-    desc: "Reciprocal Rank Fusion uniting Postgres Full-Text Search tsvectors with OpenAI/OpenRouter vector embeddings.",
+    desc: "Reciprocal Rank Fusion uniting Postgres Full-Text Search tsvectors with vector embeddings.",
     metrics: [
       { label: "FTS Algorithm", value: "tsvector + GIN" },
       { label: "Vector Search", value: "Cosine Similarity" },
@@ -128,7 +125,7 @@ const NODES: NodeDetail[] = [
   {
     id: "postgres-db",
     title: "PostgreSQL 16 + pgvector",
-    badge: "Primary Storage",
+    badge: "DB::POSTGRES",
     type: "storage",
     icon: Database,
     desc: "ACID-compliant relational database storing document bodies, revision trees, vector embeddings, and full-text indexes.",
@@ -153,38 +150,38 @@ export default function InteractiveTopology() {
   const ActiveIcon = activeNode.icon;
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-sm">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-xs">
       {/* Header Bar */}
-      <div className="p-5 sm:p-6 border-b border-[var(--border-color)] bg-[var(--bg-elevated)]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 border-b border-[var(--border-color)] bg-[var(--bg-elevated)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-              Interactive System Topology
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
+              Architecture Schematic
             </span>
           </div>
-          <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
-            How MCPedia Unifies Humans & AI Agents
+          <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
+            System Topology: Single Core Architecture
           </h3>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)] px-2.5 py-1 rounded-md">
-            Click any node below to inspect
+          <span className="text-[11px] font-mono text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)] px-2 py-1 rounded">
+            Click nodes to inspect
           </span>
         </div>
       </div>
 
-      {/* Grid Layout: Visual Interactive Map & Inspector */}
+      {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12">
         {/* Visual Map Column (Left) */}
-        <div className="lg:col-span-7 p-6 border-b lg:border-b-0 lg:border-r border-[var(--border-color)] bg-[var(--bg-app)]/50 flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-7 p-5 border-b lg:border-b-0 lg:border-r border-[var(--border-color)] bg-[var(--bg-app)] flex flex-col justify-between space-y-5">
           {/* Layer 1: Clients */}
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-dim)] mb-2 block">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)] mb-2 block">
               1. Ingestion & Access Layer
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {NODES.filter((n) => n.type === "client").map((node) => {
                 const Icon = node.icon;
                 const isSelected = activeNodeId === node.id;
@@ -193,21 +190,21 @@ export default function InteractiveTopology() {
                     key={node.id}
                     onClick={() => setActiveNodeId(node.id)}
                     type="button"
-                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-[var(--brand)]/15 border-[var(--brand)] shadow-md shadow-[var(--brand)]/10 ring-1 ring-[var(--brand)]"
-                        : "bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--brand)]/50 hover:bg-[var(--bg-elevated)]"
+                        ? "bg-[var(--bg-surface)] border-[var(--text-primary)] shadow-xs ring-1 ring-[var(--text-primary)]"
+                        : "bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--text-muted)]"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`p-2 rounded-lg ${isSelected ? "bg-[var(--brand)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-secondary)]"}`}>
-                        <Icon className="w-4 h-4" />
+                      <div className={`p-1.5 rounded ${isSelected ? "bg-[var(--brand)] text-[var(--brand-fg)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>
+                        <Icon className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-color)]">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-color)]">
                         {node.badge}
                       </span>
                     </div>
-                    <div className="font-semibold text-sm text-[var(--text-primary)]">{node.title}</div>
+                    <div className="font-semibold text-xs text-[var(--text-primary)]">{node.title}</div>
                   </button>
                 );
               })}
@@ -216,17 +213,17 @@ export default function InteractiveTopology() {
 
           {/* Flow Connector Arrow */}
           <div className="flex justify-center text-[var(--text-dim)]">
-            <span className="text-xs font-mono px-3 py-0.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-color)]">
-              ↓ Secure Protocol & Gateway
+            <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-color)]">
+              ↓ Protocol Gateway
             </span>
           </div>
 
           {/* Layer 2: Protocol & Core Services */}
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-dim)] mb-2 block">
-              2. Gateway & Intelligence Core
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)] mb-2 block">
+              2. Core Engine & Protocol Layer
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {NODES.filter((n) => n.type === "protocol" || n.type === "core").map((node) => {
                 const Icon = node.icon;
                 const isSelected = activeNodeId === node.id;
@@ -235,18 +232,18 @@ export default function InteractiveTopology() {
                     key={node.id}
                     onClick={() => setActiveNodeId(node.id)}
                     type="button"
-                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-[var(--brand)]/15 border-[var(--brand)] shadow-md shadow-[var(--brand)]/10 ring-1 ring-[var(--brand)]"
-                        : "bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--brand)]/50 hover:bg-[var(--bg-elevated)]"
+                        ? "bg-[var(--bg-surface)] border-[var(--text-primary)] shadow-xs ring-1 ring-[var(--text-primary)]"
+                        : "bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--text-muted)]"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`p-2 rounded-lg ${isSelected ? "bg-[var(--brand)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-secondary)]"}`}>
-                        <Icon className="w-4 h-4" />
+                      <div className={`p-1.5 rounded ${isSelected ? "bg-[var(--brand)] text-[var(--brand-fg)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>
+                        <Icon className="w-3.5 h-3.5" />
                       </div>
                     </div>
-                    <div className="font-semibold text-xs text-[var(--text-primary)] leading-tight mb-1 truncate">
+                    <div className="font-semibold text-xs text-[var(--text-primary)] leading-tight mb-0.5 truncate">
                       {node.title}
                     </div>
                     <div className="text-[10px] text-[var(--text-muted)] font-mono truncate">
@@ -260,15 +257,15 @@ export default function InteractiveTopology() {
 
           {/* Flow Connector Arrow */}
           <div className="flex justify-center text-[var(--text-dim)]">
-            <span className="text-xs font-mono px-3 py-0.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-color)]">
-              ↓ Persistent Layer (ACID + Vectors)
+            <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-color)]">
+              ↓ Persistent Storage Layer
             </span>
           </div>
 
-          {/* Layer 3: Database & Vector Storage */}
+          {/* Layer 3: Storage */}
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-dim)] mb-2 block">
-              3. Source of Truth Storage
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)] mb-2 block">
+              3. Database (Source of Truth)
             </span>
             {NODES.filter((n) => n.type === "storage").map((node) => {
               const Icon = node.icon;
@@ -278,23 +275,23 @@ export default function InteractiveTopology() {
                   key={node.id}
                   onClick={() => setActiveNodeId(node.id)}
                   type="button"
-                  className={`w-full p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`w-full p-3 rounded-lg border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-[var(--brand)]/15 border-[var(--brand)] shadow-md shadow-[var(--brand)]/10 ring-1 ring-[var(--brand)]"
-                      : "bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--brand)]/50 hover:bg-[var(--bg-elevated)]"
+                      ? "bg-[var(--bg-surface)] border-[var(--text-primary)] shadow-xs ring-1 ring-[var(--text-primary)]"
+                      : "bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--text-muted)]"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${isSelected ? "bg-[var(--brand)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-secondary)]"}`}>
+                      <div className={`p-1.5 rounded ${isSelected ? "bg-[var(--brand)] text-[var(--brand-fg)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="font-semibold text-sm text-[var(--text-primary)]">{node.title}</div>
-                        <div className="text-xs text-[var(--text-muted)]">Source of truth for all content & embeddings</div>
+                        <div className="font-semibold text-xs text-[var(--text-primary)]">{node.title}</div>
+                        <div className="text-[11px] text-[var(--text-muted)]">Source of truth for all content & embeddings</div>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-color)]">
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-color)]">
                       {node.badge}
                     </span>
                   </div>
@@ -305,40 +302,40 @@ export default function InteractiveTopology() {
         </div>
 
         {/* Node Inspector Details Column (Right) */}
-        <div className="lg:col-span-5 p-6 bg-[var(--bg-surface)] flex flex-col justify-between space-y-6 animate-fade-in">
+        <div className="lg:col-span-5 p-5 bg-[var(--bg-surface)] flex flex-col justify-between space-y-5 animate-fade-in">
           <div>
             {/* Inspector Header */}
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[var(--brand)]/15 border border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)] flex items-center justify-center">
-                  <ActiveIcon className="w-5 h-5" />
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-primary)] flex items-center justify-center">
+                  <ActiveIcon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-[var(--text-primary)]">{activeNode.title}</h4>
-                  <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)]">
+                  <h4 className="text-sm font-bold text-[var(--text-primary)]">{activeNode.title}</h4>
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
                     {activeNode.badge}
                   </span>
                 </div>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed mb-6">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-5">
               {activeNode.desc}
             </p>
 
             {/* Telemetry Metrics */}
-            <div className="mb-6">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-dim)] font-mono mb-2.5 block">
-                Telemetry & Architecture
+            <div className="mb-5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] font-mono mb-2 block">
+                Specifications
               </span>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {activeNode.metrics.map((m) => (
                   <div
                     key={m.label}
-                    className="flex items-center justify-between p-2.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-lg text-xs"
+                    className="flex items-center justify-between p-2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-xs"
                   >
-                    <span className="text-[var(--text-muted)]">{m.label}</span>
-                    <span className="font-mono font-medium text-[var(--text-primary)]">{m.value}</span>
+                    <span className="text-[var(--text-muted)] text-[11px]">{m.label}</span>
+                    <span className="font-mono font-medium text-[var(--text-primary)] text-[11px]">{m.value}</span>
                   </div>
                 ))}
               </div>
@@ -346,13 +343,13 @@ export default function InteractiveTopology() {
 
             {/* Key Capabilities */}
             <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-dim)] font-mono mb-2.5 block">
-                Key Capabilities
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] font-mono mb-2 block">
+                Capabilities
               </span>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {activeNode.features.map((feat, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-emerald-500 shrink-0 font-mono text-[11px]">✓</span>
                     <span>{feat}</span>
                   </li>
                 ))}
@@ -362,12 +359,12 @@ export default function InteractiveTopology() {
 
           {/* Link to Documentation */}
           {activeNode.docLink && (
-            <div className="pt-4 border-t border-[var(--border-color)]">
+            <div className="pt-3 border-t border-[var(--border-color)]">
               <Link
                 href={activeNode.docLink}
-                className="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-xs font-semibold text-[var(--text-primary)] rounded-xl transition-all shadow-xs group"
+                className="inline-flex items-center justify-center gap-1.5 w-full py-2 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-xs font-semibold text-[var(--text-primary)] rounded-lg transition-colors group"
               >
-                <span>Read technical writeup in {activeNode.title}</span>
+                <span>Read documentation</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>

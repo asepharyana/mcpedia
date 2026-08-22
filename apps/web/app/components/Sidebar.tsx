@@ -12,7 +12,6 @@ import {
   Search,
   X,
   Plus,
-  Compass,
 } from "lucide-react";
 
 interface Doc {
@@ -114,11 +113,11 @@ function TreeNodeItem({
   return (
     <li className={`select-none ${depth > 0 ? "ml-3.5 pl-2 border-l border-[var(--border-color)]" : ""}`}>
       <div
-        className={`group flex items-center justify-between gap-1 text-xs py-1.5 px-2 rounded-lg transition-all ${
+        className={`group flex items-center justify-between gap-1 text-xs py-1.5 px-2 rounded-md transition-all ${
           isActive
-            ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/15 font-semibold border border-[var(--brand)]/30 shadow-xs"
+            ? "text-[var(--text-primary)] bg-[var(--bg-elevated)] font-semibold border border-[var(--border-color)] shadow-xs"
             : isParentOfActive
-              ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
+              ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]/60"
               : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
         }`}
       >
@@ -127,12 +126,12 @@ function TreeNodeItem({
           className="flex items-center gap-2 min-w-0 flex-1 py-0.5"
           title={node.title || node.name}
         >
-          <span className="shrink-0 text-[var(--text-dim)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors">
+          <span className="shrink-0 text-[var(--text-dim)] group-hover:text-[var(--text-primary)] transition-colors">
             {isFolder ? (
               isCollapsed ? (
                 <Folder className="w-3.5 h-3.5" />
               ) : (
-                <FolderOpen className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" />
+                <FolderOpen className="w-3.5 h-3.5 text-[var(--text-primary)]" />
               )
             ) : (
               <FileText className="w-3.5 h-3.5" />
@@ -153,7 +152,7 @@ function TreeNodeItem({
                 e.stopPropagation();
                 toggleCollapse(node.slug);
               }}
-              className="p-1 text-[var(--text-dim)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--bg-elevated-hover)] transition-transform"
+              className="p-1 text-[var(--text-dim)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--bg-elevated-hover)] transition-transform cursor-pointer"
               aria-label={isCollapsed ? "Expand folder" : "Collapse folder"}
             >
               <ChevronRight
@@ -233,14 +232,14 @@ export default function Sidebar() {
             type="text"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Filter knowledge tree..."
-            className="w-full pl-8 pr-7 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition-all"
+            placeholder="Filter index..."
+            className="w-full pl-8 pr-7 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-md text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--text-primary)] transition-all"
           />
           <Search className="w-3.5 h-3.5 text-[var(--text-dim)] absolute left-2.5 top-2.5 pointer-events-none" />
           {filterText && (
             <button
               onClick={() => setFilterText("")}
-              className="absolute right-2 top-2 p-0.5 text-[var(--text-dim)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--bg-elevated)]"
+              className="absolute right-2 top-2 p-0.5 text-[var(--text-dim)] hover:text-[var(--text-primary)] rounded"
               aria-label="Clear filter"
             >
               <X className="w-3.5 h-3.5" />
@@ -250,7 +249,7 @@ export default function Sidebar() {
       </div>
 
       {/* Summary count */}
-      <div className="flex items-center justify-between px-1 mb-2 text-[10px] text-[var(--text-dim)] font-mono uppercase tracking-wider">
+      <div className="flex items-center justify-between px-1 mb-2 text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-wider">
         <span>Knowledge Index</span>
         <span>{filteredDocs.length} items</span>
       </div>
@@ -268,9 +267,9 @@ export default function Sidebar() {
             <div key={id} className="border-b border-[var(--border-color)] pb-3 last:border-0">
               <Link
                 href={`/${id}`}
-                className={`flex items-center justify-between gap-1.5 px-2 py-1.5 mb-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${
+                className={`flex items-center justify-between gap-1.5 px-2 py-1 mb-1 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors ${
                   isSectionActive
-                    ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10"
+                    ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                 }`}
               >
@@ -278,7 +277,7 @@ export default function Sidebar() {
                   <span className="text-xs">{icon}</span>
                   <span>{label}</span>
                 </div>
-                <span className="text-[10px] text-[var(--text-dim)] font-normal font-mono bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">
+                <span className="text-[10px] text-[var(--text-muted)] font-normal font-mono bg-[var(--bg-surface)] px-1.5 py-0.2 rounded border border-[var(--border-color)]">
                   {sectionDocs.length}
                 </span>
               </Link>
@@ -300,7 +299,7 @@ export default function Sidebar() {
         })}
 
         {filteredDocs.length === 0 && (
-          <div className="text-center py-8 text-xs text-[var(--text-dim)]">
+          <div className="text-center py-8 text-xs text-[var(--text-dim)] font-mono">
             No matching documents
           </div>
         )}
@@ -310,10 +309,10 @@ export default function Sidebar() {
       <div className="pt-3 border-t border-[var(--border-color)] mt-auto">
         <Link
           href="/create"
-          className="flex items-center justify-center gap-2 w-full py-2 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-all font-medium shadow-xs group"
+          className="flex items-center justify-center gap-2 w-full py-2 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] text-[var(--text-primary)] rounded-md transition-all font-medium shadow-xs"
         >
-          <Plus className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)] group-hover:scale-110 transition-transform" />
-          <span>Create New Document</span>
+          <Plus className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+          <span>Create Document</span>
         </Link>
       </div>
     </nav>

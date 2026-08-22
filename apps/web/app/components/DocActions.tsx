@@ -8,7 +8,6 @@ import {
   Share2,
   FileDown,
   Edit3,
-  ExternalLink,
 } from "lucide-react";
 
 interface DocActionsProps {
@@ -39,13 +38,13 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
       <button
         onClick={handleCopyMarkdown}
         type="button"
-        title="Copy raw markdown content to clipboard"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-xs cursor-pointer"
+        title="Copy raw markdown content"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-colors shadow-xs cursor-pointer"
       >
         {copiedMd ? (
           <>
             <Check className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-emerald-500 font-medium">Copied MD</span>
+            <span className="text-emerald-500 font-medium">Copied</span>
           </>
         ) : (
           <>
@@ -60,12 +59,12 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
         onClick={handleCopyLink}
         type="button"
         title="Copy link to document"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-xs cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-colors shadow-xs cursor-pointer"
       >
         {copiedLink ? (
           <>
             <Check className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-emerald-500 font-medium">Copied Link</span>
+            <span className="text-emerald-500 font-medium">Copied</span>
           </>
         ) : (
           <>
@@ -78,17 +77,17 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
       {/* Export PDF */}
       <Link
         href={`/${slug}/export`}
-        title="Export document or parent folder to publication-grade PDF"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-xs"
+        title="Export document to publication-grade PDF"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-colors shadow-xs"
       >
         <FileDown className="w-3.5 h-3.5" />
-        <span>Export PDF</span>
+        <span>PDF</span>
       </Link>
 
       {/* Edit Link */}
       <Link
         href={canEdit ? `/${slug}?edit=1` : `/login?redirect=/${slug}`}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20 border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 text-[var(--brand)] dark:text-[var(--accent)] rounded-lg transition-all font-medium shadow-xs"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-md transition-colors font-medium shadow-xs"
       >
         <Edit3 className="w-3.5 h-3.5" />
         <span>Edit</span>

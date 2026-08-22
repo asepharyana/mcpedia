@@ -6,16 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { DEFAULT_SECTIONS, type SectionConfig } from "@mcpedia/config/sections";
 import {
   Search,
-  Sparkles,
-  Zap,
-  Cpu,
-  Layers,
-  FileText,
-  Clock,
-  ArrowRight,
-  Filter,
   X,
-  Compass,
 } from "lucide-react";
 
 interface DocHit {
@@ -100,21 +91,16 @@ function SearchContent() {
     <div className="max-w-4xl space-y-8">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="p-2 rounded-xl bg-[var(--brand)]/15 text-[var(--brand)] dark:text-[var(--accent)]">
-            <Search className="w-5 h-5" />
-          </span>
-          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
-            Multi-Modal Search Console
-          </h1>
-        </div>
-        <p className="text-xs sm:text-sm text-[var(--text-muted)]">
-          Search across documentation, CTF writeups, and research notes using PostgreSQL Full-Text Search, Cosine Embeddings, or Reciprocal Rank Fusion.
+        <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
+          Multi-Modal Search Console
+        </h1>
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+          Query across knowledge documents and CTF writeups using PostgreSQL Full-Text Search (tsvector), Cosine Vector Embeddings, or Reciprocal Rank Fusion (RRF).
         </p>
       </div>
 
       {/* Search Box & Controls */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
         {/* Search Input Bar */}
         <div className="relative">
           <input
@@ -122,17 +108,17 @@ function SearchContent() {
             value={query}
             onChange={handleChange}
             placeholder="Search by keywords, challenge names, tools, concepts..."
-            className="w-full pl-12 pr-10 py-3.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20 text-base transition-all"
+            className="w-full pl-10 pr-9 py-3 bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--text-primary)] text-sm transition-all"
             autoFocus
           />
-          <Search className="w-5 h-5 text-[var(--brand)] dark:text-[var(--accent)] absolute left-4 top-4 pointer-events-none" />
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-3.5 pointer-events-none" />
           {query && (
             <button
               onClick={() => {
                 setQuery("");
                 setResults([]);
               }}
-              className="absolute right-3.5 top-3.5 p-1 text-[var(--text-dim)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-surface)]"
+              className="absolute right-3 top-3 p-0.5 text-[var(--text-dim)] hover:text-[var(--text-primary)] rounded"
               aria-label="Clear query"
             >
               <X className="w-4 h-4" />
@@ -141,23 +127,23 @@ function SearchContent() {
         </div>
 
         {/* Algorithm & Filter Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-[var(--border-color)] text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-[var(--border-color)] text-xs">
           {/* Mode Selector */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[var(--text-dim)] font-mono uppercase font-semibold mr-1">Algorithm:</span>
+            <span className="text-[var(--text-dim)] font-mono uppercase text-[10px] mr-1">Algorithm:</span>
             {[
-              { id: "hybrid", label: "⚡ Hybrid (RRF)", desc: "Reciprocal Rank Fusion (FTS + Vector)" },
-              { id: "keyword", label: "🔍 Keyword (FTS)", desc: "PostgreSQL GIN tsvector" },
-              { id: "semantic", label: "🧠 Semantic Vector", desc: "Cosine Similarity over Embeddings" },
+              { id: "hybrid", label: "Hybrid (RRF)", desc: "Reciprocal Rank Fusion (FTS + Vector)" },
+              { id: "keyword", label: "Keyword (FTS)", desc: "PostgreSQL GIN tsvector" },
+              { id: "semantic", label: "Semantic Vector", desc: "Cosine Similarity Embeddings" },
             ].map((m) => (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => handleModeChange(m.id as SearchMode)}
                 title={m.desc}
-                className={`px-3 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md border text-xs font-medium transition-all cursor-pointer ${
                   mode === m.id
-                    ? "bg-[var(--brand)] border-[var(--brand)] text-white shadow-sm shadow-[var(--brand)]/25"
+                    ? "bg-[var(--brand)] border-[var(--brand)] text-[var(--brand-fg)] font-semibold shadow-xs"
                     : "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
@@ -171,9 +157,9 @@ function SearchContent() {
             <button
               type="button"
               onClick={() => setSelectedSection("all")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                 selectedSection === "all"
-                  ? "bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] font-bold"
+                  ? "bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] font-semibold"
                   : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
               }`}
             >
@@ -184,9 +170,9 @@ function SearchContent() {
                 key={s.id}
                 type="button"
                 onClick={() => setSelectedSection(s.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                   selectedSection === s.id
-                    ? "bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] font-bold"
+                    ? "bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] font-semibold"
                     : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
                 }`}
               >
@@ -199,19 +185,16 @@ function SearchContent() {
 
       {/* Loading Spinner */}
       {loading && (
-        <div className="flex items-center justify-center gap-3 py-12 text-[var(--text-muted)] text-sm animate-fade-in">
-          <div className="w-5 h-5 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
-          <span>Searching knowledge vector space...</span>
+        <div className="flex items-center justify-center gap-3 py-10 text-[var(--text-muted)] text-xs font-mono">
+          <div className="w-4 h-4 border-2 border-[var(--text-muted)] border-t-transparent rounded-full animate-spin" />
+          <span>SEARCHING_VECTOR_SPACE...</span>
         </div>
       )}
 
       {/* Empty State */}
       {!loading && query && filteredResults.length === 0 && (
-        <div className="text-center py-16 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl shadow-sm space-y-3 animate-fade-in">
-          <div className="p-3 w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] text-[var(--text-dim)] mx-auto flex items-center justify-center">
-            <Search className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-[var(--text-primary)]">No matching documents found</h3>
+        <div className="text-center py-12 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-xs space-y-2 animate-fade-in">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">No matching documents found</h3>
           <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
             Try switching algorithm mode to <strong>Hybrid</strong> or <strong>Semantic</strong>, or search with different keywords.
           </p>
@@ -220,8 +203,8 @@ function SearchContent() {
 
       {/* Initial Suggestions */}
       {!loading && !query && (
-        <div className="p-6 sm:p-8 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl space-y-4 shadow-sm">
-          <p className="text-xs font-mono uppercase tracking-wider text-[var(--text-dim)]">Popular search queries:</p>
+        <div className="p-6 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl space-y-3 shadow-xs">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">Popular Queries:</p>
           <div className="flex justify-center flex-wrap gap-2 text-xs">
             {[
               "stack alignment",
@@ -238,7 +221,7 @@ function SearchContent() {
                   setQuery(term);
                   handleSearch(term, mode);
                 }}
-                className="px-3.5 py-1.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all font-mono cursor-pointer"
+                className="px-3 py-1 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all font-mono text-xs cursor-pointer"
               >
                 {term}
               </button>
@@ -249,40 +232,40 @@ function SearchContent() {
 
       {/* Results List */}
       {!loading && filteredResults.length > 0 && (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
           <div className="flex items-center justify-between text-xs text-[var(--text-dim)] font-mono">
             <span>Found {filteredResults.length} result{filteredResults.length !== 1 ? "s" : ""}</span>
             <span>Ranked by {mode} score</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {filteredResults.map((r) => (
               <Link
                 key={r.slug}
                 href={`/${r.slug}`}
-                className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl p-5 transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-xl p-4.5 transition-all shadow-xs"
               >
-                <div className="flex items-center justify-between gap-3 mb-2.5">
+                <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--brand)]/10 border border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)] uppercase font-bold">
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] uppercase font-semibold">
                       {r.section}
                     </span>
                     <span className="text-xs text-[var(--text-dim)] font-mono truncate">
                       /{r.slug}
                     </span>
                   </div>
-                  <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] border border-[var(--border-color)] px-2.5 py-0.5 rounded-md font-semibold">
-                    Score: {r.score.toFixed(3)}
+                  <span className="text-xs font-mono text-[var(--text-dim)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded">
+                    {r.score.toFixed(3)}
                   </span>
                 </div>
 
-                <h2 className="text-base font-bold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors mb-2">
+                <h2 className="text-sm font-semibold text-[var(--text-primary)] group-hover:underline mb-1.5">
                   {r.title}
                 </h2>
 
                 {r.snippet && (
                   <p
-                    className="text-xs text-[var(--text-muted)] leading-relaxed line-clamp-2 [&>mark]:bg-[var(--brand)]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:px-1 [&>mark]:rounded [&>mark]:font-semibold"
+                    className="text-xs text-[var(--text-muted)] leading-relaxed line-clamp-2 [&>mark]:bg-[var(--bg-elevated-hover)] [&>mark]:text-[var(--text-primary)] [&>mark]:font-semibold"
                     dangerouslySetInnerHTML={{ __html: r.snippet }}
                   />
                 )}

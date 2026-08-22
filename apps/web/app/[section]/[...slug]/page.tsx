@@ -15,19 +15,16 @@ import {
   Folder,
   FileText,
   Clock,
-  User,
-  Tag,
   History,
   FileDown,
   ArrowLeft,
-  BookOpen,
   Sparkles,
-  ShieldCheck,
   CheckCircle2,
   XCircle,
   Target,
   Trophy,
   Zap,
+  Tag,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +60,7 @@ function CustomFieldBadges({
   if (customEntries.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[var(--border-color)]">
+    <div className="flex flex-wrap items-center gap-2 mt-4 pt-3.5 border-t border-[var(--border-color)]">
       {customEntries.map(([key, value]) => {
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
         let colorClass = "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)]";
@@ -71,36 +68,36 @@ function CustomFieldBadges({
         let IconComponent = Tag;
 
         if (typeof value === "number") {
-          colorClass = "bg-[var(--brand)]/10 border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)]";
+          colorClass = "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-primary)] font-semibold";
           IconComponent = Target;
           displayValue = `${value} pts`;
         } else if (typeof value === "boolean") {
           colorClass = value
-            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-            : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400";
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold"
+            : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold";
           IconComponent = value ? CheckCircle2 : XCircle;
           displayValue = value ? "Solved" : "Pending";
         } else if (Array.isArray(value)) {
-          colorClass = "bg-[var(--brand)]/10 border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)]";
+          colorClass = "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)]";
           IconComponent = Folder;
           displayValue = value.join(", ");
         } else {
           const v = String(value).toLowerCase();
           if (/^(easy|simple|beginner)/i.test(v)) {
-            colorClass = "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400";
+            colorClass = "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold";
             displayValue = "Easy";
           } else if (/^(medium|intermediate)/i.test(v)) {
-            colorClass = "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400";
+            colorClass = "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold";
             displayValue = "Medium";
           } else if (/^(hard|expert|advanced)/i.test(v)) {
-            colorClass = "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400";
+            colorClass = "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold";
             displayValue = "Hard";
           } else if (/^(pwn|web|crypto|misc|forensic|reverse|binary)/i.test(v)) {
-            colorClass = "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-300";
+            colorClass = "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-primary)] font-bold";
             IconComponent = Zap;
             displayValue = v.toUpperCase();
           } else if (/ctf|def.?con|event/i.test(v)) {
-            colorClass = "bg-[var(--brand)]/10 border-[var(--brand)]/30 text-[var(--brand)] dark:text-[var(--accent)]";
+            colorClass = "bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-primary)]";
             IconComponent = Trophy;
             displayValue = String(value);
           } else {
@@ -111,11 +108,11 @@ function CustomFieldBadges({
         return (
           <span
             key={key}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 border rounded-lg text-xs font-mono transition-colors ${colorClass}`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-md text-xs font-mono transition-colors ${colorClass}`}
           >
             <IconComponent className="w-3.5 h-3.5 opacity-80" />
             <span className="text-[var(--text-muted)] font-sans">{label}:</span>
-            <span className="font-semibold">{displayValue}</span>
+            <span>{displayValue}</span>
           </span>
         );
       })}
@@ -187,33 +184,33 @@ function FolderIndexPage({
       </nav>
 
       {/* Header Card */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-sm">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-color)] flex items-center justify-center text-[var(--brand)] dark:text-[var(--accent)] shadow-inner">
-              <Folder className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)]">
+              <Folder className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+              <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 {folderName}
               </h1>
-              <p className="text-xs text-[var(--text-muted)] mt-1 font-mono">
-                Directory: <code className="text-[var(--brand)] dark:text-[var(--accent)] font-semibold">{section}/{slug}</code>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
+                Directory: <code>{section}/{slug}</code>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] border border-[var(--border-color)] px-3 py-1.5 rounded-lg">
+            <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] border border-[var(--border-color)] px-2.5 py-1 rounded">
               {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
             </span>
             <Link
               href={`/${section}/${slug}/export`}
-              className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3.5 py-1.5 rounded-lg font-semibold transition-all shadow-md shadow-[var(--brand)]/20"
+              className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)] hover:opacity-90 text-[var(--brand-fg)] px-3 py-1.5 rounded font-semibold transition-all shadow-xs"
               title={`Export all ${folderName} documents as a single PDF report`}
             >
               <FileDown className="w-3.5 h-3.5" />
-              <span>Export PDF Report</span>
+              <span>Export PDF</span>
             </Link>
           </div>
         </div>
@@ -222,8 +219,8 @@ function FolderIndexPage({
       {/* Subfolders Grid */}
       {folders.length > 0 && (
         <div>
-          <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase mb-3.5 tracking-wider font-mono flex items-center gap-2">
-            <Folder className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" />
+          <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase mb-3 tracking-wider font-mono flex items-center gap-2">
+            <Folder className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             <span>Subfolders ({folders.length})</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -231,16 +228,14 @@ function FolderIndexPage({
               <Link
                 key={folder}
                 href={`/${section}/${slug}/${folder}`.replace(/\/+/g, "/")}
-                className="group flex items-center gap-3.5 p-4 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                className="group flex items-center gap-3 p-3.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-lg transition-colors shadow-xs"
               >
-                <div className="p-2 rounded-xl bg-[var(--bg-elevated)] text-[var(--brand)] dark:text-[var(--accent)]">
-                  <Folder className="w-5 h-5" />
-                </div>
+                <Folder className="w-4 h-4 text-[var(--text-muted)]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
+                  <div className="text-xs font-semibold text-[var(--text-primary)] group-hover:underline truncate">
                     {folder.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
                   </div>
-                  <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                  <div className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5">
                     {info.docCount} document{info.docCount !== 1 ? "s" : ""}
                   </div>
                 </div>
@@ -253,31 +248,29 @@ function FolderIndexPage({
       {/* Documents List */}
       {immediateDocs.length > 0 && (
         <div>
-          <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase mb-3.5 tracking-wider font-mono flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" />
+          <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase mb-3 tracking-wider font-mono flex items-center gap-2">
+            <FileText className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             <span>Documents ({immediateDocs.length})</span>
           </h2>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {immediateDocs.map((doc) => (
               <Link
                 key={doc.slug}
                 href={`/${doc.slug}`}
-                className="group flex items-center justify-between gap-4 p-4 sm:p-5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                className="group flex items-center justify-between gap-4 p-4 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-lg transition-colors shadow-xs"
               >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="p-2 rounded-xl bg-[var(--bg-elevated)] text-[var(--text-dim)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors">
-                    <FileText className="w-4 h-4" />
-                  </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
+                    <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] group-hover:underline truncate">
                       {doc.title}
                     </div>
                     {doc.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
+                      <div className="flex flex-wrap gap-1 mt-1.5">
                         {doc.tags.slice(0, 4).map((t) => (
                           <span
                             key={t}
-                            className="text-[10px] px-2 py-0.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-md text-[var(--text-muted)] font-mono"
+                            className="text-[10px] px-1.5 py-0.2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)] font-mono"
                           >
                             #{t}
                           </span>
@@ -303,8 +296,8 @@ function FolderIndexPage({
       )}
 
       {folders.length === 0 && immediateDocs.length === 0 && (
-        <div className="text-center py-16 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-surface)]">
-          <p className="text-sm text-[var(--text-muted)]">No documents found in this directory.</p>
+        <div className="text-center py-12 border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
+          <p className="text-sm text-[var(--text-muted)]">No documents in this directory.</p>
         </div>
       )}
     </div>
@@ -316,7 +309,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
   const searchParamsObj = await searchParams;
   const { edit, path: queryPath, sort } = searchParamsObj;
 
-  // Handle direct export views: /[section]/export, /[section]/[...folder]/export, or /export/pdf
+  // Handle direct export views
   if (section === "export" || (slug && slug[slug.length - 1] === "export")) {
     const isTrailingExport = slug && slug[slug.length - 1] === "export";
     const targetSlug = isTrailingExport ? slug.slice(0, -1) : slug;
@@ -363,7 +356,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to document</span>
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Edit: {doc.title}
         </h1>
         <DocForm
@@ -399,7 +392,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
       {/* Main Content Column */}
       <article className="flex-1 min-w-0">
         {/* Breadcrumbs Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-4 flex-wrap">
+        <nav className="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-4 flex-wrap font-mono">
           <Link href="/" className="hover:text-[var(--text-primary)] transition-colors">
             MCPedia
           </Link>
@@ -414,7 +407,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                 <span>/</span>
                 <Link
                   href={`/${crumbPath}`}
-                  className={isLast ? "text-[var(--text-primary)] font-semibold" : "hover:text-[var(--text-primary)] transition-colors"}
+                  className={isLast ? "text-[var(--text-primary)] font-semibold font-sans" : "hover:text-[var(--text-primary)] transition-colors font-sans"}
                 >
                   {label}
                 </Link>
@@ -424,17 +417,17 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
         </nav>
 
         {/* Hero Metadata Card */}
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 mb-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mb-5">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 sm:p-7 mb-8 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--brand)]/15 text-[var(--brand)] dark:text-[var(--accent)] border border-[var(--brand)]/30 uppercase">
+              <div className="flex items-center gap-2 mb-2 flex-wrap text-xs">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-primary)] uppercase">
                   <span>{sectionInfo.icon}</span>
                   <span>{sectionInfo.label}</span>
                 </span>
                 <span className="text-xs text-[var(--text-dim)]">·</span>
-                <span className="text-xs text-[var(--text-muted)] font-medium">
-                  {doc.type.charAt(0).toUpperCase() + doc.type.slice(1)}
+                <span className="text-xs text-[var(--text-muted)] font-mono">
+                  {doc.type}
                 </span>
                 <span className="text-xs text-[var(--text-dim)]">·</span>
                 <span className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-1">
@@ -443,31 +436,30 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
                 {doc.title}
               </h1>
             </div>
 
-            {/* Quick Actions Deck */}
+            {/* Quick Actions */}
             <DocActions slug={doc.slug} body={doc.body} canEdit={canEdit} />
           </div>
 
-          {/* Author, Date, and Tags */}
-          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] pt-4 border-t border-[var(--border-color)]">
+          {/* Author, Date, Tags */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] pt-3.5 border-t border-[var(--border-color)]">
             {doc.author && (
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold">
+                <div className="w-4 h-4 rounded bg-[var(--brand)] text-[var(--brand-fg)] flex items-center justify-center text-[10px] font-bold font-mono">
                   {doc.author.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-[var(--text-secondary)] font-medium">{doc.author}</span>
                 <span className="text-[var(--text-dim)]">·</span>
               </div>
             )}
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3 text-[var(--text-dim)]" />
+            <span className="flex items-center gap-1 font-mono text-[11px]">
               <span>
                 Updated {new Date(doc.updatedAt).toLocaleDateString(undefined, {
-                  month: "long",
+                  month: "short",
                   day: "numeric",
                   year: "numeric",
                 })}
@@ -481,7 +473,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                   {doc.tags.map((t) => (
                     <span
                       key={t}
-                      className="px-2 py-0.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-md text-[var(--text-muted)] text-[11px] font-mono"
+                      className="px-1.5 py-0.2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)] text-[10px] font-mono"
                     >
                       #{t}
                     </span>
@@ -495,8 +487,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           <CustomFieldBadges doc={{ ...doc }} standardKeys={STANDARD_KEYS} />
         </div>
 
-        {/* Mobile TOC (rendered inline on smaller screens) */}
-        <div className="xl:hidden mb-6 p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl shadow-xs">
+        {/* Mobile TOC */}
+        <div className="xl:hidden mb-6 p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-xs">
           <TOC source={doc.body} />
         </div>
 
@@ -507,24 +499,24 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
 
         {/* Related Documents Grid */}
         {related.length > 0 && (
-          <aside className="mt-14 pt-8 border-t border-[var(--border-color)]">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
+          <aside className="mt-12 pt-8 border-t border-[var(--border-color)]">
+            <div className="flex items-center gap-2 mb-3.5">
+              <Sparkles className="w-4 h-4 text-[var(--text-muted)]" />
               <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                Related Knowledge & Writeups
+                Related Knowledge
               </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {related.map((r) => {
                 const rInfo = getSectionInfo(r.section);
                 return (
                   <Link
                     key={r.slug}
                     href={`/${r.slug}`}
-                    className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl p-5 transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                    className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-lg p-4 transition-colors shadow-xs"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-xs text-[var(--brand)] dark:text-[var(--accent)] font-mono uppercase font-semibold">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase font-semibold">
                         {rInfo.icon} {r.section}
                       </span>
                       <time className="text-[11px] text-[var(--text-dim)] font-mono">
@@ -534,7 +526,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                         })}
                       </time>
                     </div>
-                    <h3 className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors line-clamp-1 mb-1">
+                    <h3 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] group-hover:underline line-clamp-1">
                       {r.title}
                     </h3>
                   </Link>
@@ -544,12 +536,12 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           </aside>
         )}
 
-        {/* Revision History Timeline */}
+        {/* Revision History */}
         {revisions.length > 0 && (
           <aside className="mt-10 pt-8 border-t border-[var(--border-color)]">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3.5">
               <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
+                <History className="w-4 h-4 text-[var(--text-muted)]" />
                 <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
                   Revision History ({revisions.length})
                 </h2>
@@ -559,16 +551,16 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
               {revisions.map((rev) => (
                 <div
                   key={rev.id}
-                  className="flex items-center justify-between gap-3 p-3.5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-xs shadow-xs"
+                  className="flex items-center justify-between gap-3 p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg text-xs shadow-xs"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="font-mono text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 px-2 py-0.5 rounded-md border border-[var(--brand)]/30 font-bold">
+                  <div className="flex items-center gap-2 min-w-0 font-mono">
+                    <span className="text-[var(--text-primary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded border border-[var(--border-color)] font-bold text-[10px]">
                       v{rev.revisionNo}
                     </span>
-                    <span className="text-[var(--text-primary)] font-medium truncate">
+                    <span className="text-[var(--text-secondary)] font-sans truncate text-xs">
                       {rev.reason || "Updated document in PostgreSQL"}
                     </span>
-                    <span className="text-[var(--text-dim)] hidden sm:inline font-mono">
+                    <span className="text-[var(--text-dim)] hidden sm:inline text-[11px]">
                       · {new Date(rev.createdAt).toLocaleString()}
                     </span>
                   </div>
@@ -577,7 +569,7 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
                       <input type="hidden" name="id" value={rev.id} />
                       <button
                         type="submit"
-                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] px-3 py-1 rounded-lg border border-[var(--border-color)] hover:border-[var(--brand)] transition-colors font-semibold shadow-xs cursor-pointer"
+                        className="text-xs text-[var(--text-primary)] hover:text-black dark:hover:text-white bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] px-2.5 py-1 rounded border border-[var(--border-color)] transition-colors font-medium cursor-pointer"
                       >
                         Restore
                       </button>

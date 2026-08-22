@@ -10,18 +10,10 @@ import {
   Heading3,
   Code,
   Link as LinkIcon,
-  Table as TableIcon,
-  Info,
-  Lightbulb,
-  AlertTriangle,
   Plus,
   Trash2,
-  Check,
   Eye,
   Edit3,
-  FileCode,
-  Tag,
-  Folder,
   Sliders,
 } from "lucide-react";
 
@@ -127,7 +119,7 @@ export default function DocForm({
   const availableFolders = existingFolders?.[section] ?? [];
 
   const baseInputCls =
-    "w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20 transition-all";
+    "w-full px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--text-primary)] transition-colors";
 
   function addCustomField(key = "", value = "") {
     setCustomFields([...customFields, { key, value }]);
@@ -229,7 +221,7 @@ export default function DocForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       {error && (
-        <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400 text-xs sm:text-sm font-medium animate-fade-in">
+        <div className="p-3.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400 text-xs font-medium animate-fade-in">
           {error}
         </div>
       )}
@@ -244,7 +236,7 @@ export default function DocForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Exploiting Stack Alignment Issues in x86_64"
-          className={`${baseInputCls} text-base sm:text-lg font-semibold`}
+          className={`${baseInputCls} text-base font-semibold`}
           required
         />
       </div>
@@ -339,7 +331,7 @@ export default function DocForm({
               type="text"
               value={slug ?? ""}
               readOnly
-              className="w-full px-3.5 py-2.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-muted)] font-mono"
+              className="w-full px-3.5 py-2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-muted)] font-mono"
             />
           ) : (
             <input
@@ -352,7 +344,7 @@ export default function DocForm({
             />
           )}
           <p className="text-[11px] text-[var(--text-dim)] mt-1.5 font-mono">
-            Full Slug: <span className="text-[var(--brand)] dark:text-[var(--accent)] font-semibold">{effectiveSlug || section}</span>
+            Full Slug: <span className="text-[var(--text-primary)] font-semibold">{effectiveSlug || section}</span>
           </p>
         </div>
       </div>
@@ -386,26 +378,26 @@ export default function DocForm({
       </div>
 
       {/* Custom Metadata Fields */}
-      <div className="p-4 sm:p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl space-y-4 shadow-sm">
+      <div className="p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl space-y-3.5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] font-mono flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" />
-              <span>Dynamic Technical Metadata</span>
+              <Sliders className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              <span>Technical Metadata</span>
             </h3>
             <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
               Custom fields (points, difficulty, event, solved) will render as styled badges in the document hero.
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 flex-wrap">
             <span className="text-[10px] font-mono text-[var(--text-dim)] uppercase">Presets:</span>
             {PRESET_FIELDS.map((preset) => (
               <button
                 key={preset.key}
                 type="button"
                 onClick={() => addCustomField(preset.key, preset.value)}
-                className="px-2 py-0.5 text-[11px] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-colors font-mono cursor-pointer"
+                className="px-2 py-0.5 text-[10px] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded transition-colors font-mono cursor-pointer"
               >
                 +{preset.key}
               </button>
@@ -432,7 +424,7 @@ export default function DocForm({
             <button
               type="button"
               onClick={() => removeCustomField(i)}
-              className="p-2 text-rose-500 hover:text-rose-600 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
+              className="p-2 text-rose-500 hover:text-rose-600 rounded hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
               title="Remove field"
             >
               <Trash2 className="w-4 h-4" />
@@ -443,7 +435,7 @@ export default function DocForm({
         <button
           type="button"
           onClick={() => addCustomField()}
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--brand)] dark:text-[var(--accent)] hover:underline px-3 py-1.5 rounded-lg border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 bg-[var(--brand)]/5 transition-colors font-medium cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-primary)] hover:underline px-3 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] transition-colors font-medium cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add Custom Field</span>
@@ -451,17 +443,17 @@ export default function DocForm({
       </div>
 
       {/* Markdown Body Editor */}
-      <div className="border border-[var(--border-color)] rounded-2xl overflow-hidden bg-[var(--bg-surface)] shadow-sm">
+      <div className="border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-surface)] shadow-xs">
         {/* Editor Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)]/60 border-b border-[var(--border-color)] flex-wrap gap-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-color)] flex-wrap gap-2">
           {/* Tabs */}
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setActiveTab("write")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded font-semibold transition-all cursor-pointer ${
                 activeTab === "write"
-                  ? "bg-[var(--brand)] text-white shadow-xs"
+                  ? "bg-[var(--brand)] text-[var(--brand-fg)] shadow-xs"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -471,14 +463,14 @@ export default function DocForm({
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded font-semibold transition-all cursor-pointer ${
                 activeTab === "preview"
-                  ? "bg-[var(--brand)] text-white shadow-xs"
+                  ? "bg-[var(--brand)] text-[var(--brand-fg)] shadow-xs"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Live Preview</span>
+              <span>Preview</span>
             </button>
           </div>
 
@@ -488,23 +480,23 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("**", "**")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
-                title="Bold (**text**)"
+                className="p-1 hover:bg-[var(--bg-surface)] rounded hover:text-[var(--text-primary)]"
+                title="Bold"
               >
                 <Bold className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("*", "*")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
-                title="Italic (*text*)"
+                className="p-1 hover:bg-[var(--bg-surface)] rounded hover:text-[var(--text-primary)]"
+                title="Italic"
               >
                 <Italic className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("## ")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                className="p-1 hover:bg-[var(--bg-surface)] rounded hover:text-[var(--text-primary)]"
                 title="Heading 2"
               >
                 <Heading2 className="w-3.5 h-3.5" />
@@ -512,7 +504,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("### ")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                className="p-1 hover:bg-[var(--bg-surface)] rounded hover:text-[var(--text-primary)]"
                 title="Heading 3"
               >
                 <Heading3 className="w-3.5 h-3.5" />
@@ -520,7 +512,7 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("```\n", "\n```")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                className="p-1 hover:bg-[var(--bg-surface)] rounded hover:text-[var(--text-primary)]"
                 title="Code Block"
               >
                 <Code className="w-3.5 h-3.5" />
@@ -528,26 +520,10 @@ export default function DocForm({
               <button
                 type="button"
                 onClick={() => insertMarkdown("[", "](https://)")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                className="p-1 hover:bg-[var(--bg-surface)] rounded hover:text-[var(--text-primary)]"
                 title="Link"
               >
                 <LinkIcon className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown("> [!NOTE]\n> ")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)] text-indigo-500"
-                title="Note Callout"
-              >
-                <Info className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertMarkdown("> [!TIP]\n> ")}
-                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)] text-emerald-500"
-                title="Tip Callout"
-              >
-                <Lightbulb className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -559,7 +535,7 @@ export default function DocForm({
             ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full h-96 p-4 sm:p-5 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] font-mono text-sm focus:outline-none resize-y leading-relaxed"
+            className="w-full h-96 p-4 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] font-mono text-sm focus:outline-none resize-y leading-relaxed"
             placeholder="# Write your technical documentation or writeup here in Markdown..."
             required
           />
@@ -568,7 +544,7 @@ export default function DocForm({
             {body.trim() ? (
               <Markdown source={body} />
             ) : (
-              <p className="text-xs text-[var(--text-dim)] italic">No content to preview yet.</p>
+              <p className="text-xs text-[var(--text-dim)] italic font-mono">No content to preview yet.</p>
             )}
           </div>
         )}
@@ -579,18 +555,18 @@ export default function DocForm({
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-[var(--brand)]/20 hover:shadow-[var(--brand)]/35 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          className="px-6 py-2.5 bg-[var(--brand)] hover:opacity-90 text-[var(--brand-fg)] rounded-lg font-semibold text-xs transition-all shadow-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer font-mono uppercase tracking-wider"
         >
           {loading && (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
           )}
-          <span>{loading ? "Persisting Document..." : mode === "create" ? "Publish to PostgreSQL" : "Save Changes"}</span>
+          <span>{loading ? "PERSISTING..." : mode === "create" ? "PUBLISH_DOCUMENT" : "SAVE_CHANGES"}</span>
         </button>
 
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2.5 border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-xl text-sm transition-colors shadow-xs cursor-pointer"
+          className="px-4 py-2.5 border border-[var(--border-color)] hover:border-[var(--text-muted)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-lg text-xs transition-colors shadow-xs cursor-pointer font-mono"
         >
           Cancel
         </button>
