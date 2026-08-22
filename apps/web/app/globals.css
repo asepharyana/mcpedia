@@ -374,3 +374,145 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
+/* ==========================================================================
+   Print & PDF Export Stylesheet
+   Optimized for publication-grade PDF generation via browser / window.print()
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  /* Force exact background colors and graphics */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset document canvas to white for crisp printing & ink economy */
+  html, body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10.5pt !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide app navigation, headers, sidebars, interactive controls */
+  header,
+  aside,
+  nav.site-header,
+  .no-print,
+  .export-toolbar,
+  #a11y-live-region {
+    display: none !important;
+  }
+
+  /* Full width container in print */
+  main,
+  .print-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Page break rules */
+  .page-break-before,
+  .chapter-page {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .page-break-after,
+  .cover-page,
+  .scoreboard-page,
+  .toc-page {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  .avoid-break-inside,
+  .challenge-header-card,
+  .badge-container,
+  table,
+  pre,
+  blockquote {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Code block wrapping and styling in print */
+  pre,
+  pre code,
+  code {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    font-size: 8.5pt !important;
+    line-height: 1.4 !important;
+  }
+
+  pre {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 8pt 10pt !important;
+    margin: 10pt 0 !important;
+  }
+
+  /* Typography tweaks for high-contrast print */
+  .prose {
+    color: #1e293b !important;
+    font-size: 10.5pt !important;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    color: #0f172a !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .prose p,
+  .prose li {
+    color: #334155 !important;
+  }
+
+  .prose a {
+    color: #312e81 !important;
+    text-decoration: underline !important;
+  }
+
+  /* Links display clean href only if needed or retain normal link text */
+  .prose blockquote {
+    background-color: #f1f5f9 !important;
+    border-left: 3.5pt solid #4f46e5 !important;
+    color: #334155 !important;
+    padding: 6pt 10pt !important;
+  }
+
+  .prose table {
+    border: 1px solid #cbd5e1 !important;
+    font-size: 9pt !important;
+  }
+
+  .prose th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-bottom: 1.5px solid #94a3b8 !important;
+  }
+
+  .prose td {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+}

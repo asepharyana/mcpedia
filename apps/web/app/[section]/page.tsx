@@ -151,10 +151,20 @@ export default async function SectionIndexPage({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 border border-[var(--brand)]/25 px-2.5 py-1 rounded-md">
               {sectionDocs.length} document{sectionDocs.length !== 1 ? "s" : ""}
             </span>
+            {sectionDocs.length > 0 && (
+              <Link
+                href={`/export/pdf?section=${section}`}
+                className="inline-flex items-center gap-1.5 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1 rounded-md font-medium transition-all shadow-xs"
+                title={`Export all ${sectionInfo.label} documents to PDF`}
+              >
+                <span>📄</span>
+                <span>Export PDF</span>
+              </Link>
+            )}
             <Link
               href="/create"
               className="inline-flex items-center gap-1 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3 py-1 rounded-md font-medium transition-all"

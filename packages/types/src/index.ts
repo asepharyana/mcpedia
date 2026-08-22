@@ -40,3 +40,41 @@ export interface SearchHit {
   snippet: string;
 }
 
+export type ExportSortOption =
+  | "category_points"
+  | "path"
+  | "title"
+  | "points_desc"
+  | "difficulty"
+  | "updated_at";
+
+export interface ExportCategorySummary {
+  name: string;
+  count: number;
+  points: number;
+}
+
+export interface ExportSummary {
+  title: string;
+  scope: string;
+  section: string;
+  totalDocuments: number;
+  totalPoints: number;
+  categories: ExportCategorySummary[];
+  authors: string[];
+  generatedAt: string;
+}
+
+export interface ExportData {
+  summary: ExportSummary;
+  documents: Document[];
+}
+
+export interface ExportQueryOptions {
+  path?: string;
+  section?: string;
+  slugs?: string[];
+  status?: string;
+  sortBy?: ExportSortOption;
+}
+

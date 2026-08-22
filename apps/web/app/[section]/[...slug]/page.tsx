@@ -186,9 +186,19 @@ function FolderIndexPage({
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] border border-[var(--border-color)] px-2.5 py-1 rounded-md">
-            {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] border border-[var(--border-color)] px-2.5 py-1 rounded-md">
+              {immediateDocs.length + folders.length} item{folders.length + immediateDocs.length !== 1 ? "s" : ""}
+            </span>
+            <Link
+              href={`/export/pdf?path=${section}/${slug}`}
+              className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3 py-1.5 rounded-lg font-medium transition-all shadow-xs"
+              title={`Export all ${folderName} documents as a single PDF report`}
+            >
+              <span>📄</span>
+              <span>Export PDF Report</span>
+            </Link>
+          </div>
         </div>
       </div>
 
