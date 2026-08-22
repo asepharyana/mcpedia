@@ -31,7 +31,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border-color)] glass-nav transition-all">
+    <header className="site-header no-print sticky top-0 z-40 border-b border-[var(--border-color)] glass-nav transition-all">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center justify-between gap-3 sm:gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3">

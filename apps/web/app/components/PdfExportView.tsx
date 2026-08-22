@@ -17,6 +17,7 @@ import { getSectionMeta } from "@mcpedia/config/sections";
 import {
   Printer,
   FileDown,
+  FileText,
   Copy,
   Check,
   ArrowLeft,
@@ -119,6 +120,37 @@ export default function PdfExportView({
     URL.revokeObjectURL(url);
   }
 
+  const [downloadingDocx, setDownloadingDocx] = useState(false);
+
+  async function handleDownloadDocx() {
+    setDownloadingDocx(true);
+    try {
+      const slugs = filteredAndSortedDocs.map((d) => d.slug).join(",");
+      const safeName =
+        summary.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || "export";
+      const url = `/api/export?format=docx&slugs=${encodeURIComponent(slugs)}&sort=${sortBy}&pageBreaks=${pageBreaks}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to generate Word document");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${safeName}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("DOCX download error:", err);
+      alert("Failed to generate .docx file. Please try again.");
+    } finally {
+      setDownloadingDocx(false);
+    }
+  }
+
   return (
     <div className="pb-16 print:pb-0">
       {/* Export Control Toolbar (Screen Only — Hidden in Print) */}
@@ -181,6 +213,22 @@ export default function PdfExportView({
             >
               <FileDown className="w-3.5 h-3.5" />
               <span>Download .md</span>
+            </button>
+
+            {/* Download Word (.docx) */}
+            <button
+              onClick={handleDownloadDocx}
+              disabled={downloadingDocx}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+              title="Download editable Microsoft Word (.docx) document"
+            >
+              {downloadingDocx ? (
+                <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <FileText className="w-3.5 h-3.5" />
+              )}
+              <span>Download .docx</span>
             </button>
 
             {/* Print / Save as PDF Button */}
@@ -280,13 +328,13 @@ export default function PdfExportView({
       </aside>
 
       {/* Writeup Document Flow */}
-      <main className="print-container bg-white text-slate-900 max-w-4xl mx-auto px-4 sm:px-8 py-6 print:p-0 print:max-w-none rounded-xl border border-[var(--border-color)] print:border-none shadow-xs print:shadow-none">
+      <main className="print-container bg-white text-slate-900 max-w-4xl mx-auto px-4 sm:px-8 py-6 print:p-0 print:m-0 print:max-w-none rounded-xl border border-[var(--border-color)] print:border-none shadow-xs print:shadow-none">
         {/* Document Header */}
-        <header className="mb-8 pb-4 border-b border-slate-300">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight mb-2">
+        <header className="doc-header mb-8 pb-4 print:mb-2.5 print:pb-1.5 border-b border-slate-300">
+          <h1 className="text-3xl sm:text-4xl print:text-lg font-extrabold text-slate-950 tracking-tight mb-2 print:mb-0.5">
             {summary.title}
           </h1>
-          <div className="text-xs text-slate-500 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="text-xs print:text-[7.5pt] text-slate-500 font-mono flex flex-wrap items-center gap-x-2 gap-y-1 print:gap-x-1.5 print:gap-y-0.5">
             <span>{filteredAndSortedDocs.length} Challenges</span>
             {currentTotalPoints > 0 && (
               <span>· {currentTotalPoints.toLocaleString()} Total Points</span>
@@ -297,25 +345,25 @@ export default function PdfExportView({
 
         {/* Table of Contents */}
         {showTOC && filteredAndSortedDocs.length > 1 && (
-          <section className="toc-section mb-10 pb-6 border-b border-slate-200">
-            <h2 className="text-xs font-bold uppercase font-mono text-slate-700 mb-3 tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5" />
+          <section className="toc-section mb-10 pb-6 print:mb-2.5 print:pb-1.5 border-b border-slate-200 print:border-slate-300">
+            <h2 className="text-xs print:text-[8pt] font-bold uppercase font-mono text-slate-700 mb-3 print:mb-1 tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 print:w-3 print:h-3" />
               <span>Table of Contents</span>
             </h2>
-            <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-800">
+            <ol className="list-decimal list-inside space-y-1.5 print:space-y-0.5 text-xs print:text-[7.5pt] text-slate-800">
               {filteredAndSortedDocs.map((doc, idx) => {
                 const cat = extractDocCategory(doc);
                 const pts = extractDocPoints(doc);
 
                 return (
-                  <li key={doc.slug}>
+                  <li key={doc.slug} className="print:leading-tight">
                     <a
                       href={`#ch-${idx + 1}`}
                       className="hover:underline font-medium text-slate-900"
                     >
                       {doc.title}
                     </a>
-                    <span className="text-slate-500 font-mono ml-2">
+                    <span className="text-slate-500 font-mono ml-2 print:ml-1">
                       [{cat}{pts > 0 ? ` · ${pts} pts` : ""}]
                     </span>
                   </li>
@@ -340,14 +388,14 @@ export default function PdfExportView({
                 id={`ch-${chNum}`}
                 className={`challenge-entry ${
                   pageBreaks && idx > 0 ? "page-break-before" : ""
-                } pt-6 first:pt-0`}
+                } pt-6 first:pt-0 print:pt-2.5 print:pb-2 print:border-b print:border-slate-200 print:last:border-none`}
               >
                 {/* Challenge Title & Metadata */}
-                <div className="mb-4 pb-2 border-b border-slate-200">
-                  <h2 className="text-2xl font-bold text-slate-950 tracking-tight leading-tight mb-1.5">
+                <div className="challenge-header mb-4 pb-2 print:mb-1.5 print:pb-1 border-b border-slate-200 print:border-slate-300">
+                  <h2 className="text-2xl print:text-[11pt] font-bold text-slate-950 tracking-tight leading-tight mb-1.5 print:mb-0.5">
                     {chNum}. {doc.title}
                   </h2>
-                  <div className="text-xs font-mono text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <div className="text-xs print:text-[7.5pt] font-mono text-slate-600 flex flex-wrap items-center gap-x-3 print:gap-x-2 gap-y-1 print:gap-y-0.5">
                     <span><strong>Category:</strong> {cat}</span>
                     {pts > 0 && <span><strong>Points:</strong> {pts} pts</span>}
                     {diff && <span><strong>Difficulty:</strong> {diff}</span>}
@@ -387,7 +435,7 @@ export default function PdfExportView({
                 </div>
 
                 {/* Markdown Writeup Content */}
-                <div className="prose prose-slate max-w-none text-slate-900 mb-8">
+                <div className="prose prose-slate max-w-none text-slate-900 mb-8 print:mb-1">
                   <Markdown source={doc.body} />
                 </div>
 

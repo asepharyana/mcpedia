@@ -17,6 +17,7 @@ import {
 } from "./export.helpers";
 
 export * from "./export.helpers";
+export * from "./export.docx";
 
 /**
  * Fetch all documents for export with full bodies directly from PostgreSQL

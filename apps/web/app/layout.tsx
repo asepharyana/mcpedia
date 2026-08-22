@@ -46,11 +46,11 @@ export default function RootLayout({
 
         <div className="mx-auto max-w-7xl w-full flex-1 flex flex-col">
           <div className="flex flex-1">
-            <aside className="hidden lg:block w-72 shrink-0 border-r border-[var(--border-color)] sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto bg-[var(--bg-app)]">
+            <aside className="no-print hidden lg:block w-72 shrink-0 border-r border-[var(--border-color)] sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto bg-[var(--bg-app)]">
               <Sidebar />
             </aside>
             <main className="flex-1 min-w-0">
-              <div className="px-4 sm:px-8 py-8 sm:py-10 max-w-4xl mx-auto xl:max-w-5xl">
+              <div className="px-4 sm:px-8 py-8 sm:py-10 print:p-0 print:m-0 print:max-w-none max-w-4xl mx-auto xl:max-w-5xl">
                 {children}
               </div>
             </main>

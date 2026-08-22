@@ -15,6 +15,7 @@
     "@mcpedia/parser": "workspace:*",
     "@mcpedia/search": "workspace:*",
     "@mcpedia/types": "workspace:*",
+    "docx": "^9.7.1",
     "drizzle-orm": "^0.38.0"
   },
   "scripts": {

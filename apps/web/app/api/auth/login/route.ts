@@ -13,15 +13,23 @@ function signCookie(value: string): string {
   return `${value}.${sig}`;
 }
 
+function safeTimingEqual(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    if (bufA.length !== bufB.length) return false;
+    return timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
 function verifyCookie(cookieValue: string | undefined): boolean {
   if (!cookieValue) return false;
   const [value, sig] = cookieValue.split(".");
   if (!value || !sig) return false;
   const expected = signCookie(value);
-  return timingSafeEqual(
-    Buffer.from(cookieValue),
-    Buffer.from(expected),
-  );
+  return safeTimingEqual(cookieValue, expected);
 }
 
 export async function POST(req: NextRequest) {
@@ -32,10 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const ok = timingSafeEqual(
-    Buffer.from(password),
-    Buffer.from(ADMIN_PASSWORD),
-  );
+  const ok = safeTimingEqual(password, ADMIN_PASSWORD);
 
   if (!ok) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });

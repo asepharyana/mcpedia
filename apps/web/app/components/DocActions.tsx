@@ -7,6 +7,7 @@ import {
   Check,
   Share2,
   FileDown,
+  FileText,
   Edit3,
 } from "lucide-react";
 
@@ -83,6 +84,16 @@ export default function DocActions({ slug, body, canEdit }: DocActionsProps) {
         <FileDown className="w-3.5 h-3.5" />
         <span>PDF</span>
       </Link>
+
+      {/* Export Word (.docx) */}
+      <a
+        href={`/api/export?path=${encodeURIComponent(slug)}&format=docx`}
+        title="Download editable Microsoft Word (.docx) file"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-colors shadow-xs cursor-pointer"
+      >
+        <FileText className="w-3.5 h-3.5" />
+        <span>Word (.docx)</span>
+      </a>
 
       {/* Edit Link */}
       <Link

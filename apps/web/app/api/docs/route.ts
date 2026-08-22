@@ -13,8 +13,12 @@ import { timingSafeEqual } from "node:crypto";
 function isAuthorized(req: NextRequest): boolean {
   if (!WEBHOOK_SECRET) return false;
   const headerSecret = req.headers.get("x-webhook-secret") ?? "";
-  if (headerSecret && timingSafeEqual(Buffer.from(headerSecret), Buffer.from(WEBHOOK_SECRET))) {
-    return true;
+  if (headerSecret) {
+    const bufA = Buffer.from(headerSecret);
+    const bufB = Buffer.from(WEBHOOK_SECRET);
+    if (bufA.length === bufB.length && timingSafeEqual(bufA, bufB)) {
+      return true;
+    }
   }
   const cookie = req.cookies.get("mcpedia_admin")?.value ?? "";
   return cookie.startsWith("admin.");

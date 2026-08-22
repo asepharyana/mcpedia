@@ -437,27 +437,31 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 18mm 15mm 18mm 15mm;
+    margin: 10mm 12mm 10mm 12mm;
   }
 
   *, *::before, *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-sizing: border-box !important;
   }
 
   html, body {
     background-color: #ffffff !important;
-    color: #09090b !important;
+    color: #0f172a !important;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    font-size: 10pt !important;
-    line-height: 1.5 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.35 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
   }
 
-  header,
-  aside,
+  /* Hide navigation, toolbars, sidebar, and web UI controls */
+  header.site-header,
+  header.glass-nav,
+  aside.site-sidebar,
+  aside:not(.print-include),
   footer,
   nav.site-header,
   .no-print,
@@ -467,7 +471,8 @@ body {
   }
 
   main,
-  .print-container {
+  .print-container,
+  main > div {
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
@@ -477,53 +482,190 @@ body {
     background: transparent !important;
   }
 
+  /* Explicit page break classes */
   .page-break-before,
-  .chapter-page,
-  .challenge-entry {
+  .chapter-page {
     break-before: page !important;
     page-break-before: always !important;
   }
 
+  /* Prevent awkward mid-element page breaks */
   .avoid-break-inside,
   .code-block-wrapper,
   .code-block-container,
-  .challenge-entry,
+  .callout,
+  blockquote,
   table,
   tr,
-  img,
-  pre,
-  blockquote {
+  img {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
+  /* Prevent headings from being orphaned at the bottom of pages */
+  .challenge-header,
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Dense / compact challenge flow */
+  .challenge-entry {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Compact typography & prose overrides */
+  p,
+  .prose p {
+    margin-top: 0 !important;
+    margin-bottom: 2.5pt !important;
+    font-size: 8.5pt !important;
+    line-height: 1.35 !important;
+    color: #1e293b !important;
+  }
+
+  h1,
+  .prose h1 {
+    font-size: 13pt !important;
+    line-height: 1.2 !important;
+    font-weight: 800 !important;
+    color: #020617 !important;
+    margin-top: 6pt !important;
+    margin-bottom: 2pt !important;
+    padding-bottom: 1pt !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+
+  h2,
+  .prose h2 {
+    font-size: 10.5pt !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    color: #020617 !important;
+    margin-top: 5pt !important;
+    margin-bottom: 2pt !important;
+    padding-bottom: 1pt !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  h3,
+  .prose h3 {
+    font-size: 9.5pt !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-top: 4pt !important;
+    margin-bottom: 1.5pt !important;
+  }
+
+  h4, h5, h6,
+  .prose h4, .prose h5, .prose h6 {
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin-top: 3pt !important;
+    margin-bottom: 1pt !important;
+  }
+
+  ul, ol,
+  .prose ul, .prose ol {
+    margin-top: 1pt !important;
+    margin-bottom: 2.5pt !important;
+    padding-left: 13pt !important;
+  }
+
+  li,
+  .prose li {
+    margin-top: 0.5pt !important;
+    margin-bottom: 0.5pt !important;
+    font-size: 8.5pt !important;
+    line-height: 1.3 !important;
+  }
+
+  li > p {
+    margin: 0 !important;
+  }
+
+  blockquote,
+  .prose blockquote,
+  .callout {
+    margin: 2.5pt 0 !important;
+    padding: 2pt 5pt !important;
+    font-size: 8pt !important;
+    line-height: 1.3 !important;
+    border-left: 2.5px solid #64748b !important;
+    background-color: #f8fafc !important;
+    border-radius: 0 2px 2px 0 !important;
+  }
+
+  table,
+  .prose table {
+    margin: 2.5pt 0 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.25 !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  th, td,
+  .prose th, .prose td {
+    padding: 2pt 4pt !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+  }
+
+  th,
+  .prose th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  hr,
+  .prose hr {
+    margin: 3pt 0 !important;
+    border-color: #e2e8f0 !important;
+  }
+
   img {
     max-width: 100% !important;
+    max-height: 220px !important;
     height: auto !important;
+    object-fit: contain !important;
+    margin: 2.5pt auto !important;
+    display: block !important;
   }
 
   .code-block-wrapper,
   .code-block-container {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
-    border: 1px solid #d4d4d8 !important;
-    background-color: #f4f4f5 !important;
-    border-radius: 4px !important;
-    margin: 8pt 0 !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    border-radius: 3px !important;
+    margin: 2.5pt 0 !important;
     overflow: hidden !important;
   }
 
   .code-block-header {
-    border-bottom: 1px solid #d4d4d8 !important;
-    background-color: #e4e4e7 !important;
-    padding: 3pt 8pt !important;
-    color: #27272a !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    background-color: #f1f5f9 !important;
+    padding: 1.5pt 5pt !important;
+    color: #334155 !important;
+    font-size: 7pt !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
   }
 
   .code-block-wrapper pre {
     border: none !important;
     background-color: transparent !important;
-    padding: 6pt 8pt !important;
+    padding: 3pt 5pt !important;
     margin: 0 !important;
     border-radius: 0 !important;
   }
@@ -535,7 +677,16 @@ body {
     word-break: break-all !important;
     overflow-wrap: anywhere !important;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-    font-size: 8.5pt !important;
-    line-height: 1.4 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.3 !important;
+    color: #0f172a !important;
+  }
+
+  :not(pre) > code {
+    padding: 0.5pt 2pt !important;
+    font-size: 7.5pt !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 2px !important;
   }
 }

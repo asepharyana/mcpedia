@@ -1,12 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { restoreRevision, getRevision } from "@mcpedia/core";
+import { WEBHOOK_SECRET } from "@mcpedia/config";
+import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
+
+function isAuthorized(req: NextRequest): boolean {
+  if (!WEBHOOK_SECRET) return false;
+  const headerSecret = req.headers.get("x-webhook-secret") ?? "";
+  if (headerSecret) {
+    const bufA = Buffer.from(headerSecret);
+    const bufB = Buffer.from(WEBHOOK_SECRET);
+    if (bufA.length === bufB.length && timingSafeEqual(bufA, bufB)) {
+      return true;
+    }
+  }
+  const cookie = req.cookies.get("mcpedia_admin")?.value ?? "";
+  return cookie.startsWith("admin.");
+}
 
 // POST /api/revisions/restore  — restore a document to a past revision.
 // Body (form-urlencoded): id=<revision uuid>
 // After restoring, we rebuild semantic chunks (handled inside restoreRevision)
 // and revalidate the doc page so the Web UI reflects the restored body.
 export async function POST(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   const form = await req.formData().catch(() => null);
   const id = form?.get("id");
   if (typeof id !== "string" || id.length === 0) {
