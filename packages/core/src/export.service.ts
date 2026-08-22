@@ -104,8 +104,26 @@ export async function getExportDocuments(
     return { ...toMeta(row), body: body || "" };
   });
 
+  // Filter out meta index documents (like _index or index) when exporting multiple docs
+  let filteredDocs = loadedDocs;
+  if (loadedDocs.length > 1) {
+    const withoutIndex = loadedDocs.filter((d) => {
+      const slug = d.slug.toLowerCase();
+      return (
+        !slug.endsWith("/_index") &&
+        !slug.endsWith("/index") &&
+        slug !== "_index" &&
+        slug !== "index" &&
+        d.type !== "writeup-index"
+      );
+    });
+    if (withoutIndex.length > 0) {
+      filteredDocs = withoutIndex;
+    }
+  }
+
   // Sort neatly
-  const sortedDocs = sortExportDocuments(loadedDocs, sortBy);
+  const sortedDocs = sortExportDocuments(filteredDocs, sortBy);
   const summary = buildExportSummary(sortedDocs, opts.path, opts.section);
 
   return {

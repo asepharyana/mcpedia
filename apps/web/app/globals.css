@@ -427,7 +427,8 @@ body {
 
   /* Page break rules */
   .page-break-before,
-  .chapter-page {
+  .chapter-page,
+  .challenge-entry {
     break-before: page !important;
     page-break-before: always !important;
   }
