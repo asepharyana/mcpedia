@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import GithubSlugger from "github-slugger";
+import { AlignLeft, ArrowUp, Hash } from "lucide-react";
 
 interface TOCEntry {
   id: string;
@@ -58,18 +59,29 @@ export default function TOC({ source }: { source: string }) {
 
   if (toc.length === 0) return null;
 
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
-    <nav className="text-xs">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--border-color)]">
-        <svg className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-        </svg>
-        <span className="font-semibold uppercase tracking-wider text-[var(--text-muted)] text-[11px]">
-          On this page
-        </span>
+    <nav className="text-xs space-y-4">
+      <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
+        <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[var(--text-muted)] text-[11px] font-mono">
+          <AlignLeft className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" />
+          <span>On This Page</span>
+        </div>
+        <button
+          onClick={scrollToTop}
+          type="button"
+          className="text-[10px] text-[var(--text-dim)] hover:text-[var(--text-primary)] flex items-center gap-0.5 hover:underline"
+          title="Scroll to top"
+        >
+          <ArrowUp className="w-3 h-3" />
+          <span>Top</span>
+        </button>
       </div>
 
-      <ul className="space-y-1.5 border-l border-[var(--border-color)] pl-2.5">
+      <ul className="space-y-1.5 border-l border-[var(--border-color)] pl-3">
         {toc.map((entry) => {
           const isActive = activeId === entry.id;
           return (
@@ -90,7 +102,7 @@ export default function TOC({ source }: { source: string }) {
                     history.pushState(null, "", `#${entry.id}`);
                   }
                 }}
-                className={`block py-0.5 transition-colors line-clamp-1 ${
+                className={`block py-0.5 transition-all line-clamp-1 ${
                   isActive
                     ? "text-[var(--brand)] dark:text-[var(--accent)] font-semibold translate-x-0.5"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"

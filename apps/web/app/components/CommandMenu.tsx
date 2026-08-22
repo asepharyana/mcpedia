@@ -3,6 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Search,
+  FileText,
+  Plus,
+  Compass,
+  Sparkles,
+  ArrowRight,
+  BookOpen,
+  Flag,
+  Layers,
+  SunMoon,
+  Command,
+  X,
+  Flame,
+} from "lucide-react";
 
 interface Hit {
   slug: string;
@@ -10,6 +25,15 @@ interface Hit {
   section: string;
   snippet?: string;
   score: number;
+}
+
+interface QuickAction {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: any;
+  href?: string;
+  action?: () => void;
 }
 
 export default function CommandMenu() {
@@ -21,10 +45,48 @@ export default function CommandMenu() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const quickActions: QuickAction[] = [
+    {
+      id: "create-doc",
+      title: "Create New Document",
+      subtitle: "Write technical doc, writeup, or research note",
+      icon: Plus,
+      href: "/create",
+    },
+    {
+      id: "hybrid-search",
+      title: "Multi-Modal Hybrid Search",
+      subtitle: "Full-text + Semantic vector search console",
+      icon: Search,
+      href: "/search",
+    },
+    {
+      id: "browse-docs",
+      title: "Documentation Hub",
+      subtitle: "System setup, API references, protocol specs",
+      icon: BookOpen,
+      href: "/docs",
+    },
+    {
+      id: "browse-writeups",
+      title: "CTF & Challenge Writeups",
+      subtitle: "Pwn, Reverse, Web, Crypto writeups and solutions",
+      icon: Flag,
+      href: "/writeups",
+    },
+    {
+      id: "browse-research",
+      title: "Deep-Dive Research",
+      subtitle: "Architecture notes, benchmarks, experiments",
+      icon: Sparkles,
+      href: "/research",
+    },
+  ];
+
   // Global shortcut ⌘K or /
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);
       } else if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
@@ -56,7 +118,7 @@ export default function CommandMenu() {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=8`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`);
         const data = await res.json();
         setResults(data.results || []);
         setSelectedIndex(0);
@@ -65,25 +127,31 @@ export default function CommandMenu() {
       } finally {
         setLoading(false);
       }
-    }, 150);
+    }, 120);
     return () => clearTimeout(timer);
   }, [query]);
 
-  function handleNavigate(slug: string) {
+  function handleNavigate(href: string) {
     setOpen(false);
-    router.push(`/${slug}`);
+    router.push(href);
   }
+
+  const totalItems = query.trim() ? results.length : quickActions.length;
 
   function handleKeyNavigation(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => (results.length > 0 ? (prev + 1) % results.length : 0));
+      setSelectedIndex((prev) => (totalItems > 0 ? (prev + 1) % totalItems : 0));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (results.length > 0 ? (prev - 1 + results.length) % results.length : 0));
-    } else if (e.key === "Enter" && results[selectedIndex]) {
+      setSelectedIndex((prev) => (totalItems > 0 ? (prev - 1 + totalItems) % totalItems : 0));
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      handleNavigate(results[selectedIndex].slug);
+      if (query.trim() && results[selectedIndex]) {
+        handleNavigate(`/${results[selectedIndex].slug}`);
+      } else if (!query.trim() && quickActions[selectedIndex]?.href) {
+        handleNavigate(quickActions[selectedIndex].href!);
+      }
     }
   }
 
@@ -91,13 +159,12 @@ export default function CommandMenu() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-color)] hover:border-[var(--brand)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-sm"
+        type="button"
+        className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg transition-all shadow-xs cursor-pointer group"
       >
-        <svg className="w-3.5 h-3.5 text-[var(--text-dim)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <span>Search docs...</span>
-        <kbd className="ml-2 font-mono bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded border border-[var(--border-color)] text-[10px] text-[var(--text-dim)]">
+        <Search className="w-3.5 h-3.5 text-[var(--text-dim)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors" />
+        <span className="font-sans">Search knowledge...</span>
+        <kbd className="ml-2 font-mono bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-color)] text-[10px] text-[var(--text-dim)] shadow-xs">
           ⌘K
         </kbd>
       </button>
@@ -105,87 +172,118 @@ export default function CommandMenu() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
         onClick={() => setOpen(false)}
       />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden animate-fade-in">
+      {/* Omnisearch Modal */}
+      <div className="relative w-full max-w-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl shadow-2xl overflow-hidden animate-fade-in ring-1 ring-white/10">
         {/* Search input bar */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-color)] bg-[var(--bg-elevated)]">
-          <svg className="w-5 h-5 text-[var(--brand)] dark:text-[var(--accent)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        <div className="flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-[var(--border-color)] bg-[var(--bg-elevated)]/70">
+          <Search className="w-5 h-5 text-[var(--brand)] dark:text-[var(--accent)] shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyNavigation}
-            placeholder="Type to search (titles, keywords, concepts)..."
-            className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] text-sm focus:outline-none"
+            placeholder="Search documents, writeups, concepts, or commands..."
+            className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] text-sm sm:text-base focus:outline-none"
           />
           {loading && (
             <div className="w-4 h-4 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin shrink-0" />
           )}
           <button
             onClick={() => setOpen(false)}
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-color)]"
+            type="button"
+            className="text-[11px] font-mono text-[var(--text-dim)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] px-2 py-0.5 rounded border border-[var(--border-color)]"
           >
             ESC
           </button>
         </div>
 
-        {/* Results / Suggestions */}
-        <div className="max-h-96 overflow-y-auto p-2">
+        {/* Results / Quick Actions List */}
+        <div className="max-h-[22rem] overflow-y-auto p-2">
           {query.trim() === "" ? (
-            <div className="px-3 py-6 text-center">
-              <p className="text-xs text-[var(--text-muted)]">Search full-text, semantic embeddings, and CTF writeups.</p>
-              <div className="flex justify-center gap-2 mt-3 text-[11px] text-[var(--text-dim)]">
-                <span>Navigation: <kbd className="bg-[var(--bg-elevated)] px-1 py-0.5 rounded border border-[var(--border-color)]">↑</kbd> <kbd className="bg-[var(--bg-elevated)] px-1 py-0.5 rounded border border-[var(--border-color)]">↓</kbd></span>
-                <span>Select: <kbd className="bg-[var(--bg-elevated)] px-1 py-0.5 rounded border border-[var(--border-color)]">↵</kbd></span>
+            <div className="p-2 space-y-1">
+              <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-[var(--text-dim)]">
+                Quick Shortcuts & Actions
               </div>
+              {quickActions.map((action, idx) => {
+                const Icon = action.icon;
+                const isSelected = idx === selectedIndex;
+                return (
+                  <div
+                    key={action.id}
+                    onClick={() => action.href && handleNavigate(action.href)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
+                      isSelected
+                        ? "bg-[var(--brand)]/15 border border-[var(--brand)]/40 text-[var(--text-primary)] shadow-xs"
+                        : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${isSelected ? "bg-[var(--brand)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">
+                          {action.title}
+                        </div>
+                        <div className="text-[11px] text-[var(--text-muted)]">
+                          {action.subtitle}
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight className={`w-3.5 h-3.5 text-[var(--text-dim)] ${isSelected ? "text-[var(--brand)] translate-x-0.5" : ""} transition-all`} />
+                  </div>
+                );
+              })}
             </div>
           ) : results.length === 0 && !loading ? (
-            <div className="px-4 py-8 text-center text-xs text-[var(--text-muted)]">
-              No documents matching &quot;{query}&quot;
+            <div className="px-4 py-12 text-center text-xs text-[var(--text-muted)] space-y-2">
+              <p>No knowledge base items matched &quot;{query}&quot;</p>
+              <p className="text-[11px] text-[var(--text-dim)]">
+                Try searching with partial words or check semantic search
+              </p>
             </div>
           ) : (
-            <ul className="space-y-1">
+            <ul className="space-y-1 p-1">
               {results.map((hit, index) => {
                 const isSelected = index === selectedIndex;
                 return (
                   <li
                     key={hit.slug}
-                    onClick={() => handleNavigate(hit.slug)}
+                    onClick={() => handleNavigate(`/${hit.slug}`)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`flex items-start justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
+                    className={`flex items-start justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
                       isSelected
-                        ? "bg-[var(--brand)]/15 border border-[var(--brand)]/40 text-[var(--text-primary)]"
+                        ? "bg-[var(--brand)]/15 border border-[var(--brand)]/40 text-[var(--text-primary)] shadow-xs"
                         : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-transparent"
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--brand)] dark:text-[var(--accent)] font-mono">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--brand)] dark:text-[var(--accent)] uppercase font-semibold">
                           {hit.section}
                         </span>
-                        <span className={`text-sm font-medium ${isSelected ? "text-[var(--brand)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]"} truncate`}>
+                        <span className={`text-xs sm:text-sm font-semibold ${isSelected ? "text-[var(--brand)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]"} truncate`}>
                           {hit.title}
                         </span>
                       </div>
                       {hit.snippet && (
                         <p
-                          className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 [&>mark]:bg-[var(--brand)]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:rounded [&>mark]:px-0.5"
+                          className="text-xs text-[var(--text-muted)] line-clamp-1 mt-1 [&>mark]:bg-[var(--brand)]/30 [&>mark]:text-[var(--text-primary)] [&>mark]:rounded [&>mark]:px-0.5"
                           dangerouslySetInnerHTML={{ __html: hit.snippet }}
                         />
                       )}
                     </div>
-                    <span className="text-[11px] text-[var(--text-dim)] shrink-0 self-center">
-                      {hit.slug}
+                    <span className="text-[10px] font-mono text-[var(--text-dim)] shrink-0 self-center">
+                      /{hit.slug}
                     </span>
                   </li>
                 );
@@ -195,14 +293,18 @@ export default function CommandMenu() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-color)] bg-[var(--bg-elevated)] text-[11px] text-[var(--text-dim)]">
-          <span>Tip: Press <kbd className="bg-[var(--bg-surface)] px-1 py-0.5 rounded border border-[var(--border-color)]">Hybrid</kbd> search is enabled</span>
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-color)] bg-[var(--bg-elevated)]/60 text-[11px] text-[var(--text-dim)]">
+          <div className="flex items-center gap-2">
+            <span>Navigate: <kbd className="bg-[var(--bg-surface)] px-1 py-0.5 rounded border border-[var(--border-color)]">↑↓</kbd></span>
+            <span>Select: <kbd className="bg-[var(--bg-surface)] px-1 py-0.5 rounded border border-[var(--border-color)]">↵</kbd></span>
+          </div>
           <Link
             href={`/search?q=${encodeURIComponent(query)}`}
             onClick={() => setOpen(false)}
-            className="hover:text-[var(--brand)] dark:hover:text-[var(--accent)] transition-colors"
+            className="text-[var(--brand)] dark:text-[var(--accent)] hover:underline font-medium flex items-center gap-1"
           >
-            Open full search page →
+            <span>Full Search Console</span>
+            <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
       </div>

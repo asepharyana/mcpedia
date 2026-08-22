@@ -1,6 +1,17 @@
 import Link from "next/link";
 import { listDocuments } from "@mcpedia/core";
 import { getSectionMeta } from "@mcpedia/config";
+import {
+  Folder,
+  FileText,
+  ChevronRight,
+  FileDown,
+  Plus,
+  Compass,
+  ArrowLeft,
+  Clock,
+  Tag,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -81,26 +92,28 @@ function renderTree(nodes: TreeNode[], pathname: string) {
           <li key={node.slug}>
             <Link
               href={`/${node.slug}`}
-              className={`flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg transition-all ${
+              className={`flex items-center justify-between gap-2 text-xs py-2 px-3 rounded-xl transition-all ${
                 isActive
-                  ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/15 font-semibold border border-[var(--brand)]/30"
+                  ? "text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/15 font-semibold border border-[var(--brand)]/30 shadow-xs"
                   : hasActiveChild
                     ? "text-[var(--text-primary)] bg-[var(--bg-elevated)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
               }`}
             >
-              <span className="flex items-center gap-2 truncate">
-                <span>{isFolder ? "📁" : "📄"}</span>
-                <span className="truncate">{node.doc?.title || node.name}</span>
+              <span className="flex items-center gap-2.5 truncate">
+                <span className="text-[var(--text-dim)]">
+                  {isFolder ? <Folder className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" /> : <FileText className="w-4 h-4" />}
+                </span>
+                <span className="truncate font-medium">{node.doc?.title || node.name}</span>
               </span>
               {isFolder && (
-                <span className="text-[10px] text-[var(--text-dim)] bg-[var(--bg-surface)] border border-[var(--border-color)] px-1.5 py-0.5 rounded font-mono">
+                <span className="text-[10px] text-[var(--text-dim)] bg-[var(--bg-surface)] border border-[var(--border-color)] px-2 py-0.5 rounded-md font-mono">
                   {node.docCount} docs
                 </span>
               )}
             </Link>
             {node.children.length > 0 && (
-              <div className="ml-4 border-l border-[var(--border-color)] pl-2 mt-1">
+              <div className="ml-4 border-l border-[var(--border-color)] pl-3 mt-1 space-y-1">
                 {renderTree(node.children, pathname)}
               </div>
             )}
@@ -125,66 +138,74 @@ export default async function SectionIndexPage({
 
   return (
     <div className="space-y-10">
-      {/* Breadcrumb */}
+      {/* Breadcrumb Navigation */}
       <nav className="flex items-center gap-2 text-xs text-[var(--text-dim)]">
-        <Link href="/" className="hover:text-[var(--text-primary)] transition-colors">
-          MCPedia
+        <Link href="/" className="hover:text-[var(--text-primary)] transition-colors flex items-center gap-1">
+          <span>MCPedia</span>
         </Link>
         <span>/</span>
-        <span className="text-[var(--text-muted)] font-medium">{sectionInfo.label}</span>
+        <span className="text-[var(--text-muted)] font-semibold">{sectionInfo.label}</span>
       </nav>
 
       {/* Hero Card */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-color)] flex items-center justify-center text-2xl shadow-inner">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-color)] flex items-center justify-center text-3xl shadow-inner">
               {sectionInfo.icon}
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                {sectionInfo.label}
-              </h1>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-mono uppercase">
-                Section: {section}
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                  {sectionInfo.label}
+                </h1>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider mt-1">
+                Section Domain: <span className="text-[var(--brand)] dark:text-[var(--accent)] font-semibold">{section}</span>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 border border-[var(--brand)]/25 px-2.5 py-1 rounded-md">
+            <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] bg-[var(--brand)]/10 border border-[var(--brand)]/25 px-3 py-1.5 rounded-lg font-semibold">
               {sectionDocs.length} document{sectionDocs.length !== 1 ? "s" : ""}
             </span>
+
             {sectionDocs.length > 0 && (
               <Link
                 href={`/${section}/export`}
-                className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20 border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 text-[var(--brand)] dark:text-[var(--accent)] px-3 py-1 rounded-md font-medium transition-all shadow-xs"
-                title={`Export all ${sectionInfo.label} documents to PDF`}
+                className="inline-flex items-center gap-1.5 text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
+                title={`Export all ${sectionInfo.label} documents to publication-grade PDF`}
               >
-                <span>📄</span>
+                <FileDown className="w-3.5 h-3.5" />
                 <span>Export PDF</span>
               </Link>
             )}
+
             <Link
               href="/create"
-              className="inline-flex items-center gap-1 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3 py-1 rounded-md font-medium transition-all"
+              className="inline-flex items-center gap-1.5 text-xs bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white px-3.5 py-1.5 rounded-lg font-semibold transition-all shadow-md shadow-[var(--brand)]/20"
             >
-              <span>+ Create</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create Doc</span>
             </Link>
           </div>
         </div>
 
-        <p className="text-sm text-[var(--text-muted)] leading-relaxed max-w-2xl mt-2">
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed max-w-2xl mt-3">
           {sectionInfo.desc}
         </p>
       </div>
 
       {/* Hierarchical Folder Directory */}
       {tree.length > 0 && (
-        <section className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-6 shadow-sm">
-          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
-            <span>Folder Structure</span>
-          </h2>
+        <section className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--border-color)]">
+            <Folder className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
+            <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+              Folder & Chapter Directory
+            </h2>
+          </div>
           {renderTree(tree, section)}
         </section>
       )}
@@ -192,10 +213,14 @@ export default async function SectionIndexPage({
       {/* Document List */}
       {sectionDocs.length > 0 ? (
         <section>
-          <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-4">
-            All Documents in {sectionInfo.label}
-          </h2>
-          <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-4 h-4 text-[var(--brand)] dark:text-[var(--accent)]" />
+            <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+              All Knowledge in {sectionInfo.label}
+            </h2>
+          </div>
+
+          <div className="space-y-2.5">
             {[...sectionDocs]
               .sort(
                 (a, b) =>
@@ -205,20 +230,22 @@ export default async function SectionIndexPage({
                 <Link
                   key={d.slug}
                   href={`/${d.slug}`}
-                  className="group flex items-center justify-between gap-4 p-4 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl transition-all shadow-sm"
+                  className="group flex items-center justify-between gap-4 p-4 sm:p-5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-2xl transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-lg opacity-70 group-hover:opacity-100">📄</span>
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="p-2 rounded-xl bg-[var(--bg-elevated)] text-[var(--text-dim)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
+                      <h3 className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--brand)] dark:group-hover:text-[var(--accent)] transition-colors truncate">
                         {d.title}
                       </h3>
                       {d.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
+                        <div className="flex flex-wrap gap-1.5 mt-2">
                           {d.tags.slice(0, 4).map((t) => (
                             <span
                               key={t}
-                              className="text-[10px] px-1.5 py-0.25 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)]"
+                              className="text-[10px] px-2 py-0.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-md text-[var(--text-muted)] font-mono"
                             >
                               #{t}
                             </span>
@@ -227,19 +254,23 @@ export default async function SectionIndexPage({
                       )}
                     </div>
                   </div>
-                  <time className="text-xs text-[var(--text-dim)] font-mono shrink-0">
-                    {new Date(d.updatedAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+
+                  <time className="text-xs text-[var(--text-dim)] font-mono shrink-0 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>
+                      {new Date(d.updatedAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
                   </time>
                 </Link>
               ))}
           </div>
         </section>
       ) : (
-        <div className="text-center py-12 border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)]">
+        <div className="text-center py-16 border border-[var(--border-color)] rounded-2xl bg-[var(--bg-surface)]">
           <p className="text-sm text-[var(--text-muted)]">No documents in this section yet.</p>
         </div>
       )}

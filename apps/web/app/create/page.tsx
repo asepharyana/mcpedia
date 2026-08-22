@@ -4,6 +4,7 @@ import { WEBHOOK_SECRET } from "@mcpedia/config";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import DocForm from "@/components/DocForm";
+import { Edit3, ArrowLeft, Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -33,14 +34,16 @@ export default async function CreatePage() {
 
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[var(--brand)]/15 border border-[var(--brand)]/30 flex items-center justify-center text-xl text-[var(--brand)] dark:text-[var(--accent)]">
-            ✏️
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-[var(--brand)]/15 border border-[var(--brand)]/30 flex items-center justify-center text-[var(--brand)] dark:text-[var(--accent)]">
+            <Plus className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Create Document</h1>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              Writes directly to PostgreSQL, records revision history, and computes vector embeddings.
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+              Create Knowledge Document
+            </h1>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
+              Persists directly into PostgreSQL, tracks revision history, and generates vector embeddings.
             </p>
           </div>
         </div>

@@ -1,8 +1,9 @@
-import React from "react";
+import React from "next/link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getExportDocuments, formatScopeTitle, type ExportSortOption } from "@mcpedia/core";
 import PdfExportView from "@/components/PdfExportView";
+import { FileText, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +44,16 @@ export default async function ExportPdfPage({
 
   if (exportData.documents.length === 0) {
     return (
-      <div className="py-16 text-center space-y-4 max-w-lg mx-auto">
-        <div className="text-4xl">📄</div>
+      <div className="py-16 text-center space-y-4 max-w-lg mx-auto bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-3xl p-8 shadow-sm">
+        <div className="w-14 h-14 rounded-2xl bg-[var(--bg-elevated)] text-[var(--text-dim)] flex items-center justify-center mx-auto">
+          <FileText className="w-7 h-7" />
+        </div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">
           No Documents Found for Export
         </h1>
-        <p className="text-sm text-[var(--text-muted)]">
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
           Could not find any published documents matching the path{" "}
-          <code className="text-[var(--brand)] font-mono">
+          <code className="text-[var(--brand)] dark:text-[var(--accent)] font-mono font-semibold">
             {targetPath || section || "root"}
           </code>
           .
@@ -58,9 +61,10 @@ export default async function ExportPdfPage({
         <div className="pt-4">
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--brand)]/20 transition-all"
           >
-            <span>← Return to Knowledge Base</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Knowledge Base</span>
           </Link>
         </div>
       </div>

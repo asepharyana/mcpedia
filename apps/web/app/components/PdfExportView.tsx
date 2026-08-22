@@ -14,6 +14,16 @@ import {
   type ExportSortOption,
 } from "@mcpedia/core/export-helpers";
 import { getSectionMeta } from "@mcpedia/config/sections";
+import {
+  Printer,
+  FileDown,
+  Copy,
+  Check,
+  ArrowLeft,
+  Filter,
+  ListOrdered,
+  BookOpen,
+} from "lucide-react";
 
 interface PdfExportViewProps {
   exportData: ExportData;
@@ -113,23 +123,21 @@ export default function PdfExportView({
 
   return (
     <div className="pb-16 print:pb-0">
-      {/* =========================================================================
-          Export Control Toolbar (Screen Only — Hidden in Print)
-          ========================================================================= */}
-      <aside className="no-print export-toolbar sticky top-16 z-30 mb-8 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+      {/* Export Control Toolbar (Screen Only — Hidden in Print) */}
+      <aside className="no-print export-toolbar sticky top-16 z-30 mb-8 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 shadow-md">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Left info & Back button */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <Link
               href={backHref}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-xs"
             >
-              <span>←</span>
+              <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-[var(--text-primary)] font-semibold uppercase">
+                <span className="text-xs font-mono text-[var(--brand)] dark:text-[var(--accent)] font-bold uppercase">
                   {sectionMeta.label}
                 </span>
                 <span className="text-xs text-[var(--text-dim)]">·</span>
@@ -150,13 +158,19 @@ export default function PdfExportView({
             <button
               onClick={handleCopyMarkdown}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl transition-all shadow-xs cursor-pointer"
               title="Copy compiled markdown document"
             >
               {copiedMd ? (
-                <span className="text-emerald-600 font-bold">✓ Copied</span>
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-emerald-500 font-bold">Copied</span>
+                </>
               ) : (
-                <span>Copy Markdown</span>
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy Markdown</span>
+                </>
               )}
             </button>
 
@@ -164,9 +178,10 @@ export default function PdfExportView({
             <button
               onClick={handleDownloadMarkdown}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl transition-all shadow-xs cursor-pointer"
               title="Download compiled .md file"
             >
+              <FileDown className="w-3.5 h-3.5" />
               <span>Download .md</span>
             </button>
 
@@ -174,22 +189,10 @@ export default function PdfExportView({
             <button
               onClick={handlePrint}
               type="button"
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-md shadow-sm transition-all cursor-pointer hover:shadow"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl shadow-md transition-all cursor-pointer hover:shadow-lg"
               title="Open browser print dialog to save as PDF"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                />
-              </svg>
+              <Printer className="w-4 h-4" />
               <span>Print / Save as PDF</span>
             </button>
           </div>
@@ -199,11 +202,11 @@ export default function PdfExportView({
         <div className="mt-4 pt-3.5 border-t border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           {/* Sort Order Selector */}
           <div className="flex items-center gap-2">
-            <span className="text-[var(--text-muted)] font-medium">Sort by:</span>
+            <span className="text-[var(--text-muted)] font-medium font-mono text-[11px] uppercase">Sort by:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as ExportSortOption)}
-              className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-md px-2.5 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-slate-500"
+              className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-lg px-3 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--brand)]"
             >
               <option value="category_points">Category & Points (Standard)</option>
               <option value="points_desc">Points (Highest First)</option>
@@ -217,23 +220,23 @@ export default function PdfExportView({
           {/* Section toggles */}
           <div className="flex items-center gap-3 flex-wrap text-[var(--text-secondary)]">
             {cleanDocs.length > 1 && (
-              <label className="inline-flex items-center gap-1.5 cursor-pointer">
+              <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={showTOC}
                   onChange={(e) => setShowTOC(e.target.checked)}
-                  className="rounded border-[var(--border-color)] text-slate-800"
+                  className="rounded border-[var(--border-color)] text-indigo-600"
                 />
                 <span>Table of Contents</span>
               </label>
             )}
 
-            <label className="inline-flex items-center gap-1.5 cursor-pointer">
+            <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={pageBreaks}
                 onChange={(e) => setPageBreaks(e.target.checked)}
-                className="rounded border-[var(--border-color)] text-slate-800"
+                className="rounded border-[var(--border-color)] text-indigo-600"
               />
               <span>Page Break per Challenge</span>
             </label>
@@ -243,13 +246,13 @@ export default function PdfExportView({
         {/* Category filter pills */}
         {allCategories.length > 1 && (
           <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 flex-wrap text-xs">
-            <span className="text-[var(--text-muted)] mr-1">Filter:</span>
+            <span className="text-[var(--text-muted)] font-mono text-[11px] uppercase mr-1">Filter:</span>
             <button
               onClick={() => setSelectedCategory("all")}
               type="button"
-              className={`px-2.5 py-0.5 rounded-md text-xs font-mono transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                 selectedCategory === "all"
-                  ? "bg-slate-900 text-white font-semibold"
+                  ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold"
                   : "bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
               }`}
             >
@@ -264,9 +267,9 @@ export default function PdfExportView({
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   type="button"
-                  className={`px-2.5 py-0.5 rounded-md text-xs font-mono transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                     selectedCategory.toLowerCase() === cat.toLowerCase()
-                      ? "bg-slate-900 text-white font-semibold"
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold"
                       : "bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
                   }`}
                 >
@@ -278,14 +281,11 @@ export default function PdfExportView({
         )}
       </aside>
 
-      {/* =========================================================================
-          Clean, Simple, Human-Written Writeup Document Flow (No Cards)
-          ========================================================================= */}
-      <main className="print-container bg-white text-slate-900 max-w-4xl mx-auto px-4 sm:px-8 py-6 print:p-0 print:max-w-none">
-        
+      {/* Writeup Document Flow */}
+      <main className="print-container bg-white text-slate-900 max-w-4xl mx-auto px-4 sm:px-8 py-6 print:p-0 print:max-w-none rounded-2xl border border-[var(--border-color)] print:border-none shadow-sm print:shadow-none">
         {/* Document Header */}
-        <header className="mb-8 pb-3 border-b border-slate-300">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight mb-2">
+        <header className="mb-8 pb-4 border-b border-slate-300">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight mb-2">
             {summary.title}
           </h1>
           <div className="text-xs text-slate-500 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -297,11 +297,12 @@ export default function PdfExportView({
           </div>
         </header>
 
-        {/* Table of Contents (Simple & Clean) */}
+        {/* Table of Contents */}
         {showTOC && filteredAndSortedDocs.length > 1 && (
           <section className="toc-section mb-10 pb-6 border-b border-slate-200">
-            <h2 className="text-sm font-bold uppercase font-mono text-slate-700 mb-3 tracking-wider">
-              Table of Contents
+            <h2 className="text-sm font-bold uppercase font-mono text-slate-700 mb-3 tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4" />
+              <span>Table of Contents</span>
             </h2>
             <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-800">
               {filteredAndSortedDocs.map((doc, idx) => {
@@ -326,7 +327,7 @@ export default function PdfExportView({
           </section>
         )}
 
-        {/* Challenges / Writeups Flow ("Mirip Writeup Manusia") */}
+        {/* Challenges / Writeups Flow */}
         <div className="challenges-flow space-y-10 print:space-y-0">
           {filteredAndSortedDocs.map((doc, idx) => {
             const chNum = idx + 1;
@@ -353,7 +354,7 @@ export default function PdfExportView({
                     {pts > 0 && <span><strong>Points:</strong> {pts} pts</span>}
                     {diff && <span><strong>Difficulty:</strong> {diff}</span>}
 
-                    {/* Extra fields (excluding author, slug, scope, etc.) */}
+                    {/* Extra fields */}
                     {Object.entries(extra).map(([k, v]) => {
                       const lowerKey = k.toLowerCase();
                       if (

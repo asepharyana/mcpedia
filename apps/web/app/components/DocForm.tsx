@@ -3,6 +3,27 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "./Markdown";
+import {
+  Bold,
+  Italic,
+  Heading2,
+  Heading3,
+  Code,
+  Link as LinkIcon,
+  Table as TableIcon,
+  Info,
+  Lightbulb,
+  AlertTriangle,
+  Plus,
+  Trash2,
+  Check,
+  Eye,
+  Edit3,
+  FileCode,
+  Tag,
+  Folder,
+  Sliders,
+} from "lucide-react";
 
 interface DocFormProps {
   mode: "create" | "edit";
@@ -22,8 +43,26 @@ interface DocFormProps {
   };
 }
 
-const DEFAULT_SECTION_LIST = ["docs", "writeups", "research", "notes", "guides", "tutorials", "ctf", "api", "projects"];
-const DEFAULT_TYPE_LIST = ["documentation", "writeup", "research", "note", "guide", "tutorial", "spec"];
+const DEFAULT_SECTION_LIST = [
+  "docs",
+  "writeups",
+  "research",
+  "notes",
+  "guides",
+  "tutorials",
+  "ctf",
+  "api",
+  "projects",
+];
+const DEFAULT_TYPE_LIST = [
+  "documentation",
+  "writeup",
+  "research",
+  "note",
+  "guide",
+  "tutorial",
+  "spec",
+];
 
 const PRESET_FIELDS = [
   { key: "difficulty", value: "medium" },
@@ -88,7 +127,7 @@ export default function DocForm({
   const availableFolders = existingFolders?.[section] ?? [];
 
   const baseInputCls =
-    "w-full px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition-colors";
+    "w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--brand)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/20 transition-all";
 
   function addCustomField(key = "", value = "") {
     setCustomFields([...customFields, { key, value }]);
@@ -128,7 +167,7 @@ export default function DocForm({
     setError(null);
 
     if (!effectiveSlug || !title || !body) {
-      setError("Slug, title, and body are required.");
+      setError("Slug, title, and markdown body are required.");
       setLoading(false);
       return;
     }
@@ -175,7 +214,7 @@ export default function DocForm({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Save failed");
+        throw new Error(data.error ?? "Failed to save document. Verify ADMIN_PASSWORD or secret.");
       }
 
       const result = await res.json();
@@ -190,75 +229,73 @@ export default function DocForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       {error && (
-        <div className="p-3.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400 text-sm">
+        <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400 text-xs sm:text-sm font-medium animate-fade-in">
           {error}
         </div>
       )}
 
-      {/* Title */}
+      {/* Document Title */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
           Document Title *
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Database Architecture Overview"
-          className={`${baseInputCls} text-base`}
+          placeholder="e.g. Exploiting Stack Alignment Issues in x86_64"
+          className={`${baseInputCls} text-base sm:text-lg font-semibold`}
           required
         />
       </div>
 
-      {/* Section + Type + Status */}
+      {/* Section, Type, Status */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
             Section
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              list="section-list"
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-              placeholder="e.g. docs, writeups, ctf, guides"
-              className={baseInputCls}
-              required
-            />
-            <datalist id="section-list">
-              {sectionOptions.map((s) => (
-                <option key={s} value={s}>
-                  {s.toUpperCase()}
-                </option>
-              ))}
-            </datalist>
-          </div>
+          <input
+            type="text"
+            list="section-list"
+            value={section}
+            onChange={(e) => setSection(e.target.value)}
+            placeholder="e.g. docs, writeups, research"
+            className={baseInputCls}
+            required
+          />
+          <datalist id="section-list">
+            {sectionOptions.map((s) => (
+              <option key={s} value={s}>
+                {s.toUpperCase()}
+              </option>
+            ))}
+          </datalist>
         </div>
+
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-            Type
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
+            Document Type
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              list="type-list"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              placeholder="e.g. documentation, writeup, note"
-              className={baseInputCls}
-            />
-            <datalist id="type-list">
-              {DEFAULT_TYPE_LIST.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </datalist>
-          </div>
+          <input
+            type="text"
+            list="type-list"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            placeholder="e.g. writeup, documentation, note"
+            className={baseInputCls}
+          />
+          <datalist id="type-list">
+            {DEFAULT_TYPE_LIST.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </datalist>
         </div>
+
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
             Status
           </label>
           <select
@@ -267,7 +304,7 @@ export default function DocForm({
             className={baseInputCls}
           >
             <option value="published">Published</option>
-            <option value="draft">Draft</option>
+            <option value="draft">Draft (Unindexed)</option>
           </select>
         </div>
       </div>
@@ -275,8 +312,8 @@ export default function DocForm({
       {/* Folder + Slug */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-            Parent Folder
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
+            Parent Folder / Chapter
           </label>
           <select
             value={parentFolder}
@@ -292,16 +329,17 @@ export default function DocForm({
             ))}
           </select>
         </div>
+
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-            {isEdit ? "Full Slug" : "Slug (File name) *"}
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
+            {isEdit ? "Document Path" : "Slug (File name) *"}
           </label>
           {isEdit ? (
             <input
               type="text"
               value={slug ?? ""}
               readOnly
-              className="w-full px-3.5 py-2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-muted)] font-mono"
+              className="w-full px-3.5 py-2.5 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-muted)] font-mono"
             />
           ) : (
             <input
@@ -309,12 +347,12 @@ export default function DocForm({
               value={slugInput}
               onChange={(e) => setSlugInput(e.target.value)}
               className={`${baseInputCls} font-mono`}
-              placeholder="my-new-post"
+              placeholder="ret2win-guide"
               required
             />
           )}
-          <p className="text-[11px] text-[var(--text-dim)] mt-1 font-mono">
-            Path: <span className="text-[var(--brand)] dark:text-[var(--accent)]">{effectiveSlug || section}</span>
+          <p className="text-[11px] text-[var(--text-dim)] mt-1.5 font-mono">
+            Full Slug: <span className="text-[var(--brand)] dark:text-[var(--accent)] font-semibold">{effectiveSlug || section}</span>
           </p>
         </div>
       </div>
@@ -322,7 +360,7 @@ export default function DocForm({
       {/* Tags + Author */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
             Tags (comma separated)
           </label>
           <input
@@ -330,11 +368,11 @@ export default function DocForm({
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             className={baseInputCls}
-            placeholder="ctf, pwn, reverse, tutorial"
+            placeholder="pwn, x86_64, rop, ctf"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5 font-mono">
             Author
           </label>
           <input
@@ -342,31 +380,32 @@ export default function DocForm({
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             className={baseInputCls}
-            placeholder="asep"
+            placeholder="e.g. asepharyana"
           />
         </div>
       </div>
 
       {/* Custom Metadata Fields */}
-      <div className="p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl space-y-3 shadow-sm">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              Dynamic Custom Metadata
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] font-mono flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-[var(--brand)] dark:text-[var(--accent)]" />
+              <span>Dynamic Technical Metadata</span>
             </h3>
             <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
-              Add custom key-values (event, difficulty, points, etc.) rendered as styled badges.
+              Custom fields (points, difficulty, event, solved) will render as styled badges in the document hero.
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-[var(--text-dim)]">Presets:</span>
+            <span className="text-[10px] font-mono text-[var(--text-dim)] uppercase">Presets:</span>
             {PRESET_FIELDS.map((preset) => (
               <button
                 key={preset.key}
                 type="button"
                 onClick={() => addCustomField(preset.key, preset.value)}
-                className="px-2 py-0.5 text-[11px] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded transition-colors"
+                className="px-2 py-0.5 text-[11px] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-colors font-mono cursor-pointer"
               >
                 +{preset.key}
               </button>
@@ -393,10 +432,10 @@ export default function DocForm({
             <button
               type="button"
               onClick={() => removeCustomField(i)}
-              className="p-2 text-rose-500 hover:text-rose-600 rounded hover:bg-[var(--bg-elevated)] transition-colors"
+              className="p-2 text-rose-500 hover:text-rose-600 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
               title="Remove field"
             >
-              ✕
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ))}
@@ -404,105 +443,124 @@ export default function DocForm({
         <button
           type="button"
           onClick={() => addCustomField()}
-          className="text-xs text-[var(--brand)] dark:text-[var(--accent)] hover:underline px-3 py-1.5 rounded-lg border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 bg-[var(--brand)]/5 transition-colors font-medium"
+          className="inline-flex items-center gap-1.5 text-xs text-[var(--brand)] dark:text-[var(--accent)] hover:underline px-3 py-1.5 rounded-lg border border-[var(--brand)]/30 hover:border-[var(--brand)]/60 bg-[var(--brand)]/5 transition-colors font-medium cursor-pointer"
         >
-          + Add Custom Field
+          <Plus className="w-3.5 h-3.5" />
+          <span>Add Custom Field</span>
         </button>
       </div>
 
-      {/* Body with Write / Preview Tabs */}
-      <div className="border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-surface)] shadow-sm">
+      {/* Markdown Body Editor */}
+      <div className="border border-[var(--border-color)] rounded-2xl overflow-hidden bg-[var(--bg-surface)] shadow-sm">
         {/* Editor Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-color)] flex-wrap gap-2">
+        <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)]/60 border-b border-[var(--border-color)] flex-wrap gap-2">
           {/* Tabs */}
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setActiveTab("write")}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer ${
                 activeTab === "write"
-                  ? "bg-[var(--brand)] text-white shadow-sm"
+                  ? "bg-[var(--brand)] text-white shadow-xs"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
-              Write
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Write</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer ${
                 activeTab === "preview"
-                  ? "bg-[var(--brand)] text-white shadow-sm"
+                  ? "bg-[var(--brand)] text-white shadow-xs"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
-              Live Preview
+              <Eye className="w-3.5 h-3.5" />
+              <span>Live Preview</span>
             </button>
           </div>
 
-          {/* Markdown Action Shortcuts */}
+          {/* Quick Markdown Formatter Shortcuts */}
           {activeTab === "write" && (
             <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
               <button
                 type="button"
                 onClick={() => insertMarkdown("**", "**")}
-                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                title="Bold"
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                title="Bold (**text**)"
               >
-                <b>B</b>
+                <Bold className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("*", "*")}
-                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                title="Italic"
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                title="Italic (*text*)"
               >
-                <i>I</i>
+                <Italic className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("## ")}
-                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
                 title="Heading 2"
               >
-                H2
+                <Heading2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown("### ")}
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
+                title="Heading 3"
+              >
+                <Heading3 className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("```\n", "\n```")}
-                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-mono"
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
                 title="Code Block"
               >
-                {"</>"}
+                <Code className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("[", "](https://)")}
-                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)]"
                 title="Link"
               >
-                Link
+                <LinkIcon className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertMarkdown("> [!NOTE]\n> ")}
-                className="px-2 py-0.5 hover:bg-[var(--bg-surface)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)] text-indigo-500"
                 title="Note Callout"
               >
-                Note
+                <Info className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMarkdown("> [!TIP]\n> ")}
+                className="p-1.5 hover:bg-[var(--bg-surface)] rounded-md hover:text-[var(--text-primary)] text-emerald-500"
+                title="Tip Callout"
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Tab content */}
+        {/* Tab Content */}
         {activeTab === "write" ? (
           <textarea
             ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full h-96 p-4 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] font-mono text-sm focus:outline-none resize-y leading-relaxed"
-            placeholder="# Write your markdown document here..."
+            className="w-full h-96 p-4 sm:p-5 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] font-mono text-sm focus:outline-none resize-y leading-relaxed"
+            placeholder="# Write your technical documentation or writeup here in Markdown..."
             required
           />
         ) : (
@@ -510,28 +568,29 @@ export default function DocForm({
             {body.trim() ? (
               <Markdown source={body} />
             ) : (
-              <p className="text-xs text-[var(--text-dim)] italic">Nothing to preview yet.</p>
+              <p className="text-xs text-[var(--text-dim)] italic">No content to preview yet.</p>
             )}
           </div>
         )}
       </div>
 
-      {/* Actions */}
+      {/* Submit Action Buttons */}
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-lg font-medium text-sm transition-all shadow-md shadow-[var(--brand)]/20 disabled:opacity-50 flex items-center gap-2"
+          className="px-6 py-2.5 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-[var(--brand)]/20 hover:shadow-[var(--brand)]/35 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
         >
           {loading && (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           )}
-          <span>{loading ? "Saving document..." : mode === "create" ? "Create Document" : "Save Changes"}</span>
+          <span>{loading ? "Persisting Document..." : mode === "create" ? "Publish to PostgreSQL" : "Save Changes"}</span>
         </button>
+
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2.5 border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-lg text-sm transition-colors shadow-sm"
+          className="px-4 py-2.5 border border-[var(--border-color)] hover:border-[var(--brand)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-xl text-sm transition-colors shadow-xs cursor-pointer"
         >
           Cancel
         </button>
