@@ -442,8 +442,9 @@ body {
   }
 
   .avoid-break-inside,
-  .challenge-header-card,
-  .badge-container,
+  .code-block-wrapper,
+  .code-block-container,
+  .challenge-entry,
   table,
   tr,
   img,
@@ -459,6 +460,32 @@ body {
   }
 
   /* Code block wrapping and styling in print */
+  .code-block-wrapper,
+  .code-block-container {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    border-radius: 4px !important;
+    margin: 8pt 0 !important;
+    overflow: hidden !important;
+  }
+
+  .code-block-header {
+    border-bottom: 1px solid #cbd5e1 !important;
+    background-color: #f1f5f9 !important;
+    padding: 3pt 8pt !important;
+    color: #334155 !important;
+  }
+
+  .code-block-wrapper pre {
+    border: none !important;
+    background-color: transparent !important;
+    padding: 6pt 8pt !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
   pre,
   pre code,
   code {

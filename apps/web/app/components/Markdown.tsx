@@ -42,16 +42,16 @@ function PreBlock({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) 
   }
 
   return (
-    <div className="relative group my-5 rounded-xl overflow-hidden border border-[var(--border-code)] bg-[var(--code-block-bg)] shadow-xs">
+    <div className="code-block-wrapper relative group my-5 rounded-xl overflow-hidden border border-[var(--border-code)] bg-[var(--code-block-bg)] shadow-xs print:my-3 print:rounded-md print:border-slate-300 print:bg-slate-50">
       {/* Code block header bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[var(--code-header-bg)] border-b border-[var(--border-code)] text-xs font-mono select-none">
+      <div className="code-block-header flex items-center justify-between px-4 py-2 bg-[var(--code-header-bg)] border-b border-[var(--border-code)] text-xs font-mono select-none print:px-3 print:py-1 print:bg-slate-100 print:border-slate-300">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 opacity-75 group-hover:opacity-100 transition-opacity">
+          <div className="no-print flex items-center gap-1.5 opacity-75 group-hover:opacity-100 transition-opacity">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80 dark:bg-rose-500/60 inline-block" />
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80 dark:bg-amber-500/60 inline-block" />
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80 dark:bg-emerald-500/60 inline-block" />
           </div>
-          <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] print:text-slate-700 group-hover:text-[var(--text-secondary)] transition-colors">
             {language}
           </span>
         </div>
@@ -60,7 +60,7 @@ function PreBlock({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) 
           onClick={handleCopy}
           type="button"
           aria-label="Copy code to clipboard"
-          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--code-button-bg)] hover:bg-[var(--code-button-hover-bg)] px-2.5 py-1 rounded-md border border-[var(--border-code)] transition-all font-sans shadow-xs cursor-pointer"
+          className="no-print flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--code-button-bg)] hover:bg-[var(--code-button-hover-bg)] px-2.5 py-1 rounded-md border border-[var(--border-code)] transition-all font-sans shadow-xs cursor-pointer"
         >
           {copied ? (
             <>
@@ -80,7 +80,7 @@ function PreBlock({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) 
         </button>
       </div>
 
-      <pre className="!m-0 !bg-transparent p-4 overflow-x-auto text-[13.5px] text-[var(--pre-text)] font-mono leading-relaxed" {...props}>
+      <pre className="!m-0 !bg-transparent p-4 print:p-3 overflow-x-auto text-[13.5px] print:text-[8.5pt] text-[var(--pre-text)] print:text-slate-900 font-mono leading-relaxed" {...props}>
         {children}
       </pre>
     </div>
