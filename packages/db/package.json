@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
-    "@types/node": "^20"
+    "@types/node": "^26"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
