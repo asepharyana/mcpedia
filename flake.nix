@@ -12,6 +12,17 @@
         pkgs = import nixpkgs {
           inherit system;
           config = { allowUnfree = true; };
+          overlays = [
+            (self: super: {
+              bun = super.bun.overrideAttrs (old: rec {
+                version = "1.4.0";
+                src = super.fetchzip {
+                  url = "https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-linux-x64.zip";
+                  sha256 = "sha256:Poy0vf7yJ/hzk33QiQj5gnshI5Q7dfbaMD7xgwiyDKw=";
+                };
+              });
+            })
+          ];
         };
 
         bunBin = pkgs.bun + "/bin/bun";
