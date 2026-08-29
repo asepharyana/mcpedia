@@ -10,7 +10,7 @@
     "start": "bun run src/index.ts",
     "chat": "bun run src/index.ts",
     "ask": "bun run src/ask.ts",
-    "lint": "bun run lint",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "build": "bun build src/index.ts --outdir=dist --format=esm",
     "test": "bun test"
@@ -20,7 +20,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^26",
     "typescript": "^5.6.0"
   }
 }
