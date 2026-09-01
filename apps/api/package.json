@@ -18,7 +18,7 @@
     "@mcpedia/queue": "workspace:*",
     "@trpc/server": "^11.0.0",
     "hono": "^4.6.0",
-    "zod": "^3.23.8"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "typescript": "^5.6.0"
