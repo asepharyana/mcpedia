@@ -40,7 +40,7 @@ export const EMBED_API_KEY = process.env.EMBED_API_KEY ?? "";
 export const EMBED_MODEL = process.env.EMBED_MODEL ?? "";
 
 // Redis + BullMQ (shared Redis instance).
-export const REDIS_URL = process.env.REDIS_URL ?? "redis://100.121.180.82:6379";
+export const REDIS_URL = process.env.REDIS_URL ?? "redis://127.0.0.1:6380";
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD ?? "";
 export const QUEUE_PREFIX = process.env.QUEUE_PREFIX ?? "mcpedia";
 
