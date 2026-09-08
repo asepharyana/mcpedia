@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSearch } from "@/hooks/useSearch";
 import {
   Search,
   Plus,
@@ -10,74 +11,35 @@ import {
   BookOpen,
   Flag,
   Sparkles,
-  X,
 } from "lucide-react";
-
-interface Hit {
-  slug: string;
-  title: string;
-  section: string;
-  snippet?: string;
-  score: number;
-}
 
 interface QuickAction {
   id: string;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   href?: string;
-  action?: () => void;
 }
 
 export default function CommandMenu() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Hit[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { hits, isSearching, isValidating } = useSearch(query, "hybrid", 10);
+  const results = query.trim() ? hits : [];
+  const loading = isSearching || isValidating;
+
   const quickActions: QuickAction[] = [
-    {
-      id: "create-doc",
-      title: "Create New Document",
-      subtitle: "Write technical doc, writeup, or note",
-      icon: Plus,
-      href: "/create",
-    },
-    {
-      id: "hybrid-search",
-      title: "Multi-Modal Hybrid Search",
-      subtitle: "Full-text + Semantic vector search console",
-      icon: Search,
-      href: "/search",
-    },
-    {
-      id: "browse-docs",
-      title: "Documentation Hub",
-      subtitle: "System setup, API references, protocol specs",
-      icon: BookOpen,
-      href: "/docs",
-    },
-    {
-      id: "browse-writeups",
-      title: "CTF & Writeups Directory",
-      subtitle: "Pwn, Reverse, Web, Crypto writeups and solutions",
-      icon: Flag,
-      href: "/writeups",
-    },
-    {
-      id: "browse-research",
-      title: "Research & Benchmarks",
-      subtitle: "Architecture notes, benchmarks, experiments",
-      icon: Sparkles,
-      href: "/research",
-    },
+    { id: "create-doc", title: "Create New Document", subtitle: "Write technical doc, writeup, or note", icon: Plus, href: "/create" },
+    { id: "hybrid-search", title: "Multi-Modal Hybrid Search", subtitle: "Full-text + Semantic vector search console", icon: Search, href: "/search" },
+    { id: "browse-docs", title: "Documentation Hub", subtitle: "System setup, API references, protocol specs", icon: BookOpen, href: "/docs" },
+    { id: "browse-writeups", title: "CTF & Writeups Directory", subtitle: "Pwn, Reverse, Web, Crypto writeups and solutions", icon: Flag, href: "/writeups" },
+    { id: "browse-research", title: "Research & Benchmarks", subtitle: "Architecture notes, benchmarks, experiments", icon: Sparkles, href: "/research" },
   ];
 
-  // Global shortcut ⌘K or /
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -98,31 +60,12 @@ export default function CommandMenu() {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50);
       setQuery("");
-      setResults([]);
       setSelectedIndex(0);
     }
   }, [open]);
 
-  // Debounced search
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`);
-        const data = await res.json();
-        setResults(data.results || []);
-        setSelectedIndex(0);
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 120);
-    return () => clearTimeout(timer);
+    setSelectedIndex(0);
   }, [query]);
 
   function handleNavigate(href: string) {
@@ -158,24 +101,15 @@ export default function CommandMenu() {
       >
         <Search className="w-3.5 h-3.5 text-[var(--text-dim)] group-hover:text-[var(--text-primary)] transition-colors" />
         <span className="font-sans">Search...</span>
-        <kbd className="ml-2 font-mono bg-[var(--bg-surface)] px-1.5 py-0.2 rounded border border-[var(--border-color)] text-[10px] text-[var(--text-muted)]">
-          ⌘K
-        </kbd>
+        <kbd className="ml-2 font-mono bg-[var(--bg-surface)] px-1.5 py-0.2 rounded border border-[var(--border-color)] text-[10px] text-[var(--text-muted)]">⌘K</kbd>
       </button>
     );
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-        onClick={() => setOpen(false)}
-      />
-
-      {/* Modal */}
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity" onClick={() => setOpen(false)} />
       <div className="relative w-full max-w-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden animate-fade-in">
-        {/* Search input bar */}
         <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-[var(--border-color)] bg-[var(--bg-elevated)]">
           <Search className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
           <input
@@ -187,25 +121,14 @@ export default function CommandMenu() {
             placeholder="Search documents, writeups, concepts, or tools..."
             className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-dim)] text-sm focus:outline-none"
           />
-          {loading && (
-            <div className="w-4 h-4 border-2 border-[var(--text-muted)] border-t-transparent rounded-full animate-spin shrink-0" />
-          )}
-          <button
-            onClick={() => setOpen(false)}
-            type="button"
-            className="text-[10px] font-mono text-[var(--text-dim)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-color)]"
-          >
-            ESC
-          </button>
+          {loading && <div className="w-4 h-4 border-2 border-[var(--text-muted)] border-t-transparent rounded-full animate-spin shrink-0" />}
+          <button onClick={() => setOpen(false)} type="button" className="text-[10px] font-mono text-[var(--text-dim)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-color)]">ESC</button>
         </div>
 
-        {/* Results / Quick Actions List */}
         <div className="max-h-[22rem] overflow-y-auto p-2">
           {query.trim() === "" ? (
             <div className="p-1 space-y-0.5">
-              <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                Quick Shortcuts
-              </div>
+              <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">Quick Shortcuts</div>
               {quickActions.map((action, idx) => {
                 const Icon = action.icon;
                 const isSelected = idx === selectedIndex;
@@ -214,23 +137,15 @@ export default function CommandMenu() {
                     key={action.id}
                     onClick={() => action.href && handleNavigate(action.href)}
                     onMouseEnter={() => setSelectedIndex(idx)}
-                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                      isSelected
-                        ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
-                        : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
-                    }`}
+                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${isSelected ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div className={`p-1.5 rounded ${isSelected ? "bg-[var(--brand)] text-[var(--brand-fg)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>
                         <Icon className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-[var(--text-primary)]">
-                          {action.title}
-                        </div>
-                        <div className="text-[11px] text-[var(--text-muted)]">
-                          {action.subtitle}
-                        </div>
+                        <div className="text-xs font-semibold text-[var(--text-primary)]">{action.title}</div>
+                        <div className="text-[11px] text-[var(--text-muted)]">{action.subtitle}</div>
                       </div>
                     </div>
                     <ArrowRight className={`w-3.5 h-3.5 text-[var(--text-dim)] ${isSelected ? "text-[var(--text-primary)]" : ""}`} />
@@ -251,31 +166,22 @@ export default function CommandMenu() {
                     key={hit.slug}
                     onClick={() => handleNavigate(`/${hit.slug}`)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`flex items-start justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                      isSelected
-                        ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-color)]"
-                        : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-transparent"
-                    }`}
+                    className={`flex items-start justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${isSelected ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-color)]" : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-transparent"}`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)] uppercase font-semibold">
-                          {hit.section}
-                        </span>
-                        <span className={`text-xs sm:text-sm font-semibold ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"} truncate`}>
-                          {hit.title}
-                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded text-[var(--text-muted)] uppercase font-semibold">{hit.section}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] truncate">{hit.title}</span>
                       </div>
                       {hit.snippet && (
                         <p
                           className="text-xs text-[var(--text-muted)] line-clamp-1 mt-1 [&>mark]:bg-[var(--bg-elevated-hover)] [&>mark]:text-[var(--text-primary)] [&>mark]:font-semibold"
+                          // snippet is server-sanitized ts_headline output
                           dangerouslySetInnerHTML={{ __html: hit.snippet }}
                         />
                       )}
                     </div>
-                    <span className="text-[10px] font-mono text-[var(--text-dim)] shrink-0 self-center">
-                      /{hit.slug}
-                    </span>
+                    <span className="text-[10px] font-mono text-[var(--text-dim)] shrink-0 self-center">/{hit.slug}</span>
                   </li>
                 );
               })}
@@ -283,20 +189,9 @@ export default function CommandMenu() {
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between px-4 py-2 border-t border-[var(--border-color)] bg-[var(--bg-elevated)] text-[10px] text-[var(--text-muted)] font-mono">
-          <div className="flex items-center gap-2">
-            <span>[ ↑↓ NAVIGATE ]</span>
-            <span>[ ↵ SELECT ]</span>
-          </div>
-          <Link
-            href={`/search?q=${encodeURIComponent(query)}`}
-            onClick={() => setOpen(false)}
-            className="hover:text-[var(--text-primary)] font-medium flex items-center gap-1"
-          >
-            <span>Full Search Console</span>
-            <ArrowRight className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-2"><span>[ ↑↓ NAVIGATE ]</span><span>[ ↵ SELECT ]</span></div>
+          <Link href={`/search?q=${encodeURIComponent(query)}`} onClick={() => setOpen(false)} className="hover:text-[var(--text-primary)] font-medium flex items-center gap-1"><span>Full Search Console</span><ArrowRight className="w-3 h-3" /></Link>
         </div>
       </div>
     </div>

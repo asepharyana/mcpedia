@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { mutate } from "swr";
 import Markdown from "./Markdown";
 import {
   Bold,
@@ -210,7 +211,12 @@ export default function DocForm({
       }
 
       const result = await res.json();
+      // Invalidate SWR caches so Sidebar/Header/search reflect the change immediately
+      mutate("/api/docs");
+      mutate("/api/sections");
+      mutate((key) => typeof key === "string" && key.startsWith("/api/tags"));
       router.push(result.doc?.slug ? `/${result.doc.slug}` : "/");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

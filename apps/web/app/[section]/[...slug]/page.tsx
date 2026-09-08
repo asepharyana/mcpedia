@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { getDocument, getRelated, listRevisions, listDocuments, getExportDocuments } from "@mcpedia/core";
+import { getDocument, listDocuments, getExportDocuments } from "@mcpedia/core";
 import { WEBHOOK_SECRET } from "@mcpedia/config";
 import Markdown from "@/components/Markdown";
 import DocForm from "@/components/DocForm";
 import TOC from "@/components/TOC";
 import DocActions from "@/components/DocActions";
 import PdfExportView from "@/components/PdfExportView";
+import RelatedGrid from "@/components/RelatedGrid";
+import RevisionList from "@/components/RevisionList";
 import { classifyPath, extractFoldersForSection } from "@mcpedia/core";
 import { getSectionMeta } from "@mcpedia/config";
 import type { DocumentMeta } from "@mcpedia/core";
@@ -15,10 +17,8 @@ import {
   Folder,
   FileText,
   Clock,
-  History,
   FileDown,
   ArrowLeft,
-  Sparkles,
   CheckCircle2,
   XCircle,
   Target,
@@ -382,8 +382,6 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
     );
   }
 
-  const related = await getRelated(fullSlug, 4);
-  const revisions = await listRevisions(fullSlug, 10);
   const sectionInfo = getSectionInfo(doc.section);
   const readingTime = calculateReadingTime(doc.body);
 
@@ -497,89 +495,8 @@ export default async function DocPage({ params, searchParams }: DocPageProps) {
           <Markdown source={doc.body} />
         </div>
 
-        {/* Related Documents Grid */}
-        {related.length > 0 && (
-          <aside className="mt-12 pt-8 border-t border-[var(--border-color)]">
-            <div className="flex items-center gap-2 mb-3.5">
-              <Sparkles className="w-4 h-4 text-[var(--text-muted)]" />
-              <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                Related Knowledge
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {related.map((r) => {
-                const rInfo = getSectionInfo(r.section);
-                return (
-                  <Link
-                    key={r.slug}
-                    href={`/${r.slug}`}
-                    className="group block bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-lg p-4 transition-colors shadow-xs"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase font-semibold">
-                        {rInfo.icon} {r.section}
-                      </span>
-                      <time className="text-[11px] text-[var(--text-dim)] font-mono">
-                        {new Date(r.updatedAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </time>
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] group-hover:underline line-clamp-1">
-                      {r.title}
-                    </h3>
-                  </Link>
-                );
-              })}
-            </div>
-          </aside>
-        )}
-
-        {/* Revision History */}
-        {revisions.length > 0 && (
-          <aside className="mt-10 pt-8 border-t border-[var(--border-color)]">
-            <div className="flex items-center justify-between mb-3.5">
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-[var(--text-muted)]" />
-                <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                  Revision History ({revisions.length})
-                </h2>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {revisions.map((rev) => (
-                <div
-                  key={rev.id}
-                  className="flex items-center justify-between gap-3 p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg text-xs shadow-xs"
-                >
-                  <div className="flex items-center gap-2 min-w-0 font-mono">
-                    <span className="text-[var(--text-primary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded border border-[var(--border-color)] font-bold text-[10px]">
-                      v{rev.revisionNo}
-                    </span>
-                    <span className="text-[var(--text-secondary)] font-sans truncate text-xs">
-                      {rev.reason || "Updated document in PostgreSQL"}
-                    </span>
-                    <span className="text-[var(--text-dim)] hidden sm:inline text-[11px]">
-                      · {new Date(rev.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  {canEdit && (
-                    <form action="/api/revisions/restore" method="post">
-                      <input type="hidden" name="id" value={rev.id} />
-                      <button
-                        type="submit"
-                        className="text-xs text-[var(--text-primary)] hover:text-black dark:hover:text-white bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] px-2.5 py-1 rounded border border-[var(--border-color)] transition-colors font-medium cursor-pointer"
-                      >
-                        Restore
-                      </button>
-                    </form>
-                  )}
-                </div>
-              ))}
-            </div>
-          </aside>
-        )}
+        <RelatedGrid slug={fullSlug} />
+        <RevisionList slug={fullSlug} canEdit={canEdit} />
       </article>
 
       {/* Desktop Sticky Table of Contents Column */}

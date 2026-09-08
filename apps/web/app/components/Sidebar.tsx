@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getSectionMeta } from "@mcpedia/config/sections";
+import { useDocuments } from "@/hooks/useDocuments";
 import {
   Folder,
   FolderOpen,
@@ -13,6 +14,8 @@ import {
   X,
   Plus,
 } from "lucide-react";
+
+import type { DocumentMeta } from "@mcpedia/types";
 
 interface Doc {
   slug: string;
@@ -182,20 +185,10 @@ function TreeNodeItem({
 }
 
 export default function Sidebar() {
-  const [docs, setDocs] = useState<Doc[]>([]);
+  const { docs } = useDocuments();
   const [filterText, setFilterText] = useState("");
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
-
-  useEffect(() => {
-    fetch("/api/docs")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setDocs(data);
-        else if (data?.docs) setDocs(data.docs);
-      })
-      .catch(() => setDocs([]));
-  }, []);
 
   function toggleCollapse(slug: string) {
     setCollapsedMap((prev) => ({ ...prev, [slug]: !prev[slug] }));
@@ -208,7 +201,7 @@ export default function Sidebar() {
       (d) =>
         d.title.toLowerCase().includes(lower) ||
         d.slug.toLowerCase().includes(lower) ||
-        d.tags.some((t) => t.toLowerCase().includes(lower)),
+        d.tags.some((t: string) => t.toLowerCase().includes(lower)),
     );
   }, [docs, filterText]);
 

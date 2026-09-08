@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import SWRProvider from "@/lib/swr";
 import Link from "next/link";
 import { Database } from "lucide-react";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
           <div id="a11y-live-region" aria-live="polite" aria-atomic="true" />
         </div>
 
+        <SWRProvider>
         <Header />
 
         <div className="mx-auto max-w-7xl w-full flex-1 flex flex-col">
@@ -70,6 +72,10 @@ export default function RootLayout({
             </div>
 
             <div className="flex items-center gap-4 text-[11px] text-[var(--text-muted)]">
+              <Link href="/dashboard" className="hover:text-[var(--text-primary)] transition-colors">
+                Dashboard
+              </Link>
+              <span>·</span>
               <Link href="/search" className="hover:text-[var(--text-primary)] transition-colors">
                 RRF Hybrid Search
               </Link>
@@ -82,6 +88,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        </SWRProvider>
       </body>
     </html>
   );

@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "@mcpedia/config",
     "@mcpedia/parser",
     "@mcpedia/search",
+    "@mcpedia/queue",
   ],
 };
 

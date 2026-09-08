@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEFAULT_SECTIONS, type SectionConfig } from "@mcpedia/config/sections";
+import { DEFAULT_SECTIONS } from "@mcpedia/config/sections";
+import { useSections } from "@/hooks/useSections";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandMenu from "@/components/CommandMenu";
 import {
@@ -17,18 +18,8 @@ import {
 export default function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
-
-  useEffect(() => {
-    fetch("/api/sections")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setSections(data);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const { data: liveSections } = useSections();
+  const sections = liveSections && liveSections.length > 0 ? liveSections : DEFAULT_SECTIONS;
 
   return (
     <header className="site-header no-print sticky top-0 z-40 border-b border-[var(--border-color)] glass-nav transition-all">

@@ -78,8 +78,15 @@ function splitPayload(body: Record<string, unknown>): {
 }
 
 // GET /api/docs — list all documents (for sidebar navigation).
-export async function GET() {
-  const docs = await listDocuments();
+// Supports ?section=&status= filters.
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const section = searchParams.get("section") ?? undefined;
+  const status = searchParams.get("status") ?? undefined;
+  const docs = await listDocuments({
+    ...(section ? { section } : {}),
+    ...(status ? { status } : {}),
+  });
   return NextResponse.json(docs);
 }
 
