@@ -9,6 +9,9 @@
     "./queue": "./src/queue.ts",
     "./worker": "./src/worker.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@mcpedia/config": "workspace:*",
     "@mcpedia/core": "workspace:*",
